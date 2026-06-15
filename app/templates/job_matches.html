@@ -1,0 +1,272 @@
+{% extends "base.html" %}
+
+{% block title %}Job Matches - FADTECH Labs{% endblock %}
+
+{% block content %}
+<section class="max-w-7xl mx-auto px-6 py-8">
+    <div class="mb-8" data-aos="fade-up">
+        <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">Job Matches</h1>
+        <p class="text-white/60">AI-powered job recommendations based on your skills</p>
+    </div>
+
+    {% set parsed_data = session.get('parsed_cv', None) %}
+    
+    {% if not parsed_data %}
+    <!-- No CV Uploaded Yet -->
+    <div class="glass-card p-12 text-center" data-aos="fade-up">
+        <i class="fas fa-cloud-upload-alt text-6xl text-white/30 mb-4"></i>
+        <h2 class="text-2xl font-bold text-white mb-2">No CV Uploaded Yet</h2>
+        <p class="text-white/60 mb-6">Upload your CV to get personalized job matches</p>
+        <a href="{{ url_for('upload_cv') }}" class="btn-primary px-8 py-3 rounded-full text-white font-semibold inline-flex items-center gap-2">
+            <i class="fas fa-upload"></i> Upload CV Now
+        </a>
+    </div>
+    {% else %}
+    
+    {% set all_skills = [] %}
+    {% for category, skills in parsed_data.skills.items() %}
+        {% for skill in skills %}
+            {% set _ = all_skills.append(skill) %}
+        {% endfor %}
+    {% endfor %}
+    
+    {% set job_matches = skill_analyzer.get_job_recommendations(all_skills) %}
+
+    <!-- Match Summary -->
+    <div class="glass-card p-6 mb-8" data-aos="fade-up">
+        <div class="grid md:grid-cols-3 gap-6">
+            <div class="text-center">
+                <div class="text-3xl font-bold text-teal-400">{{ job_matches|length }}</div>
+                <div class="text-white/60 text-sm">Job Matches Found</div>
+            </div>
+            <div class="text-center">
+                <div class="text-3xl font-bold text-purple-400">{{ all_skills|length }}</div>
+                <div class="text-white/60 text-sm">Your Skills</div>
+            </div>
+            <div class="text-center">
+                <div class="text-3xl font-bold text-pink-400">GHS 4.5k-15k</div>
+                <div class="text-white/60 text-sm">Salary Range</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-8">
+        <!-- Job Listings -->
+        <div class="lg:col-span-2 space-y-6">
+            {% if job_matches %}
+                {% for job in job_matches %}
+                <div class="glass-card p-6 hover:transform hover:scale-[1.02] transition-all" data-aos="fade-right" data-aos-delay="{{ loop.index * 50 }}">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <i class="fas fa-briefcase text-teal-400"></i>
+                                <h2 class="text-xl font-bold text-white">{{ job.role }}</h2>
+                            </div>
+                            <div class="flex flex-wrap gap-3 text-sm">
+                                <span class="text-white/60"><i class="fas fa-map-marker-alt mr-1"></i> Ghana (Remote/Hybrid)</span>
+                                <span class="text-white/60"><i class="fas fa-clock mr-1"></i> Full-time</span>
+                                <span class="text-white/60"><i class="fas fa-chart-line mr-1"></i> {{ job.growth }} growth</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-2xl font-bold text-teal-400">{{ job.match_percentage }}%</div>
+                            <div class="text-white/50 text-xs">Match Score</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Match Progress Bar -->
+                    <div class="mb-4">
+                        <div class="flex justify-between text-white/60 text-xs mb-1">
+                            <span>{{ job.matched_skills }}/{{ job.total_required }} skills matched</span>
+                            <span>{{ job.match_percentage }}% match</span>
+                        </div>
+                        <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-teal-400 to-purple-600 rounded-full" style="width: {{ job.match_percentage }}%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Required Skills -->
+                    <div class="mb-4">
+                        <p class="text-white/80 text-sm font-semibold mb-2">Required Skills:</p>
+                        <div class="flex flex-wrap gap-2">
+                            {% for skill in job.required_skills %}
+                                {% set skill_found = false %}
+                                {% for user_skill in all_skills %}
+                                    {% if skill.lower() in user_skill.lower() or user_skill.lower() in skill.lower() %}
+                                        {% set skill_found = true %}
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if skill_found %}
+                                    <span class="bg-teal-500/20 text-teal-300 px-3 py-1 rounded-full text-sm">
+                                        <i class="fas fa-check mr-1"></i> {{ skill }}
+                                    </span>
+                                {% else %}
+                                    <span class="bg-red-500/20 text-red-300 px-3 py-1 rounded-full text-sm">
+                                        <i class="fas fa-times mr-1"></i> {{ skill }}
+                                    </span>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Salary & Actions -->
+                    <div class="flex justify-between items-center pt-4 border-t border-white/10">
+                        <div>
+                            <p class="text-white/60 text-sm">Salary Range</p>
+                            <p class="text-white font-bold">GHS {{ job.salary_range[0] }} - {{ job.salary_range[1] }}</p>
+                        </div>
+                        <div class="flex gap-3">
+                            <button class="btn-outline px-4 py-2 rounded-full text-white text-sm font-semibold">
+                                <i class="fas fa-bookmark mr-1"></i> Save
+                            </button>
+                            <button class="btn-primary px-4 py-2 rounded-full text-white text-sm font-semibold">
+                                Apply Now <i class="fas fa-arrow-right ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Skill Gap Warning -->
+                    {% if job.match_percentage < 70 %}
+                    <div class="mt-4 p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-exclamation-triangle text-orange-400"></i>
+                            <p class="text-white/70 text-sm">
+                                You're missing {{ job.total_required - job.matched_skills }} key skills. 
+                                <a href="{{ url_for('learning_roadmap') }}" class="text-teal-400 hover:underline">View learning roadmap →</a>
+                            </p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="glass-card p-12 text-center">
+                    <i class="fas fa-search text-6xl text-white/30 mb-4"></i>
+                    <h3 class="text-xl font-bold text-white mb-2">No Job Matches Found</h3>
+                    <p class="text-white/60">Try uploading a more detailed CV with more skills</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="space-y-8">
+            <!-- Quick Apply Tips -->
+            <div class="glass-card p-6" data-aos="fade-left">
+                <h3 class="text-lg font-bold text-white mb-4">
+                    <i class="fas fa-lightbulb text-teal-400 mr-2"></i> Quick Tips
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-teal-400 text-sm mt-0.5"></i>
+                        <p class="text-white/70 text-sm">Tailor your CV for each application</p>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-teal-400 text-sm mt-0.5"></i>
+                        <p class="text-white/70 text-sm">Highlight matching skills in your cover letter</p>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-teal-400 text-sm mt-0.5"></i>
+                        <p class="text-white/70 text-sm">Follow up within 1 week of applying</p>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-teal-400 text-sm mt-0.5"></i>
+                        <p class="text-white/70 text-sm">Prepare for technical interviews</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Salary Guide -->
+            <div class="glass-card p-6" data-aos="fade-left" data-aos-delay="100">
+                <h3 class="text-lg font-bold text-white mb-4">
+                    <i class="fas fa-chart-line text-teal-400 mr-2"></i> Salary Guide (GHS)
+                </h3>
+                <div class="space-y-3">
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-white/80">Entry Level</span>
+                            <span class="text-teal-400">GHS 2,500 - 4,000</span>
+                        </div>
+                        <div class="h-1.5 bg-white/10 rounded-full">
+                            <div class="h-full bg-teal-400 rounded-full" style="width: 30%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-white/80">Mid Level</span>
+                            <span class="text-teal-400">GHS 4,500 - 8,000</span>
+                        </div>
+                        <div class="h-1.5 bg-white/10 rounded-full">
+                            <div class="h-full bg-teal-400 rounded-full" style="width: 60%"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <span class="text-white/80">Senior Level</span>
+                            <span class="text-teal-400">GHS 9,000 - 15,000+</span>
+                        </div>
+                        <div class="h-1.5 bg-white/10 rounded-full">
+                            <div class="h-full bg-teal-400 rounded-full" style="width: 90%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Top Companies Hiring -->
+            <div class="glass-card p-6" data-aos="fade-left" data-aos-delay="150">
+                <h3 class="text-lg font-bold text-white mb-4">
+                    <i class="fas fa-building text-teal-400 mr-2"></i> Top Companies Hiring
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between p-2 hover:bg-white/5 rounded-lg">
+                        <div class="flex items-center gap-2">
+                            <i class="fab fa-google text-red-400"></i>
+                            <span class="text-white">Google</span>
+                        </div>
+                        <span class="text-white/50 text-xs">12 jobs</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 hover:bg-white/5 rounded-lg">
+                        <div class="flex items-center gap-2">
+                            <i class="fab fa-microsoft text-blue-400"></i>
+                            <span class="text-white">Microsoft</span>
+                        </div>
+                        <span class="text-white/50 text-xs">8 jobs</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 hover:bg-white/5 rounded-lg">
+                        <div class="flex items-center gap-2">
+                            <i class="fab fa-amazon text-yellow-400"></i>
+                            <span class="text-white">Amazon Web Services</span>
+                        </div>
+                        <span class="text-white/50 text-xs">6 jobs</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 hover:bg-white/5 rounded-lg">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-chart-line text-teal-400"></i>
+                            <span class="text-white">Andela</span>
+                        </div>
+                        <span class="text-white/50 text-xs">5 jobs</span>
+                    </div>
+                    <div class="flex items-center justify-between p-2 hover:bg-white/5 rounded-lg">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-mobile-alt text-purple-400"></i>
+                            <span class="text-white">Meltwater</span>
+                        </div>
+                        <span class="text-white/50 text-xs">4 jobs</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notification Bell -->
+            <div class="glass-card p-6 text-center" data-aos="fade-left" data-aos-delay="200">
+                <i class="fas fa-bell text-3xl text-teal-400 mb-3"></i>
+                <h3 class="text-lg font-bold text-white mb-2">Get Job Alerts</h3>
+                <p class="text-white/60 text-sm mb-3">Get notified when new jobs match your skills</p>
+                <button class="btn-primary w-full py-2 rounded-full text-white font-semibold">
+                    <i class="fas fa-envelope mr-2"></i> Subscribe to Alerts
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

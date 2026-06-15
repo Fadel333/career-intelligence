@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}Skill Gap Analysis - FADTECH Labs{% endblock %}
+
+{% block content %}
+<section class="max-w-7xl mx-auto px-6 py-8">
+    <div class="mb-8" data-aos="fade-up">
+        <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">Your Skill Gap Analysis</h1>
+        <p class="text-white/60">AI-powered comparison of your skills vs. market demands</p>
+    </div>
+    
+    {% if not parsed_data %}
+    <!-- No CV Uploaded Yet -->
+    <div class="glass-card p-12 text-center" data-aos="fade-up">
+        <i class="fas fa-cloud-upload-alt text-6xl text-white/30 mb-4"></i>
+        <h2 class="text-2xl font-bold text-white mb-2">No CV Uploaded Yet</h2>
+        <p class="text-white/60 mb-6">Upload your CV to get personalized skill gap analysis</p>
+        <a href="{{ url_for('upload_cv') }}" class="btn-primary px-8 py-3 rounded-full text-white font-semibold inline-flex items-center gap-2">
+            <i class="fas fa-upload"></i> Upload CV Now
+        </a>
+    </div>
+    {% else %}
+    
+    <!-- CV Analysis Success Banner -->
+    <div class="mb-6 p-4 bg-teal-500/20 rounded-xl border border-teal-400/30" data-aos="fade-up">
+        <div class="flex items-center gap-3 flex-wrap">
+            <i class="fas fa-check-circle text-teal-400 text-xl"></i>
+            <div class="flex-1">
+                <p class="text-white font-semibold">CV Analysis Complete!</p>
+                <p class="text-white/60 text-sm">We found <span class="text-teal-400 font-bold">{{ parsed_data.total_skills }}</span> skills in your CV</p>
+            </div>
+            {% if parsed_data.email %}
+            <div class="text-white/60 text-sm">
+                <i class="fas fa-envelope mr-1"></i> {{ parsed_data.email }}
+            </div>
+            {% endif %}
+            {% if parsed_data.experience_years > 0 %}
+            <div class="text-white/60 text-sm">
+                <i class="fas fa-briefcase mr-1"></i> {{ parsed_data.experience_years }}+ years exp
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="grid lg:grid-cols-3 gap-8">
+        <!-- Main Analysis -->
+        <div class="lg:col-span-2 space-y-8">
+            <!-- Employability Score Card -->
+            <div class="glass-card p-6" data-aos="fade-right">
+                <h2 class="text-xl font-bold text-white mb-4">Employability Score</h2>
+                <div class="text-center">
+                    <div class="relative inline-block">
+                        <svg class="w-40 h-40">
+                            <circle class="text-white/10" stroke-width="8" stroke="currentColor" fill="transparent" r="70" cx="80" cy="80"/>
+                            {% set circumference = 439.82 %}
+                            {% set offset = circumference - (circumference * employability.score / 100) %}
+                            <circle class="text-{{ employability.color }}-400" stroke-width="8" stroke-dasharray="{{ circumference }}" stroke-dashoffset="{{ offset }}" stroke-linecap="round" stroke="currentColor" fill="transparent" r="70" cx="80" cy="80"/>
+                        </svg>
+                        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+                            <div class="text-3xl font-bold text-white">{{ employability.score }}%</div>
+                            <div class="text-white/60 text-sm">Score</div>
+                        </div>
+                    </div>
+                    <p class="text-white/70 mt-2">
+                        <span class="text-{{ employability.color }}-400 font-semibold">{{ employability.level }}</span> Level
+                    </p>
+                    <p class="text-white/60 text-sm mt-2">
+                        Based on {{ employability.total_skills_matched }} matched skills and {{ parsed_data.experience_years }} years experience
+                    </p>
+                    <div class="mt-3 text-xs text-white/50">
+                        Base score: {{ employability.base_score }}% + Experience bonus: +{{ employability.experience_bonus }}%
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Extracted Skills Section -->
+            <div class="glass-card p-6" data-aos="fade-right" data-aos-delay="50">
+                <h2 class="text-xl font-bold text-white mb-4">
+                    <i class="fas fa-magic text-teal-400 mr-2"></i> Skills Extracted from Your CV
+                </h2>
+                {% if parsed_data.skills %}
+                    {% for category, skills in parsed_data.skills.items() %}
+                        <div class="mb-4">
+                            <h3 class="text-white/80 font-semibold mb-2">{{ category }}</h3>
+                            <div class="flex flex-wrap gap-2">
+                                {% for skill in skills %}
+                                <span class="bg-teal-500/20 text-teal-300 px-3 py-1 rounded-full text-sm">
+                                    {{ skill }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-white/60">No specific skills detected. Try uploading a more detailed CV.</p>
+                {% endif %}
+            </div>
+            
+            <!-- Detailed Gap Analysis -->
+            <div class="glass-card p-6" data-aos="fade-right" data-aos-delay="100">
+                <h2 class="text-xl font-bold text-white mb-4">Critical Skill Gaps</h2>
+                
+                {% if gaps %}
+                    {% for gap in gaps[:5] %}
+                    <div class="mb-5">
+                        <div class="flex justify-between text-sm mb-2">
+                            <span class="text-white font-medium">{{ gap.skill }}</span>
+                            <span class="{% if gap.priority == 'Critical' %}text-red-400{% elif gap.priority == 'High' %}text-orange-400{% else %}text-yellow-400{% endif %}">
+                                {{ gap.priority }} Priority
+                            </span>
+                        </div>
+                        <div class="flex justify-between text-white/60 text-xs mb-1">
+                            <span>Market demand: {{ gap.demand }}%</span>
+                            <span>Growth: {{ gap.growth }}</span>
+                        </div>
+                        <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-red-400 to-orange-400 rounded-full" style="width: {{ gap.demand }}%"></div>
+                        </div>
+                        <p class="text-white/50 text-xs mt-1">
+                            📚 Recommended: {{ gap.course.coursera }} ({{ gap.course.duration }})
+                        </p>
+                        <p class="text-white/40 text-xs mt-1">
+                            💰 Salary range: GHS {{ gap.salary_range[0] }} - {{ gap.salary_range[1] }}
+                        </p>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-white/60">Great job! You have all the in-demand skills!</p>
+                {% endif %}
+            </div>
+            
+            <!-- Learning Roadmap -->
+            <div class="glass-card p-6" data-aos="fade-right" data-aos-delay="200">
+                <h2 class="text-xl font-bold text-white mb-4">Your Personalized Learning Roadmap</h2>
+                
+                {% if roadmap.immediate %}
+                <div class="mb-4">
+                    <h3 class="text-teal-400 font-semibold mb-2">🔥 Immediate (0-2 weeks)</h3>
+                    {% for item in roadmap.immediate[:2] %}
+                    <div class="flex items-start gap-3 p-3 bg-white/5 rounded-lg mb-2">
+                        <div class="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <span class="text-white text-xs font-bold">{{ item.id }}</span>
+                        </div>
+                        <div>
+                            <p class="text-white font-medium">{{ item.skill }}</p>
+                            <p class="text-white/60 text-xs">{{ item.course_name }} • {{ item.duration }} • {{ item.effort }}</p>
+                            {% if item.certification %}
+                            <span class="text-teal-400 text-xs">✓ Certificate included</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                {% if roadmap.short_term %}
+                <div class="mb-4">
+                    <h3 class="text-purple-400 font-semibold mb-2">📚 Short Term (2-6 weeks)</h3>
+                    {% for item in roadmap.short_term[:2] %}
+                    <div class="flex items-start gap-3 p-3 bg-white/5 rounded-lg mb-2">
+                        <div class="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <span class="text-white text-xs font-bold">{{ item.id }}</span>
+                        </div>
+                        <div>
+                            <p class="text-white font-medium">{{ item.skill }}</p>
+                            <p class="text-white/60 text-xs">{{ item.course_name }} • {{ item.duration }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <a href="{{ url_for('learning_roadmap') }}" class="btn-primary w-full mt-4 py-2 rounded-full text-white font-semibold text-center inline-block">
+                    <i class="fas fa-road mr-2"></i> View Full Learning Roadmap
+                </a>
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="space-y-8">
+            <!-- Quick Stats -->
+            <div class="glass-card p-6" data-aos="fade-left">
+                <h3 class="text-lg font-bold text-white mb-4">Quick Stats</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-white/60">Total Skills Found</span>
+                        <span class="text-white font-bold">{{ parsed_data.total_skills }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-white/60">Skills Matched</span>
+                        <span class="text-teal-400 font-bold">{{ employability.total_skills_matched }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-white/60">Skills Missing</span>
+                        <span class="text-orange-400 font-bold">{{ gaps|length }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-white/60">Experience Years</span>
+                        <span class="text-white font-bold">{{ parsed_data.experience_years }}+</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Job Recommendations -->
+            <div class="glass-card p-6" data-aos="fade-left" data-aos-delay="100">
+                <h3 class="text-lg font-bold text-white mb-4">
+                    <i class="fas fa-briefcase text-teal-400 mr-2"></i> Job Matches
+                </h3>
+                {% if job_matches %}
+                    {% for job in job_matches[:3] %}
+                    <div class="mb-3 p-3 bg-white/5 rounded-lg">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-white font-semibold">{{ job.role }}</p>
+                                <p class="text-white/60 text-xs">{{ job.matched_skills }}/{{ job.total_required }} skills matched</p>
+                            </div>
+                            <span class="text-teal-400 text-sm font-bold">{{ job.match_percentage }}%</span>
+                        </div>
+                        <div class="mt-2 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                            <div class="h-full bg-gradient-to-r from-teal-400 to-purple-600 rounded-full" style="width: {{ job.match_percentage }}%"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-white/60 text-sm">Upload CV to see job matches</p>
+                {% endif %}
+            </div>
+            
+            <!-- Market Insights -->
+            <div class="glass-card p-6" data-aos="fade-left" data-aos-delay="200">
+                <h3 class="text-lg font-bold text-white mb-4">Market Insights</h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-white/80">Top Demand Skill</span>
+                        <span class="text-teal-400">Python (92%)</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-white/80">Fastest Growing</span>
+                        <span class="text-teal-400">AI/ML (+45%)</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-white/80">Highest Salary</span>
+                        <span class="text-teal-400">Cloud (GHS 15k)</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Pro Tip -->
+            <div class="glass-card p-6" data-aos="fade-left" data-aos-delay="250">
+                <i class="fas fa-lightbulb text-3xl text-teal-400 mb-3"></i>
+                <h3 class="text-lg font-bold text-white mb-2">Pro Tip</h3>
+                <p class="text-white/60 text-sm">
+                    {% if gaps %}
+                    Focus on learning <strong>{{ gaps[0].skill }}</strong> first - it's the most in-demand skill missing from your profile!
+                    {% else %}
+                    Great job! Your skill set is well-aligned with market demands.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

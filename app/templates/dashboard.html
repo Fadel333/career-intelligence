@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - FADTECH Labs | Career Intelligence System{% endblock %}
+
+{% block content %}
+<!-- Dashboard Header -->
+<section class="relative overflow-hidden">
+    <div class="max-w-7xl mx-auto px-6 py-8">
+        <!-- Welcome Banner -->
+        <div class="bg-gradient-to-r from-teal-500/20 to-purple-600/20 backdrop-blur-sm rounded-2xl p-8 mb-8 border border-white/10" data-aos="fade-up">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">
+                        Welcome back, {{ current_user.fullname }}! 👋
+                    </h1>
+                    <p class="text-white/70">Track your career progress, discover skill gaps, and get personalized recommendations.</p>
+                </div>
+                <div class="flex gap-3">
+                    <a href="{{ url_for('upload_cv') }}" class="btn-primary px-6 py-3 rounded-full text-white font-semibold inline-flex items-center gap-2">
+                        <i class="fas fa-upload"></i> Upload CV
+                    </a>
+                    <a href="{{ url_for('skill_analysis') }}" class="btn-outline px-6 py-3 rounded-full text-white font-semibold inline-flex items-center gap-2">
+                        <i class="fas fa-chart-line"></i> Analyze Skills
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="glass-card p-6 text-center" data-aos="fade-up" data-aos-delay="0">
+                <div class="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-chart-simple text-white text-xl"></i>
+                </div>
+                <div class="text-2xl font-bold text-white">78</div>
+                <p class="text-white/60 text-sm">Employability Score</p>
+                <div class="mt-2 h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-teal-400 to-purple-600 rounded-full" style="width: 78%"></div>
+                </div>
+            </div>
+
+            <div class="glass-card p-6 text-center" data-aos="fade-up" data-aos-delay="100">
+                <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-code text-white text-xl"></i>
+                </div>
+                <div class="text-2xl font-bold text-white">12</div>
+                <p class="text-white/60 text-sm">Skills Identified</p>
+            </div>
+
+            <div class="glass-card p-6 text-center" data-aos="fade-up" data-aos-delay="200">
+                <div class="w-12 h-12 bg-gradient-to-br from-pink-400 to-pink-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-graduation-cap text-white text-xl"></i>
+                </div>
+                <div class="text-2xl font-bold text-white">5</div>
+                <p class="text-white/60 text-sm">Courses Recommended</p>
+            </div>
+
+            <div class="glass-card p-6 text-center" data-aos="fade-up" data-aos-delay="300">
+                <div class="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-briefcase text-white text-xl"></i>
+                </div>
+                <div class="text-2xl font-bold text-white">23</div>
+                <p class="text-white/60 text-sm">Job Matches</p>
+            </div>
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="grid lg:grid-cols-3 gap-8">
+            <!-- Left Column - Quick Actions -->
+            <div class="lg:col-span-2 space-y-8">
+                <!-- Quick Actions Cards -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <!-- Upload CV Card -->
+                    <a href="{{ url_for('upload_cv') }}" class="glass-card p-6 hover:transform hover:scale-105 transition-all cursor-pointer block" data-aos="fade-right">
+                        <div class="w-14 h-14 bg-gradient-to-br from-teal-400 to-teal-600 rounded-2xl flex items-center justify-center mb-4">
+                            <i class="fas fa-cloud-upload-alt text-2xl text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">Upload CV</h3>
+                        <p class="text-white/60 text-sm">Let AI extract your skills and analyze your career potential</p>
+                        <div class="mt-4 text-teal-400 text-sm flex items-center gap-1">
+                            Get Started <i class="fas fa-arrow-right"></i>
+                        </div>
+                    </a>
+
+                    <!-- Profile Card -->
+                    <a href="{{ url_for('profile') }}" class="glass-card p-6 hover:transform hover:scale-105 transition-all cursor-pointer block" data-aos="fade-right" data-aos-delay="100">
+                        <div class="w-14 h-14 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center mb-4">
+                            <i class="fas fa-user-circle text-2xl text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">Complete Profile</h3>
+                        <p class="text-white/60 text-sm">Update your information and career preferences</p>
+                        <div class="mt-4 text-purple-400 text-sm flex items-center gap-1">
+                            Update Now <i class="fas fa-arrow-right"></i>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Skill Gap Analysis Section -->
+                <div id="skill-analysis" class="glass-card p-6" data-aos="fade-right" data-aos-delay="200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-white">
+                            <i class="fas fa-chart-line text-teal-400 mr-2"></i> Skill Gap Analysis
+                        </h2>
+                        <a href="{{ url_for('skill_analysis') }}" class="text-teal-400 hover:text-teal-300 text-sm">View Details →</a>
+                    </div>
+                    
+                    <!-- Top Skills Gap -->
+                    <div class="space-y-4">
+                        <div>
+                            <div class="flex justify-between text-white/80 text-sm mb-1">
+                                <span>Python Programming</span>
+                                <span>Required: 85% | You: 60%</span>
+                            </div>
+                            <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-red-400 to-orange-400 rounded-full" style="width: 60%"></div>
+                            </div>
+                            <p class="text-white/50 text-xs mt-1">Gap: -25% • Urgent: High</p>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between text-white/80 text-sm mb-1">
+                                <span>Machine Learning</span>
+                                <span>Required: 70% | You: 35%</span>
+                            </div>
+                            <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-red-400 to-orange-400 rounded-full" style="width: 35%"></div>
+                            </div>
+                            <p class="text-white/50 text-xs mt-1">Gap: -35% • Urgent: Critical</p>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between text-white/80 text-sm mb-1">
+                                <span>Cloud Computing (AWS)</span>
+                                <span>Required: 65% | You: 20%</span>
+                            </div>
+                            <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-yellow-400 to-orange-400 rounded-full" style="width: 20%"></div>
+                            </div>
+                            <p class="text-white/50 text-xs mt-1">Gap: -45% • Urgent: Critical</p>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between text-white/80 text-sm mb-1">
+                                <span>Data Analysis (Pandas/SQL)</span>
+                                <span>Required: 75% | You: 55%</span>
+                            </div>
+                            <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+                                <div class="h-full bg-gradient-to-r from-orange-400 to-yellow-400 rounded-full" style="width: 55%"></div>
+                            </div>
+                            <p class="text-white/50 text-xs mt-1">Gap: -20% • Urgent: Medium</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personalized Learning Roadmap -->
+                <div class="glass-card p-6" data-aos="fade-right" data-aos-delay="300">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-white">
+                            <i class="fas fa-road text-teal-400 mr-2"></i> Your Learning Roadmap
+                        </h2>
+                        <a href="{{ url_for('learning_roadmap') }}" class="text-teal-400 hover:text-teal-300 text-sm">View All →</a>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-start gap-3 p-3 bg-white/5 rounded-xl">
+                            <div class="w-8 h-8 bg-gradient-to-br from-teal-400 to-teal-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                                <span class="text-white text-xs font-bold">1</span>
+                            </div>
+                            <div>
+                                <h3 class="text-white font-semibold">Complete Python Programming Course</h3>
+                                <p class="text-white/60 text-sm">Coursera • 4 weeks • 5 hrs/week</p>
+                                <div class="flex gap-2 mt-2">
+                                    <span class="bg-teal-500/20 text-teal-300 text-xs px-2 py-1 rounded-full">Priority: High</span>
+                                    <span class="bg-purple-500/20 text-purple-300 text-xs px-2 py-1 rounded-full">Certificate Included</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start gap-3 p-3 bg-white/5 rounded-xl">
+                            <div class="w-8 h-8 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                                <span class="text-white text-xs font-bold">2</span>
+                            </div>
+                            <div>
+                                <h3 class="text-white font-semibold">Machine Learning Specialization</h3>
+                                <p class="text-white/60 text-sm">Coursera • 11 weeks • 7 hrs/week</p>
+                                <div class="flex gap-2 mt-2">
+                                    <span class="bg-teal-500/20 text-teal-300 text-xs px-2 py-1 rounded-full">Priority: Critical</span>
+                                    <span class="bg-purple-500/20 text-purple-300 text-xs px-2 py-1 rounded-full">Certificate Included</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-start gap-3 p-3 bg-white/5 rounded-xl">
+                            <div class="w-8 h-8 bg-gradient-to-br from-pink-400 to-pink-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                                <span class="text-white text-xs font-bold">3</span>
+                            </div>
+                            <div>
+                                <h3 class="text-white font-semibold">AWS Cloud Practitioner</h3>
+                                <p class="text-white/60 text-sm">AWS Training • 4 weeks • 6 hrs/week</p>
+                                <div class="flex gap-2 mt-2">
+                                    <span class="bg-teal-500/20 text-teal-300 text-xs px-2 py-1 rounded-full">Priority: Critical</span>
+                                    <span class="bg-purple-500/20 text-purple-300 text-xs px-2 py-1 rounded-full">Certification Path</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="space-y-8">
+                <!-- Job Market Intelligence -->
+                <div class="glass-card p-6" data-aos="fade-left">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-white">
+                            <i class="fas fa-chart-line text-teal-400 mr-2"></i> Market Intelligence
+                        </h2>
+                        <a href="{{ url_for('job_matches') }}" class="text-teal-400 hover:text-teal-300 text-sm">View All →</a>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="border-b border-white/10 pb-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-white font-medium">Python Developer</span>
+                                <span class="text-teal-400 text-sm">12 new jobs</span>
+                            </div>
+                            <p class="text-white/60 text-sm">Avg Salary: GHS 4,500 - 8,000</p>
+                        </div>
+                        
+                        <div class="border-b border-white/10 pb-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-white font-medium">Data Scientist</span>
+                                <span class="text-teal-400 text-sm">8 new jobs</span>
+                            </div>
+                            <p class="text-white/60 text-sm">Avg Salary: GHS 5,000 - 10,000</p>
+                        </div>
+                        
+                        <div class="border-b border-white/10 pb-3">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-white font-medium">Cloud Engineer</span>
+                                <span class="text-teal-400 text-sm">6 new jobs</span>
+                            </div>
+                            <p class="text-white/60 text-sm">Avg Salary: GHS 6,000 - 12,000</p>
+                        </div>
+                        
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-white font-medium">AI/ML Engineer</span>
+                                <span class="text-teal-400 text-sm">5 new jobs</span>
+                            </div>
+                            <p class="text-white/60 text-sm">Avg Salary: GHS 7,000 - 15,000</p>
+                        </div>
+                    </div>
+                    
+                    <a href="{{ url_for('job_matches') }}" class="w-full mt-4 btn-outline px-4 py-2 rounded-full text-white font-semibold text-sm inline-block text-center">
+                        View All Job Matches →
+                    </a>
+                </div>
+
+                <!-- AI Career Assistant -->
+                <div class="glass-card p-6" data-aos="fade-left" data-aos-delay="100">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-white">
+                            <i class="fas fa-robot text-teal-400 mr-2"></i> AI Career Assistant
+                        </h2>
+                        <a href="{{ url_for('career_assistant') }}" class="text-teal-400 hover:text-teal-300 text-sm">Open Chat →</a>
+                    </div>
+                    <p class="text-white/60 text-sm mb-4">Ask me anything about your career path, skills, or job market trends.</p>
+                    
+                    <div class="bg-white/5 rounded-xl p-4 mb-4 max-h-32 overflow-y-auto">
+                        <div class="text-teal-400 text-sm mb-2">
+                            <i class="fas fa-robot mr-2"></i> AI: Hi! How can I help you today?
+                        </div>
+                        <div class="text-white/70 text-sm">
+                            <i class="fas fa-user mr-2"></i> You: What skills should I learn for AI in Africa?
+                        </div>
+                        <div class="text-teal-400 text-sm mt-2">
+                            <i class="fas fa-robot mr-2"></i> AI: Python, Machine Learning, and Cloud Computing are top skills.
+                        </div>
+                    </div>
+                    
+                    <a href="{{ url_for('career_assistant') }}" class="btn-primary w-full py-2 rounded-full text-white font-semibold text-center inline-block">
+                        <i class="fas fa-comment-dots mr-2"></i> Start Conversation
+                    </a>
+                </div>
+
+                <!-- Recent Activity -->
+                <div class="glass-card p-6" data-aos="fade-left" data-aos-delay="200">
+                    <h2 class="text-xl font-bold text-white mb-4">
+                        <i class="fas fa-history text-teal-400 mr-2"></i> Recent Activity
+                    </h2>
+                    <div class="space-y-3">
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 bg-teal-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-file-upload text-teal-400 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-white text-sm">CV uploaded</p>
+                                <p class="text-white/40 text-xs">2 days ago</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-chart-line text-purple-400 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-white text-sm">Skill gap analysis completed</p>
+                                <p class="text-white/40 text-xs">3 days ago</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-8 h-8 bg-pink-500/20 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-graduation-cap text-pink-400 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="text-white text-sm">Course recommended: Python</p>
+                                <p class="text-white/40 text-xs">5 days ago</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trending Skills -->
+                <div class="glass-card p-6" data-aos="fade-left" data-aos-delay="300">
+                    <h2 class="text-xl font-bold text-white mb-4">
+                        <i class="fas fa-fire text-teal-400 mr-2"></i> Trending Skills
+                    </h2>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="bg-white/10 px-3 py-1 rounded-full text-white/80 text-sm">Python</span>
+                        <span class="bg-white/10 px-3 py-1 rounded-full text-white/80 text-sm">Machine Learning</span>
+                        <span class="bg-white/10 px-3 py-1 rounded-full text-white/80 text-sm">Cloud (AWS)</span>
+                        <span class="bg-white/10 px-3 py-1 rounded-full text-white/80 text-sm">Data Analysis</span>
+                        <span class="bg-white/10 px-3 py-1 rounded-full text-white/80 text-sm">SQL</span>
+                        <span class="bg-white/10 px-3 py-1 rounded-full text-white/80 text-sm">TensorFlow</span>
+                        <span class="bg-white/10 px-3 py-1 rounded-full text-white/80 text-sm">React</span>
+                        <span class="bg-white/10 px-3 py-1 rounded-full text-white/80 text-sm">Docker</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

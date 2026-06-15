@@ -1,0 +1,10 @@
+# Write to .gitignore
+echo "venv/
+__pycache__/
+*.pyc
+instance/
+uploads/
+*.db
+.env
+.DS_Store
+*.log" > .gitignore

@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block title %}Your Learning Roadmap - FADTECH Labs{% endblock %}
+
+{% block content %}
+<section class="max-w-7xl mx-auto px-6 py-8">
+    <div class="mb-8" data-aos="fade-up">
+        <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">Your Personalized Learning Roadmap</h1>
+        <p class="text-white/60">AI-powered course recommendations to close your skill gaps</p>
+    </div>
+
+    {% set parsed_data = session.get('parsed_cv', None) %}
+    
+    {% if not parsed_data %}
+    <!-- No CV Uploaded Yet -->
+    <div class="glass-card p-12 text-center" data-aos="fade-up">
+        <i class="fas fa-cloud-upload-alt text-6xl text-white/30 mb-4"></i>
+        <h2 class="text-2xl font-bold text-white mb-2">No CV Uploaded Yet</h2>
+        <p class="text-white/60 mb-6">Upload your CV to get personalized learning recommendations</p>
+        <a href="{{ url_for('upload_cv') }}" class="btn-primary px-8 py-3 rounded-full text-white font-semibold inline-flex items-center gap-2">
+            <i class="fas fa-upload"></i> Upload CV Now
+        </a>
+    </div>
+    {% else %}
+    
+    {% set all_skills = [] %}
+    {% for category, skills in parsed_data.skills.items() %}
+        {% for skill in skills %}
+            {% set _ = all_skills.append(skill) %}
+        {% endfor %}
+    {% endfor %}
+    
+    {% set employability = skill_analyzer.calculate_employability_score(all_skills, parsed_data.get('experience_years', 0)) %}
+    {% set gaps = skill_analyzer.analyze_gaps(all_skills) %}
+    {% set roadmap = skill_analyzer.generate_learning_roadmap(gaps) %}
+
+    <!-- Overall Progress -->
+    <div class="glass-card p-6 mb-8" data-aos="fade-up">
+        <h2 class="text-xl font-bold text-white mb-4">Your Learning Progress</h2>
+        <div class="grid md:grid-cols-4 gap-6">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-teal-400">{{ employability.total_skills_matched }}</div>
+                <div class="text-white/60 text-sm">Skills Mastered</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-orange-400">{{ gaps|length }}</div>
+                <div class="text-white/60 text-sm">Skills to Learn</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-purple-400">
+                    {% set total_weeks = 0 %}
+                    {% for gap in gaps[:5] %}
+                        {% set _ = total_weeks + 4 %}
+                    {% endfor %}
+                    {{ total_weeks }}
+                </div>
+                <div class="text-white/60 text-sm">Estimated Weeks</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-pink-400">
+                    {% set total_hours = gaps|length * 20 %}
+                    {{ total_hours }}
+                </div>
+                <div class="text-white/60 text-sm">Learning Hours</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-8">
+        <!-- Main Roadmap Content -->
+        <div class="lg:col-span-2 space-y-8">
+            
+            <!-- Immediate Priority (Critical) -->
+            {% if roadmap.immediate %}
+            <div class="glass-card p-6" data-aos="fade-right">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-fire text-red-400"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-white">Immediate Priority (0-2 Weeks)</h2>
+                </div>
+                <p class="text-white/60 text-sm mb-4">These skills are critical for your career growth. Start with these!</p>
+                
+                <div class="space-y-4">
+                    {% for item in roadmap.immediate %}
+                    <div class="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">{{ item.id }}</span>
+                                    <h3 class="text-lg font-bold text-white">{{ item.skill }}</h3>
+                                    <span class="bg-red-500/20 text-red-400 text-xs px-2 py-1 rounded-full">Critical</span>
+                                </div>
+                                <p class="text-teal-400 text-sm mb-2">{{ item.course_name }}</p>
+                                <div class="flex flex-wrap gap-3 text-xs text-white/60">
+                                    <span><i class="fas fa-clock mr-1"></i> {{ item.duration }}</span>
+                                    <span><i class="fas fa-hourglass-half mr-1"></i> {{ item.effort }}</span>
+                                    {% if item.certification %}
+                                    <span><i class="fas fa-certificate text-teal-400 mr-1"></i> Certificate Included</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <button class="btn-primary px-4 py-2 rounded-full text-white text-sm font-semibold">
+                                Enroll Now <i class="fas fa-arrow-right ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Short Term (High Priority) -->
+            {% if roadmap.short_term %}
+            <div class="glass-card p-6" data-aos="fade-right" data-aos-delay="100">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-orange-500/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-chart-line text-orange-400"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-white">Short Term (2-6 Weeks)</h2>
+                </div>
+                <p class="text-white/60 text-sm mb-4">Build these skills to significantly boost your employability.</p>
+                
+                <div class="space-y-4">
+                    {% for item in roadmap.short_term %}
+                    <div class="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold">{{ item.id }}</span>
+                                    <h3 class="text-lg font-bold text-white">{{ item.skill }}</h3>
+                                    <span class="bg-orange-500/20 text-orange-400 text-xs px-2 py-1 rounded-full">High Priority</span>
+                                </div>
+                                <p class="text-teal-400 text-sm mb-2">{{ item.course_name }}</p>
+                                <div class="flex flex-wrap gap-3 text-xs text-white/60">
+                                    <span><i class="fas fa-clock mr-1"></i> {{ item.duration }}</span>
+                                    <span><i class="fas fa-hourglass-half mr-1"></i> {{ item.effort }}</span>
+                                    {% if item.certification %}
+                                    <span><i class="fas fa-certificate text-teal-400 mr-1"></i> Certificate Included</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <button class="btn-outline px-4 py-2 rounded-full text-white text-sm font-semibold">
+                                View Course <i class="fas fa-external-link-alt ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Medium Term -->
+            {% if roadmap.medium_term %}
+            <div class="glass-card p-6" data-aos="fade-right" data-aos-delay="200">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="w-10 h-10 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-calendar-alt text-yellow-400"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-white">Medium Term (6-12 Weeks)</h2>
+                </div>
+                <p class="text-white/60 text-sm mb-4">Advanced skills that will make you stand out.</p>
+                
+                <div class="space-y-4">
+                    {% for item in roadmap.medium_term %}
+                    <div class="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-2 mb-2">
+                                    <span class="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-white text-xs font-bold">{{ item.id }}</span>
+                                    <h3 class="text-lg font-bold text-white">{{ item.skill }}</h3>
+                                    <span class="bg-yellow-500/20 text-yellow-400 text-xs px-2 py-1 rounded-full">Medium Priority</span>
+                                </div>
+                                <p class="text-teal-400 text-sm mb-2">{{ item.course_name }}</p>
+                                <div class="flex flex-wrap gap-3 text-xs text-white/60">
+                                    <span><i class="fas fa-clock mr-1"></i> {{ item.duration }}</span>
+                                    <span><i class="fas fa-hourglass-half mr-1"></i> {{ item.effort }}</span>
+                                </div>
+                            </div>
+                            <button class="btn-outline px-4 py-2 rounded-full text-white text-sm font-semibold">
+                                Save <i class="fas fa-bookmark ml-1"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Sidebar - Resources & Tips -->
+        <div class="space-y-8">
+            <!-- Learning Resources -->
+            <div class="glass-card p-6" data-aos="fade-left">
+                <h3 class="text-lg font-bold text-white mb-4">
+                    <i class="fas fa-graduation-cap text-teal-400 mr-2"></i> Learning Platforms
+                </h3>
+                <div class="space-y-3">
+                    <a href="#" class="flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition">
+                        <i class="fab fa-coursera text-2xl text-blue-400"></i>
+                        <div>
+                            <p class="text-white font-medium">Coursera</p>
+                            <p class="text-white/50 text-xs">University-accredited courses</p>
+                        </div>
+                    </a>
+                    <a href="#" class="flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition">
+                        <i class="fab fa-udemy text-2xl text-purple-400"></i>
+                        <div>
+                            <p class="text-white font-medium">Udemy</p>
+                            <p class="text-white/50 text-xs">Affordable practical courses</p>
+                        </div>
+                    </a>
+                    <a href="#" class="flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition">
+                        <i class="fab fa-youtube text-2xl text-red-400"></i>
+                        <div>
+                            <p class="text-white font-medium">YouTube</p>
+                            <p class="text-white/50 text-xs">Free tutorials & guides</p>
+                        </div>
+                    </a>
+                    <a href="#" class="flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition">
+                        <i class="fab fa-aws text-2xl text-orange-400"></i>
+                        <div>
+                            <p class="text-white font-medium">AWS Training</p>
+                            <p class="text-white/50 text-xs">Cloud certifications</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Study Tips -->
+            <div class="glass-card p-6" data-aos="fade-left" data-aos-delay="100">
+                <h3 class="text-lg font-bold text-white mb-4">
+                    <i class="fas fa-lightbulb text-teal-400 mr-2"></i> Study Tips
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-teal-400 text-sm mt-0.5"></i>
+                        <p class="text-white/70 text-sm">Set weekly learning goals</p>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-teal-400 text-sm mt-0.5"></i>
+                        <p class="text-white/70 text-sm">Practice with real projects</p>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-teal-400 text-sm mt-0.5"></i>
+                        <p class="text-white/70 text-sm">Join study groups or communities</p>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-teal-400 text-sm mt-0.5"></i>
+                        <p class="text-white/70 text-sm">Take notes and review regularly</p>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="fas fa-check-circle text-teal-400 text-sm mt-0.5"></i>
+                        <p class="text-white/70 text-sm">Build a portfolio as you learn</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Motivation Card -->
+            <div class="glass-card p-6 text-center" data-aos="fade-left" data-aos-delay="200">
+                <i class="fas fa-trophy text-4xl text-teal-400 mb-3"></i>
+                <h3 class="text-lg font-bold text-white mb-2">Stay Motivated!</h3>
+                <p class="text-white/60 text-sm">
+                    Complete your learning roadmap to increase employability by up to 40%
+                </p>
+                <div class="mt-4 h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-teal-400 to-purple-600 rounded-full" style="width: 0%"></div>
+                </div>
+                <p class="text-white/40 text-xs mt-2">Track your progress as you complete courses</p>
+            </div>
+
+            <!-- Download Roadmap -->
+            <div class="glass-card p-6 text-center" data-aos="fade-left" data-aos-delay="250">
+                <i class="fas fa-download text-3xl text-teal-400 mb-3"></i>
+                <h3 class="text-lg font-bold text-white mb-2">Download Roadmap</h3>
+                <p class="text-white/60 text-sm mb-3">Get a PDF version of your learning plan</p>
+                <button class="btn-outline w-full py-2 rounded-full text-white font-semibold">
+                    <i class="fas fa-file-pdf mr-2"></i> Download PDF
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
