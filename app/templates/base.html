@@ -11,6 +11,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <!-- AOS Animation Library -->
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/logo.svg') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon.ico') }}">
+    
     <style>
         * {
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -138,6 +143,28 @@
                 transform: translateY(0);
             }
         }
+        
+        /* Logo styles */
+        .logo-img {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        
+        .logo-img:hover {
+            transform: scale(1.08) rotate(-2deg);
+        }
+        
+        /* Responsive nav */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            .mobile-menu-btn {
+                display: block;
+            }
+        }
     </style>
 </head>
 <body>
@@ -181,16 +208,18 @@
     <nav class="fixed top-0 left-0 right-0 z-40 bg-black/30 backdrop-blur-md border-b border-white/10">
         <div class="max-w-7xl mx-auto px-6 py-4">
             <div class="flex justify-between items-center">
+                <!-- Logo -->
                 <a href="{{ url_for('index') }}" class="flex items-center space-x-3 group">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-400 to-purple-600 flex items-center justify-center text-white font-bold shadow-lg transition-all group-hover:scale-105">
-                        <i class="fas fa-chart-line text-sm"></i>
-                    </div>
+                    <img src="{{ url_for('static', filename='images/logo.svg') }}" 
+                         alt="FADTECH Labs - Career Intelligence" 
+                         class="logo-img shadow-lg">
                     <div>
                         <span class="text-white text-xl font-bold tracking-tight">FADTECH Labs</span>
                         <p class="text-teal-300 text-xs">Career Intelligence System</p>
                     </div>
                 </a>
                 
+                <!-- Desktop Navigation -->
                 <div class="hidden md:flex items-center space-x-6">
                     <a href="#problem" class="text-white/80 hover:text-teal-300 transition animated-link">Problem</a>
                     <a href="#solution" class="text-white/80 hover:text-teal-300 transition animated-link">Solution</a>
@@ -203,6 +232,9 @@
                         <a href="{{ url_for('dashboard') }}" class="text-white hover:text-teal-300 transition">
                             <i class="fas fa-tachometer-alt mr-1"></i> Dashboard
                         </a>
+                        <a href="{{ url_for('university_dashboard') }}" class="text-white hover:text-teal-300 transition">
+                            <i class="fas fa-university mr-1"></i> University
+                        </a>
                         <a href="{{ url_for('auth.logout') }}" class="bg-red-500/80 hover:bg-red-600 px-4 py-2 rounded-full text-white text-sm font-semibold transition">
                             <i class="fas fa-sign-out-alt mr-1"></i> Logout
                         </a>
@@ -214,11 +246,13 @@
                     {% endif %}
                 </div>
                 
+                <!-- Mobile Menu Button -->
                 <button id="mobileMenuBtn" class="md:hidden text-white text-2xl">
                     <i class="fas fa-bars"></i>
                 </button>
             </div>
             
+            <!-- Mobile Menu -->
             <div id="mobileMenu" class="md:hidden hidden mt-4 pb-4 space-y-3">
                 <a href="#problem" class="block text-white/80 hover:text-teal-300 transition py-2">Problem</a>
                 <a href="#solution" class="block text-white/80 hover:text-teal-300 transition py-2">Solution</a>
@@ -228,19 +262,22 @@
                 <a href="#partnership" class="block text-white/80 hover:text-teal-300 transition py-2">Partnership</a>
                 
                 {% if current_user.is_authenticated %}
-    <a href="{{ url_for('dashboard') }}" class="text-white hover:text-teal-300 transition">
-        <i class="fas fa-tachometer-alt mr-1"></i> Dashboard
-    </a>
-    <a href="{{ url_for('profile') }}" class="text-white hover:text-teal-300 transition">
-        <i class="fas fa-user mr-1"></i> Profile
-    </a>
-    <a href="{{ url_for('upload_cv') }}" class="text-white hover:text-teal-300 transition">
-        <i class="fas fa-upload mr-1"></i> Upload CV
-    </a>
-    <a href="{{ url_for('auth.logout') }}" class="bg-red-500/80 hover:bg-red-600 px-4 py-2 rounded-full text-white text-sm font-semibold transition">
-        <i class="fas fa-sign-out-alt mr-1"></i> Logout
-    </a>
-{% else %}
+                    <a href="{{ url_for('dashboard') }}" class="block text-white hover:text-teal-300 transition py-2">
+                        <i class="fas fa-tachometer-alt mr-1"></i> Dashboard
+                    </a>
+                    <a href="{{ url_for('university_dashboard') }}" class="block text-white hover:text-teal-300 transition py-2">
+                        <i class="fas fa-university mr-1"></i> University
+                    </a>
+                    <a href="{{ url_for('profile') }}" class="block text-white hover:text-teal-300 transition py-2">
+                        <i class="fas fa-user mr-1"></i> Profile
+                    </a>
+                    <a href="{{ url_for('upload_cv') }}" class="block text-white hover:text-teal-300 transition py-2">
+                        <i class="fas fa-upload mr-1"></i> Upload CV
+                    </a>
+                    <a href="{{ url_for('auth.logout') }}" class="block bg-red-500/80 hover:bg-red-600 px-4 py-2 rounded-full text-white text-sm font-semibold text-center">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                    </a>
+                {% else %}
                     <a href="{{ url_for('auth.login') }}" class="block text-white hover:text-teal-300 transition py-2">Login</a>
                     <a href="{{ url_for('auth.register') }}" class="block btn-primary px-5 py-2 rounded-full text-white font-semibold text-center">Sign Up Free</a>
                 {% endif %}
@@ -306,6 +343,7 @@
             </div>
         </section>
 
+        <!-- Rest of the sections remain the same -->
         <!-- The Problem Section -->
         <section id="problem" class="max-w-7xl mx-auto px-6 py-20">
             <div class="text-center mb-12" data-aos="fade-up">
@@ -593,7 +631,9 @@
             <div class="grid md:grid-cols-4 gap-8 mb-8">
                 <div>
                     <div class="flex items-center gap-2 mb-4">
-                        <i class="fas fa-chart-line text-teal-400 text-xl"></i>
+                        <img src="{{ url_for('static', filename='images/logo.svg') }}" 
+                             alt="FADTECH Labs" 
+                             class="w-8 h-8 rounded-lg">
                         <span class="text-white font-bold">FADTECH Labs</span>
                     </div>
                     <p class="text-white/60 text-sm">Building Africa's employability intelligence infrastructure.</p>

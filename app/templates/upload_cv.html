@@ -3,6 +3,21 @@
 {% block title %}Upload CV - FADTECH Labs{% endblock %}
 
 {% block content %}
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center">
+    <div class="glass-card p-8 max-w-md w-full text-center">
+        <div class="w-20 h-20 bg-gradient-to-br from-teal-400 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-spinner fa-spin text-3xl text-white"></i>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-2">Processing Your CV</h3>
+        <p class="text-white/60 mb-4" id="loadingStatus">Extracting skills...</p>
+        <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+            <div id="loadingProgress" class="h-full bg-gradient-to-r from-teal-400 to-purple-600 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+        <p class="text-white/40 text-xs mt-3" id="loadingDetail">This may take a few moments</p>
+    </div>
+</div>
+
 <section class="max-w-4xl mx-auto px-6 py-12">
     <div class="glass-card p-8" data-aos="fade-up">
         <div class="text-center mb-8">
@@ -16,14 +31,27 @@
         <form method="POST" enctype="multipart/form-data" id="uploadForm">
             <!-- Upload Area -->
             <div class="border-2 border-dashed border-white/20 rounded-2xl p-12 text-center hover:border-teal-400 transition-all cursor-pointer" id="uploadArea" onclick="document.getElementById('cvFile').click()">
-                <i class="fas fa-file-alt text-6xl text-white/30 group-hover:text-teal-400 transition mb-4"></i>
-                <p class="text-white/70 mb-2">Drag and drop your CV here or click to browse</p>
+                <i class="fas fa-file-alt text-6xl text-white/30 transition mb-4" id="uploadIcon"></i>
+                <p class="text-white/70 mb-2" id="uploadText">Drag and drop your CV here or click to browse</p>
                 <p class="text-white/40 text-sm">Supports PDF, DOCX (Max 5MB)</p>
                 <input type="file" name="cv_file" id="cvFile" accept=".pdf,.docx" class="hidden" required>
                 <div id="fileName" class="mt-3 text-teal-400 text-sm hidden"></div>
             </div>
             
-            <button type="submit" class="btn-primary w-full mt-6 py-3 rounded-full text-white font-semibold text-lg">
+            <!-- Progress Bar Container -->
+            <div id="progressContainer" class="hidden mt-6">
+                <div class="flex justify-between text-sm text-white/60 mb-2">
+                    <span id="progressStatus">Uploading...</span>
+                    <span id="progressPercentage">0%</span>
+                </div>
+                <div class="w-full h-3 bg-white/10 rounded-full overflow-hidden">
+                    <div id="progressBar" class="h-full bg-gradient-to-r from-teal-400 to-purple-600 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <p class="text-white/40 text-xs mt-2 text-center" id="progressDetail">Preparing upload...</p>
+            </div>
+            
+            <!-- Upload Button -->
+            <button type="submit" id="uploadBtn" class="btn-primary w-full mt-6 py-3 rounded-full text-white font-semibold text-lg transition">
                 <i class="fas fa-upload mr-2"></i> Upload & Analyze CV
             </button>
         </form>
@@ -46,14 +74,230 @@
 </section>
 
 <script>
+    const form = document.getElementById('uploadForm');
     const fileInput = document.getElementById('cvFile');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const progressPercentage = document.getElementById('progressPercentage');
+    const progressStatus = document.getElementById('progressStatus');
+    const progressDetail = document.getElementById('progressDetail');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const uploadText = document.getElementById('uploadText');
+    const uploadIcon = document.getElementById('uploadIcon');
     const fileName = document.getElementById('fileName');
     
+    // Loading overlay elements
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const loadingProgress = document.getElementById('loadingProgress');
+    const loadingStatus = document.getElementById('loadingStatus');
+    const loadingDetail = document.getElementById('loadingDetail');
+
+    // File selection handler
     fileInput.addEventListener('change', function() {
         if (this.files.length > 0) {
-            fileName.textContent = `Selected: ${this.files[0].name}`;
+            const file = this.files[0];
+            const fileSize = (file.size / (1024 * 1024)).toFixed(2);
+            fileName.textContent = `📄 Selected: ${file.name} (${fileSize} MB)`;
             fileName.classList.remove('hidden');
+            
+            // Auto-submit the form after file selection
+            setTimeout(() => {
+                uploadFile();
+            }, 500);
+        }
+    });
+
+    // Upload function with progress tracking
+    function uploadFile() {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        // Show loading overlay
+        loadingOverlay.classList.remove('hidden');
+        loadingProgress.style.width = '0%';
+        loadingStatus.textContent = 'Uploading file...';
+        loadingDetail.textContent = `Uploading ${file.name}`;
+
+        // Show progress bar
+        progressContainer.classList.remove('hidden');
+        progressBar.style.width = '0%';
+        progressPercentage.textContent = '0%';
+        progressStatus.textContent = 'Preparing upload...';
+        progressDetail.textContent = `Uploading ${file.name}...`;
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Uploading...';
+        uploadText.textContent = 'Uploading...';
+
+        // Create FormData
+        const formData = new FormData();
+        formData.append('cv_file', file);
+
+        // Create XMLHttpRequest for progress tracking
+        const xhr = new XMLHttpRequest();
+
+        // Progress event
+        xhr.upload.addEventListener('progress', function(e) {
+            if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                progressBar.style.width = percent + '%';
+                progressPercentage.textContent = percent + '%';
+                loadingProgress.style.width = Math.min(percent, 30) + '%';
+                
+                // Update status messages based on progress
+                if (percent < 25) {
+                    progressStatus.textContent = '📤 Uploading...';
+                    progressDetail.textContent = `Uploading ${file.name} (${percent}%)`;
+                    loadingStatus.textContent = 'Uploading file...';
+                    loadingDetail.textContent = `${percent}% uploaded`;
+                } else if (percent < 50) {
+                    progressStatus.textContent = '⚙️ Processing...';
+                    progressDetail.textContent = `Processing CV data (${percent}%)`;
+                    loadingStatus.textContent = 'Processing CV...';
+                    loadingDetail.textContent = 'Reading file content';
+                } else if (percent < 75) {
+                    progressStatus.textContent = '🔍 Extracting skills...';
+                    progressDetail.textContent = `AI analyzing your CV (${percent}%)`;
+                    loadingStatus.textContent = 'Extracting skills...';
+                    loadingDetail.textContent = 'AI analyzing your profile';
+                } else if (percent < 100) {
+                    progressStatus.textContent = '🧠 Finalizing analysis...';
+                    progressDetail.textContent = `Almost done! (${percent}%)`;
+                    loadingStatus.textContent = 'Finalizing...';
+                    loadingDetail.textContent = 'Generating insights';
+                }
+            }
+        });
+
+        // Load complete event
+        xhr.addEventListener('load', function() {
+            if (xhr.status === 200 || xhr.status === 302) {
+                // Success - show completion
+                progressBar.style.width = '100%';
+                progressPercentage.textContent = '100%';
+                progressStatus.textContent = '✅ Complete!';
+                progressDetail.textContent = 'CV uploaded and parsed successfully!';
+                loadingProgress.style.width = '100%';
+                loadingStatus.textContent = '✅ Complete!';
+                loadingDetail.textContent = 'Redirecting to results...';
+                
+                // Hide overlay and redirect
+                setTimeout(() => {
+                    loadingOverlay.classList.add('hidden');
+                    window.location.href = '/skill-analysis';
+                }, 1000);
+            } else {
+                handleUploadError();
+            }
+        });
+
+        // Error event
+        xhr.addEventListener('error', function() {
+            handleUploadError();
+            loadingOverlay.classList.add('hidden');
+        });
+
+        // Abort event
+        xhr.addEventListener('abort', function() {
+            progressStatus.textContent = '❌ Upload cancelled';
+            progressDetail.textContent = 'Upload was cancelled';
+            loadingOverlay.classList.add('hidden');
+            resetUploadButton();
+        });
+
+        // Send the request
+        xhr.open('POST', '/upload-cv');
+        xhr.send(formData);
+    }
+
+    // Handle upload errors
+    function handleUploadError() {
+        progressBar.style.width = '100%';
+        progressBar.className = 'h-full bg-gradient-to-r from-red-500 to-red-600 rounded-full transition-all duration-300';
+        progressStatus.textContent = '❌ Upload failed';
+        progressDetail.textContent = 'Please try again or check your file.';
+        loadingStatus.textContent = '❌ Upload failed';
+        loadingDetail.textContent = 'Please try again';
+        resetUploadButton();
+    }
+
+    // Reset upload button state
+    function resetUploadButton() {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = '<i class="fas fa-upload mr-2"></i> Upload & Analyze CV';
+        uploadText.textContent = 'Drag and drop your CV here or click to browse';
+        uploadBtn.className = 'btn-primary w-full mt-6 py-3 rounded-full text-white font-semibold text-lg transition';
+    }
+
+    // Handle drag and drop
+    const uploadArea = document.getElementById('uploadArea');
+
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.classList.add('border-teal-400', 'bg-teal-500/10');
+    });
+
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.classList.remove('border-teal-400', 'bg-teal-500/10');
+    });
+
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        this.classList.remove('border-teal-400', 'bg-teal-500/10');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            // Trigger change event
+            const event = new Event('change', { bubbles: true });
+            fileInput.dispatchEvent(event);
+        }
+    });
+
+    // Prevent form submission (handled by XHR)
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        // Only upload if file is selected
+        if (fileInput.files.length > 0) {
+            uploadFile();
+        } else {
+            uploadArea.click();
         }
     });
 </script>
+
+<style>
+    #progressBar {
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% {
+            background-position: -200% 0;
+        }
+        100% {
+            background-position: 200% 0;
+        }
+    }
+    
+    #progressBar.complete {
+        animation: none;
+        background: linear-gradient(90deg, #4ecdc4, #8e2de2);
+    }
+    
+    /* Loading overlay animation */
+    #loadingOverlay .glass-card {
+        animation: pulseGlow 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulseGlow {
+        0%, 100% {
+            box-shadow: 0 0 20px rgba(78, 205, 196, 0.1);
+        }
+        50% {
+            box-shadow: 0 0 40px rgba(78, 205, 196, 0.3);
+        }
+    }
+</style>
 {% endblock %}

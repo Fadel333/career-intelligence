@@ -1,9 +1,13 @@
 import json
 import re
 from typing import Dict, List, Tuple
+from app.utils.course_api import CourseAPI
 
 class SkillAnalyzer:
     """Analyzes user skills against market demands"""
+    
+    # Initialize course API
+    course_api = CourseAPI()
     
     # Market demand database (in production, this would come from scraped data)
     MARKET_DEMANDS = {
@@ -161,10 +165,36 @@ class SkillAnalyzer:
         
         gaps = []
         
+        # If no user skills, return all skills as gaps
+        if not user_skills:
+            for skill, data in cls.MARKET_DEMANDS.items():
+                gaps.append({
+                    'skill': skill,
+                    'demand': data['demand'],
+                    'priority': 'Critical' if data['demand'] >= 80 else 'High',
+                    'salary_range': data['salary_range'],
+                    'growth': data['growth'],
+                    'course': cls.COURSE_RECOMMENDATIONS.get(skill, {
+                        'coursera': f'{skill} Fundamentals',
+                        'duration': '4 weeks',
+                        'effort': '4 hrs/week',
+                        'certification': False
+                    })
+                })
+            return gaps
+        
+        # Convert user skills to lowercase for comparison
+        user_skills_lower = [s.lower() for s in user_skills]
+        
         for skill, data in cls.MARKET_DEMANDS.items():
-            has_skill = any(skill.lower() in user_skill.lower() or user_skill.lower() in skill.lower() 
-                          for user_skill in user_skills)
+            # Check if user has this skill (case-insensitive, partial match)
+            has_skill = False
+            for user_skill in user_skills_lower:
+                if skill.lower() in user_skill or user_skill in skill.lower():
+                    has_skill = True
+                    break
             
+            # If user doesn't have the skill, it's a gap
             if not has_skill:
                 # Determine priority based on demand
                 if data['demand'] >= 80:
@@ -197,7 +227,7 @@ class SkillAnalyzer:
     
     @classmethod
     def generate_learning_roadmap(cls, gaps: List[Dict]) -> Dict:
-        """Generate personalized learning roadmap based on skill gaps"""
+        """Generate personalized learning roadmap with real courses"""
         
         roadmap = {
             'immediate': [],      # 0-2 weeks
@@ -206,20 +236,39 @@ class SkillAnalyzer:
             'long_term': []       # 3+ months
         }
         
+        # Get real courses for each gap
         for idx, gap in enumerate(gaps[:10]):  # Top 10 gaps
             priority = gap['priority']
             skill = gap['skill']
-            course = gap.get('course', {})
+            
+            # Fetch real courses for this skill
+            courses = cls.course_api.search_courses(skill, limit=2)
+            
+            # Get certifications for this skill
+            certifications = cls.course_api.get_certification_recommendations(skill)
+            
+            # If no courses found, use the course recommendation from COURSE_RECOMMENDATIONS
+            if not courses:
+                course_data = cls.COURSE_RECOMMENDATIONS.get(skill, {})
+                courses = [{
+                    'title': course_data.get('coursera', f'{skill} Fundamentals'),
+                    'provider': 'Coursera',
+                    'url': '#',
+                    'description': f'Learn {skill} on Coursera',
+                    'duration': course_data.get('duration', '4 weeks'),
+                    'effort': course_data.get('effort', '4 hrs/week'),
+                    'certificate': course_data.get('certification', False),
+                    'platform': 'Coursera',
+                    'icon': 'fab fa-coursera',
+                    'color': 'text-blue-400'
+                }]
             
             item = {
                 'id': idx + 1,
                 'skill': skill,
                 'priority': priority,
-                'course_name': course.get('coursera', f'{skill} Course'),
-                'platform': 'Coursera',
-                'duration': course.get('duration', '4 weeks'),
-                'effort': course.get('effort', '4 hrs/week'),
-                'certification': course.get('certification', False)
+                'courses': courses,
+                'certifications': certifications[:2] if certifications else []
             }
             
             if priority == 'Critical':
@@ -295,4 +344,4 @@ class SkillAnalyzer:
         # Sort by match percentage
         recommendations.sort(key=lambda x: x['match_percentage'], reverse=True)
         
-        return recommendations[:5]  # Top 5 matches
+        return recommendations[:5]

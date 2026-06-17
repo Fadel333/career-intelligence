@@ -6,7 +6,8 @@
 <!-- Login Form Section -->
 <section class="max-w-md mx-auto px-6 py-12">
     <div class="glass-card p-8" data-aos="fade-up">
-        <!-- Header -->
+        
+        <!-- ========== HEADER ========== -->
         <div class="text-center mb-8">
             <div class="w-16 h-16 bg-gradient-to-br from-teal-400 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                 <i class="fas fa-sign-in-alt text-2xl text-white"></i>
@@ -15,8 +16,9 @@
             <p class="text-white/60">Sign in to access your career dashboard</p>
         </div>
 
-        <!-- Login Form -->
+        <!-- ========== LOGIN FORM ========== -->
         <form method="POST" action="{{ url_for('auth.login') }}" class="space-y-6">
+            
             <!-- Email Field -->
             <div>
                 <label class="block text-white/80 text-sm font-semibold mb-2">
@@ -57,30 +59,38 @@
             </button>
         </form>
 
-        <!-- Divider -->
+        <!-- ========== DIVIDER ========== -->
         <div class="relative my-8">
             <div class="absolute inset-0 flex items-center">
                 <div class="w-full border-t border-white/10"></div>
             </div>
             <div class="relative flex justify-center text-sm">
-                <span class="px-4 bg-transparent text-white/40">or</span>
+                <span class="px-4 bg-transparent text-white/40">or continue with</span>
             </div>
         </div>
 
-        <!-- Social Login Options -->
+        <!-- ========== OAUTH BUTTONS (Single) ========== -->
         <div class="space-y-3">
-            <button class="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition flex items-center justify-center gap-3">
+            <!-- Google -->
+            <a href="{{ url_for('auth.google_login') }}" 
+               class="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition flex items-center justify-center gap-3">
                 <i class="fab fa-google text-red-400"></i> Continue with Google
-            </button>
-            <button class="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition flex items-center justify-center gap-3">
+            </a>
+            
+            <!-- LinkedIn -->
+            <a href="{{ url_for('auth.linkedin_login') }}" 
+               class="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition flex items-center justify-center gap-3">
                 <i class="fab fa-linkedin text-blue-400"></i> Continue with LinkedIn
-            </button>
-            <button class="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition flex items-center justify-center gap-3">
+            </a>
+            
+            <!-- GitHub -->
+            <a href="{{ url_for('auth.github_login') }}" 
+               class="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition flex items-center justify-center gap-3">
                 <i class="fab fa-github text-gray-400"></i> Continue with GitHub
-            </button>
+            </a>
         </div>
 
-        <!-- Sign Up Link -->
+        <!-- ========== SIGN UP LINK ========== -->
         <div class="text-center mt-8">
             <p class="text-white/60">
                 Don't have an account? 
@@ -89,6 +99,7 @@
                 </a>
             </p>
         </div>
+        
     </div>
 </section>
 {% endblock %}
