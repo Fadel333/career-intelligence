@@ -202,6 +202,25 @@ class AdvancedCVParser:
         
         return results
     
+    def parse_cv_quick(self, text: str) -> Dict[str, Any]:
+        """Quick parse CV - faster but less detailed"""
+        
+        results = {
+            'text': text[:500] + '...' if len(text) > 500 else text,
+            'skills': self._extract_skills_fast(text),
+            'soft_skills': self._extract_soft_skills(text),
+            'experience_years': self._extract_experience_years(text),
+            'email': self._extract_email(text),
+            'phone': self._extract_phone(text),
+            'word_count': len(text.split()),
+            'total_skills': 0
+        }
+        
+        # Calculate total skills
+        results['total_skills'] = sum(len(skills) for skills in results['skills'].values())
+        
+        return results
+    
     def _extract_skills(self, doc: spacy.tokens.doc.Doc, text: str) -> Dict[str, List[str]]:
         """Extract technical skills using multiple methods"""
         
@@ -231,6 +250,24 @@ class AdvancedCVParser:
                         if skill.lower() in ent.text.lower():
                             if skill not in found_skills[category]:
                                 found_skills[category].append(skill)
+        
+        # Remove duplicates and empty categories
+        for category in found_skills:
+            found_skills[category] = list(set(found_skills[category]))
+        found_skills = {k: v for k, v in found_skills.items() if v}
+        
+        return found_skills
+    
+    def _extract_skills_fast(self, text: str) -> Dict[str, List[str]]:
+        """Fast skill extraction - uses simple matching without spaCy"""
+        
+        found_skills = {category: [] for category in self.skill_database.keys()}
+        text_lower = text.lower()
+        
+        for category, skills in self.skill_database.items():
+            for skill in skills:
+                if skill.lower() in text_lower:
+                    found_skills[category].append(skill)
         
         # Remove duplicates and empty categories
         for category in found_skills:
@@ -587,40 +624,3 @@ class AdvancedCVParser:
                 found_languages.append(lang)
         
         return found_languages
-
-def parse_cv_quick(self, text: str) -> Dict[str, Any]:
-    """Quick parse CV - faster but less detailed"""
-    
-    results = {
-        'text': text[:500] + '...' if len(text) > 500 else text,
-        'skills': self._extract_skills_fast(text),
-        'soft_skills': self._extract_soft_skills(text),
-        'experience_years': self._extract_experience_years(text),
-        'email': self._extract_email(text),
-        'phone': self._extract_phone(text),
-        'word_count': len(text.split()),
-        'total_skills': 0
-    }
-    
-    # Calculate total skills
-    results['total_skills'] = sum(len(skills) for skills in results['skills'].values())
-    
-    return results
-
-def _extract_skills_fast(self, text: str) -> Dict[str, List[str]]:
-    """Fast skill extraction - uses simple matching without spaCy"""
-    
-    found_skills = {category: [] for category in self.skill_database.keys()}
-    text_lower = text.lower()
-    
-    for category, skills in self.skill_database.items():
-        for skill in skills:
-            if skill.lower() in text_lower:
-                found_skills[category].append(skill)
-    
-    # Remove duplicates and empty categories
-    for category in found_skills:
-        found_skills[category] = list(set(found_skills[category]))
-    found_skills = {k: v for k, v in found_skills.items() if v}
-    
-    return found_skills

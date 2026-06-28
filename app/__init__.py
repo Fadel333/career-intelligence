@@ -17,10 +17,14 @@ from app.utils.cv_parser import CVParser
 from app.utils.skill_analyzer import SkillAnalyzer
 from app.utils.ai_assistant import CareerAssistant
 from app.utils.course_api import CourseAPI
+from app.utils.hybrid_parser import HybridParser
 
 # Configure upload settings
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf', 'docx'}
+
+# Initialize hybrid parser
+hybrid_parser = HybridParser()
 
 
 def compress_parsed_data(data):
@@ -247,6 +251,47 @@ def get_curriculum_recommendations_default():
             'add_skills': ['TensorFlow', 'PyTorch', 'Big Data'],
             'remove_skills': ['Excel Basics'],
             'priority': 'Medium'
+        },
+        {
+            'department': 'Agriculture',
+            'add_skills': ['Crop Production', 'Livestock Management', 'Fisheries and Aquaculture', 'Forestry and Logging', 'Allied Services and Agribusiness'],
+            'remove_skills': ['Soil Erosion Management'],
+            'priority': 'High'
+        },
+        {
+            'department': 'Medicine and Surgery',
+            'add_skills': ['Clinical Rotation', 'Human Anatomy'],
+            'remove_skills': ['Clinical Basics'],
+            'priority': 'Low'
+        },
+        {
+            'department': 'Nursing and Midwifery',
+            'add_skills': ['Public Health', 'Paediatric Care', 'Clinical Practice'],
+            'remove_skills': ['Paediatric Care Basics'],
+            'priority': 'Low'
+        },
+        {
+            'department': 'Pharmacy',
+            'add_skills': ['Pharmacotherapeutics', 'Pharmaceutical Technology'],
+            'remove_skills': ['Massage'],
+            'priority': 'Medium'
+        },
+        {
+            'department': 'Law',
+            'add_skills': ['Bachelor of Laws'],
+            'priority': 'Medium'
+        },
+        {
+            'department': 'Social Science',
+            'add_skills': ['Psychology', 'Sociology', 'Political Science', 'Anthropology', 'Criminology', 'Economics', 'International Relations', 'Geography'],
+            'remove_skills': ['Social Work'],
+            'priority': 'High'
+        },
+        {
+            'department': 'Art and Languages',
+            'add_skills': ['Music', 'Sculpture', 'Painting', 'Literature', 'Architecture', 'Performing Arts', 'Cinema', 'French', 'Spanish', 'Chinese', 'English'],
+            'remove_skills': ['Dancing'],
+            'priority': 'Medium'
         }
     ]
 
@@ -259,6 +304,12 @@ def register_routes(app):
     def index():
         """Landing page"""
         return render_template('base.html')
+    
+    # ========== PRIVACY POLICY ROUTE ==========
+    @app.route('/privacy-policy')
+    def privacy_policy():
+        """Privacy policy page"""
+        return render_template('privacy_policy.html')
     
     # ========== CV UPLOAD ROUTE ==========
     @app.route('/upload-cv', methods=['GET', 'POST'])
@@ -288,7 +339,8 @@ def register_routes(app):
             flash('Processing CV... Please wait.', 'info')
             
             try:
-                parsed_data = CVParser.parse_cv(filepath)
+                # Use hybrid parser - quick parse first
+                parsed_data = hybrid_parser.parse_hybrid(filepath, current_user.id)
                 
                 if parsed_data:
                     # Compress data before storing in session
@@ -296,7 +348,8 @@ def register_routes(app):
                     if compressed_data:
                         session['parsed_cv'] = compressed_data
                         session['cv_filename'] = file.filename
-                        flash(f'✅ CV uploaded and parsed successfully! Found {parsed_data["total_skills"]} skills.', 'success')
+                        session['parsing_status'] = 'processing'
+                        flash(f'✅ CV uploaded! Quick analysis complete. Found {parsed_data["total_skills"]} skills. Deep analysis running in background...', 'success')
                         return redirect(url_for('skill_analysis'))
                     else:
                         flash('Error processing CV data. Please try again.', 'error')
@@ -317,10 +370,18 @@ def register_routes(app):
         """Skill gap analysis page"""
         parsed_data = get_parsed_data_from_session()
         
+        # Check if deep parsing is complete
+        parsing_status = session.get('parsing_status', 'complete')
+        is_processing = parsing_status == 'processing'
+        
         if parsed_data and parsed_data.get('skills'):
             all_skills = []
             for category, skills in parsed_data['skills'].items():
                 all_skills.extend(skills)
+            
+            # Show progress indicator if still processing
+            if is_processing:
+                flash('🔄 Deep analysis is still running in the background. Results will update automatically when complete.', 'info')
             
             employability = SkillAnalyzer.calculate_employability_score(
                 all_skills, 
@@ -338,9 +399,10 @@ def register_routes(app):
                                  gaps=gaps,
                                  roadmap=roadmap,
                                  job_matches=job_matches,
-                                 all_skills=all_skills)
+                                 all_skills=all_skills,
+                                 is_processing=is_processing)
         
-        return render_template('skill_analysis.html', user=current_user, parsed_data=None)
+        return render_template('skill_analysis.html', user=current_user, parsed_data=None, is_processing=False)
     
     # ========== LEARNING ROADMAP ROUTE ==========
     @app.route('/learning-roadmap')
@@ -459,12 +521,30 @@ def register_routes(app):
                              parsed_data=parsed_data,
                              current_time=current_time)
     
+    # ========== PARSING STATUS API ==========
+    @app.route('/api/parsing-status')
+    @login_required
+    def parsing_status():
+        """Check if deep parsing is complete"""
+        parsed_data = get_parsed_data_from_session()
+        parsing_status = session.get('parsing_status', 'complete')
+        
+        if parsed_data:
+            status = parsed_data.get('status', parsing_status)
+            return jsonify({
+                'status': status,
+                'total_skills': parsed_data.get('total_skills', 0)
+            })
+        
+        return jsonify({'status': 'unknown'})
+    
     # ========== TEMPORARY: Clear Session Route ==========
     @app.route('/clear-session')
     @login_required
     def clear_session():
         """Temporary route to clear session data"""
         clear_parsed_data_from_session()
+        session.pop('parsing_status', None)
         flash('Session cleared successfully!', 'success')
         return redirect(url_for('dashboard'))
 

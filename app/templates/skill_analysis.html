@@ -3,14 +3,22 @@
 {% block title %}Skill Gap Analysis - FADTECH Labs{% endblock %}
 
 {% block content %}
+
+<!-- ============================================================ -->
+<!-- HEADER SECTION -->
+<!-- ============================================================ -->
 <section class="max-w-7xl mx-auto px-6 py-8">
+    
+    <!-- Page Title -->
     <div class="mb-8" data-aos="fade-up">
         <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">Your Skill Gap Analysis</h1>
         <p class="text-white/60">AI-powered comparison of your skills vs. market demands</p>
     </div>
-    
+
+    <!-- ========================================================== -->
+    <!-- NO CV UPLOADED YET -->
+    <!-- ========================================================== -->
     {% if not parsed_data %}
-    <!-- No CV Uploaded Yet -->
     <div class="glass-card p-12 text-center" data-aos="fade-up">
         <i class="fas fa-cloud-upload-alt text-6xl text-white/30 mb-4"></i>
         <h2 class="text-2xl font-bold text-white mb-2">No CV Uploaded Yet</h2>
@@ -19,15 +27,21 @@
             <i class="fas fa-upload"></i> Upload CV Now
         </a>
     </div>
+
+    <!-- ========================================================== -->
+    <!-- CV ANALYSIS RESULTS -->
+    <!-- ========================================================== -->
     {% else %}
-    
-    <!-- CV Analysis Success Banner -->
+
+    <!-- ==== SUCCESS BANNER ==== -->
     <div class="mb-6 p-4 bg-teal-500/20 rounded-xl border border-teal-400/30" data-aos="fade-up">
         <div class="flex items-center gap-3 flex-wrap">
             <i class="fas fa-check-circle text-teal-400 text-xl"></i>
             <div class="flex-1">
                 <p class="text-white font-semibold">CV Analysis Complete!</p>
-                <p class="text-white/60 text-sm">We found <span class="text-teal-400 font-bold">{{ parsed_data.total_skills }}</span> skills in your CV</p>
+                <p class="text-white/60 text-sm">
+                    We found <span class="text-teal-400 font-bold">{{ parsed_data.total_skills }}</span> skills in your CV
+                </p>
             </div>
             {% if parsed_data.email %}
             <div class="text-white/60 text-sm">
@@ -41,14 +55,22 @@
             {% endif %}
         </div>
     </div>
-    
+
+    <!-- ========================================================== -->
+    <!-- MAIN CONTENT GRID -->
+    <!-- ========================================================== -->
     <div class="grid lg:grid-cols-3 gap-8">
-        <!-- Main Analysis -->
+
+        <!-- ========================================================== -->
+        <!-- LEFT COLUMN - Main Analysis -->
+        <!-- ========================================================== -->
         <div class="lg:col-span-2 space-y-8">
-            <!-- Employability Score Card -->
+
+            <!-- ==== EMPLOYABILITY SCORE ==== -->
             <div class="glass-card p-6" data-aos="fade-right">
                 <h2 class="text-xl font-bold text-white mb-4">Employability Score</h2>
                 <div class="text-center">
+                    <!-- Circular Progress -->
                     <div class="relative inline-block">
                         <svg class="w-40 h-40">
                             <circle class="text-white/10" stroke-width="8" stroke="currentColor" fill="transparent" r="70" cx="80" cy="80"/>
@@ -61,6 +83,7 @@
                             <div class="text-white/60 text-sm">Score</div>
                         </div>
                     </div>
+                    <!-- Score Details -->
                     <p class="text-white/70 mt-2">
                         <span class="text-{{ employability.color }}-400 font-semibold">{{ employability.level }}</span> Level
                     </p>
@@ -72,8 +95,8 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Extracted Skills Section -->
+
+            <!-- ==== EXTRACTED SKILLS ==== -->
             <div class="glass-card p-6" data-aos="fade-right" data-aos-delay="50">
                 <h2 class="text-xl font-bold text-white mb-4">
                     <i class="fas fa-magic text-teal-400 mr-2"></i> Skills Extracted from Your CV
@@ -95,20 +118,22 @@
                     <p class="text-white/60">No specific skills detected. Try uploading a more detailed CV.</p>
                 {% endif %}
             </div>
-            
-            <!-- Detailed Gap Analysis -->
+
+            <!-- ==== CRITICAL SKILL GAPS ==== -->
             <div class="glass-card p-6" data-aos="fade-right" data-aos-delay="100">
                 <h2 class="text-xl font-bold text-white mb-4">Critical Skill Gaps</h2>
                 
                 {% if gaps %}
                     {% for gap in gaps[:5] %}
                     <div class="mb-5">
+                        <!-- Skill Name & Priority -->
                         <div class="flex justify-between text-sm mb-2">
                             <span class="text-white font-medium">{{ gap.skill }}</span>
                             <span class="{% if gap.priority == 'Critical' %}text-red-400{% elif gap.priority == 'High' %}text-orange-400{% else %}text-yellow-400{% endif %}">
                                 {{ gap.priority }} Priority
                             </span>
                         </div>
+                        <!-- Demand Bar -->
                         <div class="flex justify-between text-white/60 text-xs mb-1">
                             <span>Market demand: {{ gap.demand }}%</span>
                             <span>Growth: {{ gap.growth }}</span>
@@ -116,9 +141,11 @@
                         <div class="h-2 bg-white/10 rounded-full overflow-hidden">
                             <div class="h-full bg-gradient-to-r from-red-400 to-orange-400 rounded-full" style="width: {{ gap.demand }}%"></div>
                         </div>
+                        <!-- Course Recommendation -->
                         <p class="text-white/50 text-xs mt-1">
                             📚 Recommended: {{ gap.course.coursera }} ({{ gap.course.duration }})
                         </p>
+                        <!-- Salary Range -->
                         <p class="text-white/40 text-xs mt-1">
                             💰 Salary range: GHS {{ gap.salary_range[0] }} - {{ gap.salary_range[1] }}
                         </p>
@@ -128,11 +155,12 @@
                     <p class="text-white/60">Great job! You have all the in-demand skills!</p>
                 {% endif %}
             </div>
-            
-            <!-- Learning Roadmap -->
+
+            <!-- ==== LEARNING ROADMAP ==== -->
             <div class="glass-card p-6" data-aos="fade-right" data-aos-delay="200">
                 <h2 class="text-xl font-bold text-white mb-4">Your Personalized Learning Roadmap</h2>
                 
+                <!-- Immediate -->
                 {% if roadmap.immediate %}
                 <div class="mb-4">
                     <h3 class="text-teal-400 font-semibold mb-2">🔥 Immediate (0-2 weeks)</h3>
@@ -153,6 +181,7 @@
                 </div>
                 {% endif %}
                 
+                <!-- Short Term -->
                 {% if roadmap.short_term %}
                 <div class="mb-4">
                     <h3 class="text-purple-400 font-semibold mb-2">📚 Short Term (2-6 weeks)</h3>
@@ -170,15 +199,19 @@
                 </div>
                 {% endif %}
                 
+                <!-- View All Button -->
                 <a href="{{ url_for('learning_roadmap') }}" class="btn-primary w-full mt-4 py-2 rounded-full text-white font-semibold text-center inline-block">
                     <i class="fas fa-road mr-2"></i> View Full Learning Roadmap
                 </a>
             </div>
         </div>
-        
-        <!-- Sidebar -->
+
+        <!-- ========================================================== -->
+        <!-- RIGHT COLUMN - Sidebar -->
+        <!-- ========================================================== -->
         <div class="space-y-8">
-            <!-- Quick Stats -->
+
+            <!-- ==== QUICK STATS ==== -->
             <div class="glass-card p-6" data-aos="fade-left">
                 <h3 class="text-lg font-bold text-white mb-4">Quick Stats</h3>
                 <div class="space-y-3">
@@ -200,8 +233,8 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Job Recommendations -->
+
+            <!-- ==== JOB MATCHES ==== -->
             <div class="glass-card p-6" data-aos="fade-left" data-aos-delay="100">
                 <h3 class="text-lg font-bold text-white mb-4">
                     <i class="fas fa-briefcase text-teal-400 mr-2"></i> Job Matches
@@ -225,8 +258,8 @@
                     <p class="text-white/60 text-sm">Upload CV to see job matches</p>
                 {% endif %}
             </div>
-            
-            <!-- Market Insights -->
+
+            <!-- ==== MARKET INSIGHTS ==== -->
             <div class="glass-card p-6" data-aos="fade-left" data-aos-delay="200">
                 <h3 class="text-lg font-bold text-white mb-4">Market Insights</h3>
                 <div class="space-y-3">
@@ -244,8 +277,8 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Pro Tip -->
+
+            <!-- ==== PRO TIP ==== -->
             <div class="glass-card p-6" data-aos="fade-left" data-aos-delay="250">
                 <i class="fas fa-lightbulb text-3xl text-teal-400 mb-3"></i>
                 <h3 class="text-lg font-bold text-white mb-2">Pro Tip</h3>
@@ -257,8 +290,47 @@
                     {% endif %}
                 </p>
             </div>
-        </div>
-    </div>
-    {% endif %}
-</section>
+
+        </div> <!-- End Right Column -->
+
+    </div> <!-- End Grid -->
+
+    {% endif %} <!-- End CV Analysis -->
+
+</section> <!-- End Container -->
+
+<!-- ============================================================ -->
+<!-- AUTO-REFRESH FOR DEEP PARSING -->
+<!-- ============================================================ -->
+{% if is_processing %}
+<script>
+    (function() {
+        let checkCount = 0;
+        const maxChecks = 30; // 90 seconds max
+        
+        function checkParsingStatus() {
+            fetch('/api/parsing-status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'complete') {
+                        window.location.reload();
+                    } else if (checkCount < maxChecks) {
+                        checkCount++;
+                        setTimeout(checkParsingStatus, 3000);
+                    }
+                })
+                .catch(() => {
+                    if (checkCount < maxChecks) {
+                        checkCount++;
+                        setTimeout(checkParsingStatus, 5000);
+                    }
+                });
+        }
+        
+        // Start checking after 3 seconds
+        setTimeout(checkParsingStatus, 3000);
+    })();
+</script>
+{% endif %}
+
 {% endblock %}
