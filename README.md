@@ -13,45 +13,58 @@
 
 The **Career Intelligence System** is Africa's first deeply localized AI-powered employability platform, built to close the skills gap between education and industry.
 
-Across Ghana and West Africa, thousands of graduates enter the job market every year — but what they learned and what employers actually need are two different things. This platform fixes that.
-
-**Key Capabilities:**
-
-- 📄 **AI CV Parsing** - Extract skills from PDF/DOCX with 300+ skill detection
-- 📊 **Skill-Gap Analysis** - Compare your skills against real market demands
-- 🎯 **Employability Score** - AI-calculated score (0-100) for your target role
-- 🗺️ **Learning Roadmap** - Personalized course recommendations from real platforms
-- 💼 **Job Matching** - Role-based job recommendations with salary insights
-- 🤖 **AI Career Assistant** - Conversational AI for career questions
-- 🏫 **University Dashboard** - Analytics for educational institutions (partially done, 73%)
-- 🔐 **OAuth 2.0** - Login with Google, LinkedIn, or GitHub
-- **AI CV generator: yet to be develop** Help Student with no CV generate one with Moern AI assisant
-- **Employers Dashboard** Help job seekers land a legid jobs base on their details in some partners companies(yet to be added)
--
-
 ---
 
-## 🎯 Live Demo
+## 🚀 Features
 
-**Local Development:**
-http://127.0.0.1:10000
+### ✅ Completed Features
 
-text
+| Feature | Status | Description |
+|---------|--------|-------------|
+| 📄 **AI CV Parsing** | ✅ Complete | Extract skills from PDF/DOCX with 300+ skill detection |
+| 📊 **Skill-Gap Analysis** | ✅ Complete | Compare your skills against real market demands |
+| 🎯 **Employability Score** | ✅ Complete | AI-calculated score (0-100) for your target role |
+| 🗺️ **Learning Roadmap** | ✅ Complete | Personalized course recommendations from 10+ platforms |
+| 💼 **Job Matching** | ✅ Complete | Role-based job recommendations with salary insights |
+| 🤖 **AI Career Assistant** | ✅ Complete | Conversational AI for career questions |
+| 🏫 **University Dashboard** | ✅ Complete | Analytics for educational institutions |
+| 🔐 **OAuth 2.0** | ✅ Complete | Login with Google, LinkedIn, or GitHub |
+| 📱 **Mobile Responsive** | ✅ Complete | Works on all devices |
+| 🧠 **Brain Logo** | ✅ Complete | Professional branding |
+
+### 🚧 In Progress Features
+
+| Feature | Status | Description |
+|---------|--------|-------------|
+| 🎨 **AI CV Generator** | 🚧 Planned | Help students without CVs generate one with AI |
+| 🏢 **Employer Dashboard** | 🚧 Planned | Help job seekers land jobs based on their skills |
+| 🤝 **Partner Companies** | 🚧 Planned | Connect with partner companies for job placements |
+| ⚡ **CV Upload Speed** | 🚧 Optimizing | Improving parsing speed for large files |
+
+### 📅 Future Features
+
+- 🌐 LinkedIn Profile Sync
+- 📧 Email Notifications
+- 📱 Mobile App (iOS/Android)
+- 🏛️ Government Workforce Analytics
+- 🤝 Mentor Matching
+- 🎓 Certification Verification
+- 🎨 AI CV Generator
 
 ---
 
 ## 🛠️ Technology Stack
 
-| Layer               | Technology                                                                                                          |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| **Frontend**        | HTML5, Tailwind CSS, JavaScript, Font Awesome                                                                       |
-| **Backend**         | Flask 3.1.3 (Python)                                                                                                |
-| **Database**        | SQLite (development) / PostgreSQL (production)                                                                      |
-| **AI/NLP**          | spaCy 3.7.2, Sentence Transformers                                                                                  |
-| **OAuth**           | Authlib (Google, LinkedIn, GitHub)                                                                                  |
-| **Course APIs**     | Coursera, Udemy, YouTube, W3schools, Pluralsight, LYNDA, Skillshare, Khan Academy, CODEACADEMY, DATACAMP, TREEHOUSE |
-| **Deployment**      | Render.com (Free Tier)                                                                                              |
-| **Version Control** | Git / GitHub                                                                                                        |
+| Layer | Technology |
+|-------|------------|
+| **Frontend** | HTML5, Tailwind CSS, JavaScript, Font Awesome |
+| **Backend** | Flask 3.1.3 (Python) |
+| **Database** | SQLite / PostgreSQL |
+| **AI/NLP** | spaCy 3.7.2, Sentence Transformers |
+| **OAuth** | Authlib (Google, LinkedIn, GitHub) |
+| **Course APIs** | Coursera, Udemy, YouTube, edX, W3Schools, Pluralsight, LinkedIn Learning, Skillshare, Khan Academy |
+| **Deployment** | Render.com (Free Tier) |
+| **Version Control** | Git / GitHub |
 
 ---
 
@@ -74,13 +87,15 @@ career-intelligence/
 │ │ ├── job_matches.html # Job recommendations
 │ │ ├── career_assistant.html # AI chat assistant
 │ │ ├── university_dashboard.html # University analytics
+│ │ ├── privacy_policy.html # Privacy policy page
 │ │ └── profile.html # User profile
 │ └── utils/
 │ ├── advanced_cv_parser.py # Advanced NLP parsing (spaCy)
+│ ├── hybrid_parser.py # Hybrid CV parser (quick + deep)
 │ ├── cv_parser.py # CV parsing interface
 │ ├── skill_analyzer.py # Skill gap analysis engine
 │ ├── ai_assistant.py # AI career assistant
-│ ├── course_api.py # Course API integration
+│ ├── course_api.py # 10+ Course API integration
 │ └── oauth.py # OAuth configuration
 ├── static/
 │ └── images/
@@ -95,7 +110,6 @@ career-intelligence/
 ├── LICENSE # MIT License
 └── README.md # This file
 
-text
 
 ---
 
@@ -103,13 +117,12 @@ text
 
 ### Prerequisites
 
-- **Python 3.11+**
-- **pip** (Python package manager)
-- **Git** (optional, for cloning)
+- Python 3.11+
+- pip
+- Git
 
 ### Step 1: Clone the Repository
 
 ```bash
 git clone https://github.com/Fadel333/career-intelligence.git
 cd career-intelligence
-```
