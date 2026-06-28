@@ -16,6 +16,7 @@ The **Career Intelligence System** is Africa's first deeply localized AI-powered
 Across Ghana and West Africa, thousands of graduates enter the job market every year — but what they learned and what employers actually need are two different things. This platform fixes that.
 
 **Key Capabilities:**
+
 - 📄 **AI CV Parsing** - Extract skills from PDF/DOCX with 300+ skill detection
 - 📊 **Skill-Gap Analysis** - Compare your skills against real market demands
 - 🎯 **Employability Score** - AI-calculated score (0-100) for your target role
@@ -24,10 +25,9 @@ Across Ghana and West Africa, thousands of graduates enter the job market every 
 - 🤖 **AI Career Assistant** - Conversational AI for career questions
 - 🏫 **University Dashboard** - Analytics for educational institutions (partially done, 73%)
 - 🔐 **OAuth 2.0** - Login with Google, LinkedIn, or GitHub
--    **AI CV generator: yet to be develop** Help Student with no CV generate one with Moern AI assisant
+- **AI CV generator: yet to be develop** Help Student with no CV generate one with Moern AI assisant
 - **Employers Dashboard** Help job seekers land a legid jobs base on their details in some partners companies(yet to be added)
--  
- 
+-
 
 ---
 
@@ -42,20 +42,21 @@ text
 
 ## 🛠️ Technology Stack
 
-| Layer | Technology |
-|-------|------------|
-| **Frontend** | HTML5, Tailwind CSS, JavaScript, Font Awesome |
-| **Backend** | Flask 3.1.3 (Python) |
-| **Database** | SQLite (development) / PostgreSQL (production) |
-| **AI/NLP** | spaCy 3.7.2, Sentence Transformers |
-| **OAuth** | Authlib (Google, LinkedIn, GitHub) |
-| **Course APIs** | Coursera, Udemy, YouTube |
-| **Deployment** | Render.com (Free Tier) |
-| **Version Control** | Git / GitHub |
+| Layer               | Technology                                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **Frontend**        | HTML5, Tailwind CSS, JavaScript, Font Awesome                                                                       |
+| **Backend**         | Flask 3.1.3 (Python)                                                                                                |
+| **Database**        | SQLite (development) / PostgreSQL (production)                                                                      |
+| **AI/NLP**          | spaCy 3.7.2, Sentence Transformers                                                                                  |
+| **OAuth**           | Authlib (Google, LinkedIn, GitHub)                                                                                  |
+| **Course APIs**     | Coursera, Udemy, YouTube, W3schools, Pluralsight, LYNDA, Skillshare, Khan Academy, CODEACADEMY, DATACAMP, TREEHOUSE |
+| **Deployment**      | Render.com (Free Tier)                                                                                              |
+| **Version Control** | Git / GitHub                                                                                                        |
 
 ---
 
 ## 📂 Project Structure
+
 career-intelligence/
 ├── app/
 │ ├── init.py # Flask app factory
@@ -111,3 +112,4 @@ text
 ```bash
 git clone https://github.com/Fadel333/career-intelligence.git
 cd career-intelligence
+```
