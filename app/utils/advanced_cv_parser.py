@@ -4,25 +4,45 @@ from typing import Dict, List, Any, Tuple
 from datetime import datetime
 from collections import Counter
 
+
 class AdvancedCVParser:
-    """Advanced CV parsing using spaCy NLP - No external dependencies"""
+    """
+    Advanced CV parsing using spaCy NLP - No external dependencies
+    
+    This parser extracts:
+    - Technical skills (300+ across 15 categories)
+    - Soft skills
+    - Certifications
+    - Education history
+    - Work experience
+    - Contact information (email, phone)
+    - Languages
+    - Professional summary
+    - Years of experience
+    """
     
     def __init__(self):
-        """Initialize spaCy models"""
-        try:
-            self.nlp = spacy.load("en_core_web_md")
-        except:
-            try:
-                self.nlp = spacy.load("en_core_web_sm")
-            except:
-                import subprocess
-                subprocess.run(["python", "-m", "spacy", "download", "en_core_web_sm"])
-                self.nlp = spacy.load("en_core_web_sm")
-        
-        # Load comprehensive skill database
+        """Initialize spaCy models and load skill databases"""
+        self.nlp = self._initialize_spacy()
         self.skill_database = self._load_skill_database()
         self.soft_skills = self._load_soft_skills()
         self.certifications = self._load_certifications()
+    
+    # ============================================================
+    # INITIALIZATION METHODS
+    # ============================================================
+    
+    def _initialize_spacy(self):
+        """Initialize spaCy with the best available model"""
+        try:
+            return spacy.load("en_core_web_md")
+        except:
+            try:
+                return spacy.load("en_core_web_sm")
+            except:
+                import subprocess
+                subprocess.run(["python", "-m", "spacy", "download", "en_core_web_sm"])
+                return spacy.load("en_core_web_sm")
     
     def _load_skill_database(self) -> Dict[str, List[str]]:
         """Comprehensive skill database with expanded categories"""
@@ -173,15 +193,19 @@ class AdvancedCVParser:
             'Salesforce Certified', 'SAP Certified', 'IBM Certified'
         ]
     
+    # ============================================================
+    # MAIN PARSING METHODS
+    # ============================================================
+    
     def parse_cv(self, text: str) -> Dict[str, Any]:
-        """Main parsing function returning comprehensive analysis"""
-        
-        # Process with spaCy
+        """
+        Main parsing function returning comprehensive analysis
+        Uses spaCy for deep NLP analysis (slower but more accurate)
+        """
         doc = self.nlp(text)
         
-        # Extract all information
         results = {
-            'text': text[:500] + '...' if len(text) > 500 else text,
+            'text': self._truncate_text(text),
             'skills': self._extract_skills(doc, text),
             'soft_skills': self._extract_soft_skills(text),
             'experience_years': self._extract_experience_years(text),
@@ -196,17 +220,18 @@ class AdvancedCVParser:
             'languages': self._extract_languages(text)
         }
         
-        # Calculate skill level
         results['skill_level'] = self._calculate_skill_level(results['skills'])
         results['total_skills'] = sum(len(skills) for skills in results['skills'].values())
         
         return results
     
     def parse_cv_quick(self, text: str) -> Dict[str, Any]:
-        """Quick parse CV - faster but less detailed"""
-        
+        """
+        QUICK PARSE - Faster but less detailed (1-2 seconds)
+        Uses simple keyword matching without spaCy
+        """
         results = {
-            'text': text[:500] + '...' if len(text) > 500 else text,
+            'text': self._truncate_text(text, 300),
             'skills': self._extract_skills_fast(text),
             'soft_skills': self._extract_soft_skills(text),
             'experience_years': self._extract_experience_years(text),
@@ -221,28 +246,29 @@ class AdvancedCVParser:
         
         return results
     
+    # ============================================================
+    # SKILL EXTRACTION METHODS
+    # ============================================================
+    
     def _extract_skills(self, doc: spacy.tokens.doc.Doc, text: str) -> Dict[str, List[str]]:
-        """Extract technical skills using multiple methods"""
-        
+        """Extract technical skills using multiple methods (spaCy + keyword matching)"""
         found_skills = {category: [] for category in self.skill_database.keys()}
         text_lower = text.lower()
         
         # Method 1: Direct keyword matching
         for category, skills in self.skill_database.items():
             for skill in skills:
-                # Check for exact match with word boundaries
                 pattern = r'\b' + re.escape(skill.lower()) + r'\b'
                 if re.search(pattern, text_lower):
                     found_skills[category].append(skill)
                 else:
-                    # Check for variations
                     variations = self._get_skill_variations(skill)
                     for variation in variations:
                         if variation in text_lower:
                             found_skills[category].append(skill)
                             break
         
-        # Method 2: Use spaCy's named entities and context
+        # Method 2: Use spaCy's named entities
         for ent in doc.ents:
             if ent.label_ in ['PRODUCT', 'ORG', 'WORK_OF_ART']:
                 for category, skills in self.skill_database.items():
@@ -251,16 +277,14 @@ class AdvancedCVParser:
                             if skill not in found_skills[category]:
                                 found_skills[category].append(skill)
         
-        # Remove duplicates and empty categories
+        # Clean up
         for category in found_skills:
             found_skills[category] = list(set(found_skills[category]))
-        found_skills = {k: v for k, v in found_skills.items() if v}
         
-        return found_skills
+        return {k: v for k, v in found_skills.items() if v}
     
     def _extract_skills_fast(self, text: str) -> Dict[str, List[str]]:
-        """Fast skill extraction - uses simple matching without spaCy"""
-        
+        """FAST skill extraction - simple keyword matching only (0.5 seconds)"""
         found_skills = {category: [] for category in self.skill_database.keys()}
         text_lower = text.lower()
         
@@ -269,62 +293,50 @@ class AdvancedCVParser:
                 if skill.lower() in text_lower:
                     found_skills[category].append(skill)
         
-        # Remove duplicates and empty categories
         for category in found_skills:
             found_skills[category] = list(set(found_skills[category]))
-        found_skills = {k: v for k, v in found_skills.items() if v}
         
-        return found_skills
+        return {k: v for k, v in found_skills.items() if v}
     
     def _get_skill_variations(self, skill: str) -> List[str]:
         """Generate common variations of skill names"""
         variations = []
-        
-        # Common tech variations
         skill_lower = skill.lower()
         
-        if skill_lower in ['machine learning', 'ml']:
-            variations = ['machine learning engineer', 'ml engineer', 'ai/ml']
-        elif skill_lower in ['deep learning', 'dl']:
-            variations = ['deep learning engineer', 'neural networks']
-        elif skill_lower in ['nlp', 'natural language processing']:
-            variations = ['nlp engineer', 'natural language understanding']
-        elif skill_lower == 'sql':
-            variations = ['structured query language', 'sql developer']
-        elif skill_lower == 'aws':
-            variations = ['amazon web services', 'aws cloud', 'aws engineer']
-        elif skill_lower == 'docker':
-            variations = ['containerization', 'docker container', 'docker compose']
-        elif skill_lower == 'kubernetes':
-            variations = ['k8s', 'container orchestration', 'kubernetes engineer']
-        elif skill_lower in ['react', 'reactjs']:
-            variations = ['react.js', 'react developer', 'react native']
-        elif skill_lower in ['node.js', 'node']:
-            variations = ['nodejs', 'node developer']
-        elif skill_lower == 'python':
-            variations = ['python developer', 'python programming', 'python engineer']
-        elif skill_lower == 'javascript':
-            variations = ['js', 'javascript developer', 'es6']
-        elif skill_lower == 'typescript':
-            variations = ['ts', 'typescript developer']
-        elif skill_lower == 'django':
-            variations = ['django developer', 'django rest framework']
-        elif skill_lower == 'flask':
-            variations = ['flask developer', 'flask api']
-        elif skill_lower == 'tensorflow':
-            variations = ['tensorflow developer', 'tf', 'tensorflow engineer']
-        elif skill_lower == 'pytorch':
-            variations = ['pytorch developer', 'torch']
-        elif skill_lower == 'git':
-            variations = ['git version control', 'github', 'gitlab']
-        elif skill_lower == 'linux':
-            variations = ['linux administration', 'linux engineer']
-        elif skill_lower == 'bash':
-            variations = ['bash scripting', 'shell scripting']
-        elif skill_lower in ['jenkins', 'ci/cd']:
-            variations = ['jenkins pipeline', 'ci cd pipeline']
+        variations_map = {
+            'machine learning': ['machine learning engineer', 'ml engineer', 'ai/ml'],
+            'deep learning': ['deep learning engineer', 'neural networks'],
+            'nlp': ['nlp engineer', 'natural language understanding'],
+            'natural language processing': ['nlp engineer', 'natural language understanding'],
+            'sql': ['structured query language', 'sql developer'],
+            'aws': ['amazon web services', 'aws cloud', 'aws engineer'],
+            'docker': ['containerization', 'docker container', 'docker compose'],
+            'kubernetes': ['k8s', 'container orchestration', 'kubernetes engineer'],
+            'react': ['react.js', 'react developer', 'react native'],
+            'node.js': ['nodejs', 'node developer'],
+            'python': ['python developer', 'python programming', 'python engineer'],
+            'javascript': ['js', 'javascript developer', 'es6'],
+            'typescript': ['ts', 'typescript developer'],
+            'django': ['django developer', 'django rest framework'],
+            'flask': ['flask developer', 'flask api'],
+            'tensorflow': ['tensorflow developer', 'tf', 'tensorflow engineer'],
+            'pytorch': ['pytorch developer', 'torch'],
+            'git': ['git version control', 'github', 'gitlab'],
+            'linux': ['linux administration', 'linux engineer'],
+            'bash': ['bash scripting', 'shell scripting'],
+            'jenkins': ['jenkins pipeline'],
+            'ci/cd': ['ci cd pipeline']
+        }
+        
+        for key, vals in variations_map.items():
+            if skill_lower in key or key in skill_lower:
+                variations.extend(vals)
         
         return variations
+    
+    # ============================================================
+    # TEXT EXTRACTION METHODS
+    # ============================================================
     
     def _extract_soft_skills(self, text: str) -> List[str]:
         """Extract soft skills from text"""
@@ -352,7 +364,6 @@ class AdvancedCVParser:
         for pattern in patterns:
             match = re.search(pattern, text.lower())
             if match:
-                # If range (e.g., 5-8 years), take average
                 if '-' in match.group(0):
                     years = match.group(1)
                     if years:
@@ -365,16 +376,14 @@ class AdvancedCVParser:
         if dates:
             current_year = datetime.now().year
             years = sum(1 for date in dates if int(date) < current_year)
-            return min(years, 20)  # Cap at 20 years
+            return min(years, 20)
         
         return 0
     
     def _extract_education(self, doc: spacy.tokens.doc.Doc, text: str) -> List[Dict]:
         """Extract education information with degree and institution"""
-        
         education = []
         
-        # Patterns for degree types
         degree_patterns = {
             'PhD': r'(PhD|Ph\.D|Doctor of Philosophy|DPhil|Doctorate|DBA|Dr\.)',
             'Master': r'(Master|MSc|M\.Sc|MS|M\.S|MBA|M\.B\.A|MEng|M\.Eng|MEd|M\.Ed|MA|M\.A|MPH)',
@@ -384,16 +393,13 @@ class AdvancedCVParser:
             'Professional': r'(Professional|Executive|Fellow|Chartered)'
         }
         
-        # Extract education using patterns
         for degree_type, pattern in degree_patterns.items():
             matches = re.finditer(pattern, text, re.IGNORECASE)
             for match in matches:
-                # Get context around the degree
                 start = max(0, match.start() - 60)
                 end = min(len(text), match.end() + 60)
                 context = text[start:end]
                 
-                # Look for institution names
                 institutions = [
                     r'(University|College|Institute|School|Academy|Polytechnic|Business School)\s+of?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)',
                     r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+(University|College|Institute)'
@@ -406,7 +412,6 @@ class AdvancedCVParser:
                         institution = inst_match.group(0)
                         break
                 
-                # Look for GPA/grade
                 gpa_pattern = r'GPA[:;]?\s*([0-9]+\.[0-9]+)'
                 gpa_match = re.search(gpa_pattern, context, re.IGNORECASE)
                 gpa = gpa_match.group(1) if gpa_match else None
@@ -432,26 +437,20 @@ class AdvancedCVParser:
     
     def _extract_work_experience(self, doc: spacy.tokens.doc.Doc, text: str) -> List[Dict]:
         """Extract work experience with job titles and companies"""
-        
         experiences = []
         
-        # Common job title patterns
         job_patterns = [
             r'(Engineer|Developer|Manager|Analyst|Designer|Architect|Consultant|Director|Lead|Specialist|Administrator|Coordinator|Officer|Assistant|Executive|Principal|Senior|Staff)',
             r'(Software|Data|Security|Network|Systems|Frontend|Backend|Full Stack|DevOps|QA|Product|Project|Program|Technical|Business|Machine Learning|AI|Cloud|Sales)'
         ]
         
-        # Extract job titles
-        job_titles = []
         for pattern in job_patterns:
             matches = re.finditer(pattern, text, re.IGNORECASE)
             for match in matches:
-                # Get context
                 start = max(0, match.start() - 40)
                 end = min(len(text), match.end() + 40)
                 context = text[start:end]
                 
-                # Look for company names
                 company_patterns = [
                     r'at\s+([A-Z][a-zA-Z0-9]+(?:\s+[A-Za-z0-9]+)*)',
                     r'with\s+([A-Z][a-zA-Z0-9]+(?:\s+[A-Za-z0-9]+)*)',
@@ -465,7 +464,6 @@ class AdvancedCVParser:
                         company = comp_match.group(1)
                         break
                 
-                # Look for dates
                 date_pattern = r'(19|20)\d{2}'
                 years = re.findall(date_pattern, context)
                 start_year = years[0] if years else None
@@ -498,13 +496,13 @@ class AdvancedCVParser:
         for cert in self.certifications:
             if cert.lower() in text_lower:
                 found_certs.append(cert)
-            # Check for variations
-            cert_parts = cert.split()
-            if len(cert_parts) > 1:
-                for part in cert_parts:
-                    if part.lower() in text_lower and len(part) > 2:
-                        found_certs.append(cert)
-                        break
+            else:
+                cert_parts = cert.split()
+                if len(cert_parts) > 1:
+                    for part in cert_parts:
+                        if part.lower() in text_lower and len(part) > 2:
+                            found_certs.append(cert)
+                            break
         
         return list(set(found_certs))
     
@@ -531,8 +529,6 @@ class AdvancedCVParser:
     
     def _extract_job_title(self, doc: spacy.tokens.doc.Doc, text: str) -> str:
         """Extract current or primary job title"""
-        
-        # Look for job titles near "current", "now", "present"
         patterns = [
             r'(current|now|present).{0,50}(Engineer|Developer|Manager|Analyst|Designer|Architect|Consultant|Director|Lead|Specialist)',
             r'(Engineer|Developer|Manager|Analyst|Designer|Architect|Consultant|Director|Lead|Specialist).{0,50}(current|now|present)'
@@ -543,7 +539,6 @@ class AdvancedCVParser:
             if match:
                 return match.group(0)
         
-        # Try to find from first position in employment history
         job_titles = self._extract_work_experience(doc, text)
         if job_titles:
             return job_titles[0]['title']
@@ -552,8 +547,6 @@ class AdvancedCVParser:
     
     def _extract_summary(self, doc: spacy.tokens.doc.Doc, text: str) -> str:
         """Extract professional summary"""
-        
-        # Look for summary sections
         patterns = [
             r'(summary|profile|about me).{0,200}',
             r'(professional summary).{0,200}',
@@ -566,12 +559,29 @@ class AdvancedCVParser:
             if match:
                 return match.group(0).strip()
         
-        # Take first paragraph as summary
         paragraphs = text.split('\n\n')
         if paragraphs:
-            return paragraphs[0][:500] + '...' if len(paragraphs[0]) > 500 else paragraphs[0]
+            return self._truncate_text(paragraphs[0])
         
         return None
+    
+    def _extract_languages(self, text: str) -> List[str]:
+        """Extract languages from text"""
+        found_languages = []
+        text_lower = text.lower()
+        
+        languages = [
+            'English', 'French', 'Arabic', 'Chinese', 'Spanish', 'German',
+            'Portuguese', 'Twi', 'Ga', 'Ewe', 'Hausa', 'Yoruba', 'Igbo',
+            'Swahili', 'Zulu', 'Amharic', 'Somali', 'Oromo', 'Berber',
+            'Italian', 'Dutch', 'Russian', 'Japanese', 'Korean', 'Hindi'
+        ]
+        
+        for lang in languages:
+            if lang.lower() in text_lower:
+                found_languages.append(lang)
+        
+        return found_languages
     
     def _extract_year(self, text: str) -> str:
         """Extract year from text"""
@@ -579,9 +589,18 @@ class AdvancedCVParser:
         match = re.search(pattern, text)
         return match.group(0) if match else None
     
+    # ============================================================
+    # UTILITY METHODS
+    # ============================================================
+    
+    def _truncate_text(self, text: str, max_length: int = 500) -> str:
+        """Truncate text to max length"""
+        if len(text) > max_length:
+            return text[:max_length] + '...'
+        return text
+    
     def _calculate_skill_level(self, skills: Dict[str, List[str]]) -> Dict[str, Any]:
         """Calculate skill level based on number and variety of skills"""
-        
         total_skills = sum(len(skills_list) for skills_list in skills.values())
         
         if total_skills >= 25:
@@ -606,21 +625,3 @@ class AdvancedCVParser:
             'total_skills': total_skills,
             'categories': len(skills)
         }
-    
-    def _extract_languages(self, text: str) -> List[str]:
-        """Extract languages from text"""
-        found_languages = []
-        text_lower = text.lower()
-        
-        languages = [
-            'English', 'French', 'Arabic', 'Chinese', 'Spanish', 'German',
-            'Portuguese', 'Twi', 'Ga', 'Ewe', 'Hausa', 'Yoruba', 'Igbo',
-            'Swahili', 'Zulu', 'Amharic', 'Somali', 'Oromo', 'Berber',
-            'Italian', 'Dutch', 'Russian', 'Japanese', 'Korean', 'Hindi'
-        ]
-        
-        for lang in languages:
-            if lang.lower() in text_lower:
-                found_languages.append(lang)
-        
-        return found_languages

@@ -3,75 +3,81 @@ import random
 from typing import Dict, List, Any
 
 class CareerAssistant:
-    """Advanced AI Career Assistant with intelligent responses"""
+    """Advanced AI Career Assistant - ALL SECTORS (Works like ChatGPT for careers)"""
     
     def __init__(self):
         self.context_memory = {}
-        
+    
     def get_response(self, question: str, user_skills: List[str] = None, experience: int = 0) -> Dict:
         """Generate intelligent response based on question type"""
         
         question_lower = question.lower()
         
-        # Determine intent
+        # Detect sector and intent
+        sector = self._detect_sector(question_lower)
         intent = self._detect_intent(question_lower)
         
-        # Generate response based on intent
-        if intent == 'skill_recommendation':
-            response = self._handle_skill_recommendation(user_skills, experience)
-        elif intent == 'interview_prep':
-            response = self._handle_interview_prep(question_lower)
-        elif intent == 'salary_info':
-            response = self._handle_salary_info(question_lower, experience)
-        elif intent == 'career_path':
-            response = self._handle_career_path(question_lower, user_skills)
-        elif intent == 'certification':
-            response = self._handle_certification(question_lower)
-        elif intent == 'cv_tips':
-            response = self._handle_cv_tips()
-        elif intent == 'portfolio':
-            response = self._handle_portfolio_advice()
-        elif intent == 'networking':
-            response = self._handle_networking_tips()
-        elif intent == 'job_search':
-            response = self._handle_job_search_tips()
-        elif intent == 'remote_work':
-            response = self._handle_remote_work()
-        elif intent == 'soft_skills':
-            response = self._handle_soft_skills()
-        elif intent == 'tech_trends':
-            response = self._handle_tech_trends()
-        elif intent == 'salary_negotiation':
-            response = self._handle_salary_negotiation()
-        elif intent == 'work_life_balance':
-            response = self._handle_work_life_balance()
-        else:
-            response = self._handle_general_question(question_lower)
+        # Generate response based on sector + intent
+        response = self._generate_response(question_lower, sector, intent, user_skills, experience)
             
         return {
             'response': response,
             'intent': intent,
-            'suggested_followups': self._get_suggested_followups(intent)
+            'sector': sector,
+            'suggested_followups': self._get_suggested_followups(intent, sector)
         }
+    
+    def _detect_sector(self, question: str) -> str:
+        """Detect which sector the question is about"""
+        
+        sector_keywords = {
+            'technology': ['programming', 'software', 'developer', 'coding', 'data science', 'ai', 'ml', 'cloud', 'python', 'java', 'react', 'django', 'flask', 'aws', 'docker', 'kubernetes', 'git', 'linux', 'devops', 'cybersecurity', 'full stack', 'frontend', 'backend', 'api', 'machine learning', 'artificial intelligence', 'tech'],
+            'healthcare': ['doctor', 'nurse', 'medical', 'patient', 'hospital', 'pharmacy', 'diagnosis', 'surgery', 'clinical', 'medicine', 'health', 'cardiology', 'pediatrics', 'obstetrics', 'gynecology', 'orthopedics', 'neurology', 'oncology', 'psychiatry', 'patient care', 'public health', 'epidemiology', 'radiology', 'pathology'],
+            'law': ['lawyer', 'attorney', 'legal', 'court', 'contract', 'litigation', 'compliance', 'corporate law', 'criminal law', 'family law', 'property law', 'tax law', 'human rights', 'international law', 'legal research', 'advocate', 'barrister', 'solicitor'],
+            'finance': ['banking', 'investment', 'accounting', 'finance', 'tax', 'audit', 'financial', 'risk management', 'fintech', 'financial modeling', 'corporate finance', 'portfolio management', 'wealth management', 'cfa', 'acca', 'aicpa', 'accountant', 'auditor', 'financial analyst'],
+            'education': ['teacher', 'teaching', 'school', 'curriculum', 'education', 'professor', 'lecturer', 'academic', 'student assessment', 'educational leadership', 'special education', 'edtech', 'classroom management', 'lesson planning'],
+            'agriculture': ['agriculture', 'farming', 'crop', 'livestock', 'agribusiness', 'agritech', 'irrigation', 'soil science', 'agronomy', 'animal science', 'fisheries', 'aquaculture', 'food processing', 'farm management', 'agricultural economics'],
+            'business': ['management', 'hr', 'marketing', 'sales', 'operations', 'business', 'strategy', 'brand management', 'customer relations', 'digital marketing', 'human resources', 'recruitment', 'talent management', 'employee relations', 'project management'],
+            'creative': ['design', 'art', 'animation', 'music', 'content', 'creative', 'graphic design', 'video production', 'photography', 'illustration', 'multimedia', 'motion graphics', 'ui/ux', 'art direction', 'brand identity', 'visual design'],
+            'trades': ['carpentry', 'plumbing', 'electrical', 'welding', 'automotive', 'construction', 'masonry', 'mechanic', 'electrician', 'plumber', 'carpenter', 'hvac', 'maintenance', 'repair', 'trades'],
+            'social': ['social work', 'community development', 'counseling', 'nonprofit', 'ngo', 'social services', 'advocacy', 'social worker', 'counselor', 'mental health', 'child protection', 'human rights', 'community organizing'],
+            'engineering': ['civil engineering', 'structural engineering', 'mechanical engineering', 'electrical engineering', 'construction', 'cad', 'bim', 'site supervision', 'quantity surveying', 'project engineering', 'environmental engineering', 'geotechnical engineering']
+        }
+        
+        question_lower = question.lower()
+        sector_scores = {}
+        for sector, keywords in sector_keywords.items():
+            score = sum(1 for keyword in keywords if keyword in question_lower)
+            sector_scores[sector] = score
+        
+        if sector_scores:
+            best_sector = max(sector_scores, key=sector_scores.get)
+            if sector_scores[best_sector] > 0:
+                return best_sector
+        
+        return 'general'
     
     def _detect_intent(self, question: str) -> str:
         """Detect the intent of the question"""
         
         intents = {
-            'skill_recommendation': ['skill', 'learn', 'study', 'what should i learn', 'which skill', 'upskill'],
-            'interview_prep': ['interview', 'prepare for interview', 'technical interview', 'coding interview'],
-            'salary_info': ['salary', 'pay', 'compensation', 'how much', 'earn', 'paid'],
-            'career_path': ['career path', 'career growth', 'promotion', 'advance', 'senior', 'lead'],
-            'certification': ['certification', 'certificate', 'certified', 'credential', 'exam'],
-            'cv_tips': ['cv', 'resume', 'curriculum vitae', 'application', 'cover letter'],
-            'portfolio': ['portfolio', 'project', 'github', 'showcase', 'demo'],
-            'networking': ['network', 'connect', 'linkedin', 'mentor', 'community'],
-            'job_search': ['job search', 'find job', 'apply', 'application', 'hiring'],
-            'remote_work': ['remote', 'work from home', 'wfh', 'distributed', 'virtual'],
-            'soft_skills': ['soft skill', 'communication', 'leadership', 'teamwork', 'problem solving'],
-            'tech_trends': ['trend', 'future', 'emerging', 'latest', 'new technology'],
-            'salary_negotiation': ['negotiate', 'negotiation', 'ask for more', 'counter offer'],
-            'work_life_balance': ['balance', 'stress', 'burnout', 'overwork', 'healthy']
+            'skill_recommendation': ['skill', 'learn', 'study', 'what should i learn', 'which skill', 'upskill', 'what to study', 'recommendation'],
+            'interview_prep': ['interview', 'prepare for interview', 'technical interview', 'coding interview', 'interview questions', 'how to prepare'],
+            'salary_info': ['salary', 'pay', 'compensation', 'how much', 'earn', 'paid', 'wage', 'income'],
+            'career_path': ['career path', 'career growth', 'promotion', 'advance', 'senior', 'lead', 'progression', 'future', 'roadmap'],
+            'certification': ['certification', 'certificate', 'certified', 'credential', 'exam', 'qualification', 'cert'],
+            'cv_tips': ['cv', 'resume', 'curriculum vitae', 'application', 'cover letter', 'cv tips', 'resume tips'],
+            'portfolio': ['portfolio', 'project', 'github', 'showcase', 'demo', 'portfolio tips'],
+            'networking': ['network', 'connect', 'linkedin', 'mentor', 'community', 'networking', 'connections'],
+            'job_search': ['job search', 'find job', 'apply', 'application', 'hiring', 'job hunting', 'where to find'],
+            'remote_work': ['remote', 'work from home', 'wfh', 'distributed', 'virtual', 'remote work'],
+            'soft_skills': ['soft skill', 'communication', 'leadership', 'teamwork', 'problem solving', 'emotional intelligence', 'soft skills'],
+            'trends': ['trend', 'future', 'emerging', 'latest', 'new technology', 'in demand', 'hot skills'],
+            'salary_negotiation': ['negotiate', 'negotiation', 'ask for more', 'counter offer', 'how to negotiate'],
+            'work_life_balance': ['balance', 'stress', 'burnout', 'overwork', 'healthy', 'work life'],
+            'university': ['university', 'college', 'degree', 'program', 'course', 'study', 'education', 'school'],
+            'job_market': ['job market', 'market trends', 'demand', 'opportunities', 'growth sector'],
+            'entrepreneurship': ['entrepreneur', 'startup', 'business', 'founder', 'launch', 'own business']
         }
         
         for intent, keywords in intents.items():
@@ -80,64 +86,864 @@ class CareerAssistant:
                 
         return 'general'
     
-    def _handle_skill_recommendation(self, user_skills: List[str], experience: int) -> str:
-        """Generate personalized skill recommendations"""
+    def _generate_response(self, question: str, sector: str, intent: str, user_skills: List[str] = None, experience: int = 0) -> str:
+        """Generate intelligent response based on sector and intent"""
+        
+        # Route to sector-specific handlers
+        if sector == 'technology':
+            return self._handle_tech_question(question, intent, user_skills, experience)
+        elif sector == 'healthcare':
+            return self._handle_healthcare_question(question, intent, user_skills, experience)
+        elif sector == 'law':
+            return self._handle_law_question(question, intent, user_skills, experience)
+        elif sector == 'finance':
+            return self._handle_finance_question(question, intent, user_skills, experience)
+        elif sector == 'education':
+            return self._handle_education_question(question, intent, user_skills, experience)
+        elif sector == 'agriculture':
+            return self._handle_agriculture_question(question, intent, user_skills, experience)
+        elif sector == 'business':
+            return self._handle_business_question(question, intent, user_skills, experience)
+        elif sector == 'creative':
+            return self._handle_creative_question(question, intent, user_skills, experience)
+        elif sector == 'trades':
+            return self._handle_trades_question(question, intent, user_skills, experience)
+        elif sector == 'social':
+            return self._handle_social_question(question, intent, user_skills, experience)
+        elif sector == 'engineering':
+            return self._handle_engineering_question(question, intent, user_skills, experience)
+        else:
+            return self._handle_general_question(question, sector, intent, user_skills, experience)
+    
+    # ============================================================
+    # SECTOR-SPECIFIC HANDLERS
+    # ============================================================
+    
+    def _handle_tech_question(self, question: str, intent: str, user_skills: List[str], experience: int) -> str:
+        """Handle technology sector questions"""
+        
+        if intent == 'skill_recommendation':
+            return self._handle_tech_skill_recommendation(user_skills, experience)
+        elif intent == 'salary_info':
+            return self._handle_tech_salary(question, experience)
+        elif intent == 'career_path':
+            return self._handle_tech_career_path(question, user_skills)
+        elif intent == 'interview_prep':
+            return self._handle_interview_prep(question)
+        elif intent == 'trends':
+            return self._handle_tech_trends()
+        else:
+            return self._handle_tech_general(question, intent, user_skills, experience)
+    
+    def _handle_tech_skill_recommendation(self, user_skills: List[str], experience: int) -> str:
+        """Tech skill recommendations"""
         
         if not user_skills:
-            return """Based on current market trends in Africa, here are the top skills you should consider learning:
+            return """💻 **Top Tech Skills for 2026 in Africa:**
 
-🔥 **Hot Skills for 2026:**
-1. **Python** - Most in-demand (92% of job postings)
-2. **Machine Learning/AI** - 40% job growth in Africa
-3. **Cloud Computing (AWS/Azure)** - Highest salaries (GHS 15k+)
-4. **Data Analysis** - Needed across all industries
-5. **Cybersecurity** - Growing demand in fintech
+🔥 **Most In-Demand:**
+1. **Python** - 92% of job postings (GHS 5k-12k/month)
+2. **Machine Learning/AI** - 40% growth (GHS 7k-15k/month)
+3. **Cloud Computing (AWS/Azure)** - Highest salaries (GHS 8k-18k/month)
+4. **Data Science** - 28% growth (GHS 6k-14k/month)
+5. **Cybersecurity** - 30% growth (GHS 6k-12k/month)
+6. **DevOps** - 25% growth (GHS 7k-15k/month)
 
-💡 **Quick Start:** Begin with Python fundamentals (4 weeks), then specialize based on your interest.
+📚 **Learning Path:**
+1. Start with Python (4-6 weeks)
+2. Then choose: Data Science OR Web Development OR Cloud
+3. Build projects (2-3 months)
+4. Get certified (AWS, Google, Microsoft)
 
-Want me to create a personalized learning plan for you? Upload your CV first! 📄"""
+💡 **Quick Start:** 
+• Free: Python.org, freeCodeCamp, YouTube
+• Paid: Coursera, Udemy, DataCamp
+
+Want a personalized plan? Upload your CV! 🎯"""
         
-        # Personalized recommendations based on user's existing skills
         skills_set = [s.lower() for s in user_skills]
-        
         recommendations = []
-        if 'python' in str(skills_set):
-            recommendations.append("• **Advanced Python** → Move to frameworks like Django/FastAPI")
-            recommendations.append("• **Machine Learning** → Natural next step with your Python skills")
-        else:
-            recommendations.append("• **Python Programming** → Foundation for all tech roles")
-            
-        if any(skill in str(skills_set) for skill in ['data', 'analysis']):
-            recommendations.append("• **Advanced Data Science** → Deepen with ML and AI")
-        else:
-            recommendations.append("• **Data Analysis** → Pandas, SQL, Visualization")
-            
-        recommendations.append("• **Cloud Computing** → AWS or Azure certification")
-        recommendations.append("• **Soft Skills** → Communication, Leadership, Problem-solving")
         
-        return f"""🎯 **Personalized Skill Recommendations for You:**
+        if 'python' in str(skills_set):
+            recommendations.append("🔥 **Advanced Python** → Django/FastAPI, Data Science, ML")
+            recommendations.append("🧠 **Machine Learning** → Natural next step with Python")
+        else:
+            recommendations.append("🐍 **Python** → Foundation for all tech roles")
+        
+        if 'javascript' in str(skills_set):
+            recommendations.append("⚛️ **React/Next.js** → Modern frontend development")
+        else:
+            recommendations.append("🌐 **JavaScript/React** → Essential for web dev")
+        
+        if any(skill in str(skills_set) for skill in ['cloud', 'aws', 'azure']):
+            recommendations.append("☁️ **AWS/Azure** → Advanced cloud architecture")
+        else:
+            recommendations.append("☁️ **Cloud Computing** → AWS Solutions Architect cert")
+        
+        recommendations.append("🔒 **Cybersecurity** → Growing demand in fintech")
+        recommendations.append("🤝 **Soft Skills** → Communication, Leadership, Problem-solving")
+        
+        return f"""🎯 **Your Personalized Tech Path:**
 
-Based on your profile with skills in {', '.join(user_skills[:3])} and {experience}+ years experience:
+Based on your skills ({', '.join(user_skills[:3])}) and {experience}+ years:
 
 {chr(10).join(recommendations)}
 
-📊 **Priority Order:**
-1. Focus on {recommendations[0].replace('• ', '')} first
-2. Then add {recommendations[1].replace('• ', '')}
-3. Finally, pursue certifications in {recommendations[2].replace('• ', '')}
+📊 **Priority:**
+1. {recommendations[0]}
+2. {recommendations[1]}
+3. {recommendations[2]}
 
-🎯 **Goal:** Complete these in 3-6 months for 40% employability increase!
+🎯 **Goal:** 40% employability increase in 6 months!
 
-Would you like me to create a detailed weekly learning plan?"""
+Need a weekly plan? Just ask! 🚀"""
+    
+    def _handle_tech_salary(self, question: str, experience: int) -> str:
+        """Tech salary information"""
+        
+        roles = {
+            'python developer': [4500, 8000],
+            'data scientist': [6000, 12000],
+            'cloud engineer': [7000, 15000],
+            'full stack developer': [5000, 10000],
+            'devops engineer': [6500, 14000],
+            'ai engineer': [7000, 15000],
+            'software engineer': [4500, 9500],
+            'frontend developer': [4000, 8500],
+            'backend developer': [4500, 9000],
+            'security analyst': [5000, 10000]
+        }
+        
+        role = 'Software Engineer'
+        for key in roles:
+            if key in question.lower():
+                role = key.title()
+                break
+        
+        if experience <= 2:
+            level = 'Entry'
+            multiplier = 0.8
+        elif experience <= 5:
+            level = 'Mid'
+            multiplier = 1.0
+        else:
+            level = 'Senior'
+            multiplier = 1.3
+        
+        base = roles.get(role.lower(), [4500, 8000])
+        min_salary = int(base[0] * multiplier)
+        max_salary = int(base[1] * multiplier)
+        
+        return f"""💰 **{role} Salary in Ghana:**
+
+**{level} Level** ({experience} years experience)
+• 💵 Min: GHS {min_salary:,}/month
+• 📈 Average: GHS {(min_salary + max_salary)//2:,}/month
+• 🚀 Max: GHS {max_salary:,}/month
+
+**What Affects Your Salary:**
+✅ Cloud/AI skills add +25-35%
+✅ AWS Certification adds +25%
+✅ Company type: Big Tech > Startup
+✅ Location: Accra has highest rates
+
+**Top Skills That Pay More:**
+1. AWS/Azure: +35%
+2. Machine Learning: +30%
+3. Cybersecurity: +25%
+4. DevOps: +25%
+
+💡 **Want to increase your salary?** Ask me about negotiation tips! 💪"""
+    
+    def _handle_tech_career_path(self, question: str, user_skills: List[str]) -> str:
+        """Tech career path guidance"""
+        
+        return """🚀 **Tech Career Progression:**
+
+**Years 0-2 (Junior):**
+• Master fundamentals
+• Build portfolio (3-5 projects)
+• Get first certification
+• 💰 GHS 3k-5k/month
+
+**Years 2-5 (Mid-Level):**
+• Specialize (Data/Cloud/Backend)
+• Mentor juniors
+• Lead small projects
+• 💰 GHS 5k-9k/month
+
+**Years 5-8 (Senior):**
+• Architecture decisions
+• Team leadership
+• Strategic planning
+• 💰 GHS 9k-13k/month
+
+**Years 8+ (Lead/Principal):**
+• Technical strategy
+• Cross-team initiatives
+• Industry influence
+• 💰 GHS 13k-18k+/month
+
+**Fast-Track Tips:**
+✅ Get AWS/GCP/Azure certified
+✅ Contribute to open source
+✅ Build your personal brand
+✅ Network actively
+✅ Start speaking at events
+
+**Careers with Fastest Growth:**
+1. AI/ML Engineer (+45% growth)
+2. Cloud Architect (+35%)
+3. Cybersecurity (+30%)
+4. Data Engineer (+28%)
+
+**Remote Work Opportunities:**
+• Global companies hiring remotely
+• Higher salaries (USD rates)
+• Flexible schedule
+
+What stage are you at? I can give specific advice! 🎯"""
+    
+    def _handle_tech_general(self, question: str, intent: str, user_skills: List[str], experience: int) -> str:
+        """General tech questions"""
+        return f"""💻 **Tech Career Questions:**
+
+I can help you with tech-related questions about:
+• 📚 **Skills** - What to learn for your tech career
+• 💰 **Salaries** - How much tech professionals earn
+• 🎯 **Career Path** - How to advance in tech
+• 📝 **CV Tips** - How to stand out in tech
+• 🏆 **Certifications** - What tech certs to get
+• 💼 **Job Search** - Where to find tech jobs
+• 🔍 **Interview Prep** - How to prepare for tech interviews
+
+**Your question:** "{question}"
+
+💡 **Tip:** Be specific about your tech stack and experience for better answers! 🚀"""
+    
+    def _handle_healthcare_question(self, question: str, intent: str, user_skills: List[str], experience: int) -> str:
+        """Healthcare sector questions"""
+        
+        if 'doctor' in question.lower() or 'physician' in question.lower():
+            return self._handle_healthcare_doctor(question, experience)
+        elif 'nurse' in question.lower():
+            return self._handle_healthcare_nurse(question, experience)
+        elif 'pharmacy' in question.lower() or 'pharmacist' in question.lower():
+            return self._handle_healthcare_pharmacy(question, experience)
+        elif intent == 'salary_info':
+            return self._handle_healthcare_salary(question, experience)
+        else:
+            return self._handle_healthcare_general(question, intent, user_skills, experience)
+    
+    def _handle_healthcare_doctor(self, question: str, experience: int) -> str:
+        """Doctor career path"""
+        return """👨‍⚕️ **Becoming a Doctor in West Africa:**
+
+**Career Path:**
+1. Medical School (6 years) → MBChB/MD
+2. Internship (1 year) → Housemanship
+3. Residency (3-5 years) → Specialization
+4. Consultant → Senior Specialist
+
+**Top Specializations:**
+• Surgery (General, Orthopedic, Neuro)
+• Internal Medicine (Cardiology, Nephrology)
+• Pediatrics, OB/GYN, Emergency Medicine
+
+**Timeline:**
+• Medical School: 6 years
+• Internship: 1 year
+• Residency: 3-5 years
+• Total: 10-12 years
+
+**Salaries in Ghana:**
+• Intern: GHS 2,500-3,500/month
+• Medical Officer: GHS 4,500-7,000/month
+• Specialist: GHS 8,000-12,000/month
+• Consultant: GHS 12,000-20,000/month
+
+📚 **Medical Schools in Ghana:**
+• University of Ghana Medical School
+• KNUST School of Medicine
+• University of Cape Coast Medical School
+• University of Development Studies (Tamale)
+
+💡 **Tip:** Start preparing early - get good grades in science subjects! 🩺"""
+    
+    def _handle_healthcare_nurse(self, question: str, experience: int) -> str:
+        """Nursing career path"""
+        return """🩺 **Nursing Career in West Africa:**
+
+**Career Path:**
+1. Nursing Diploma/BSc (3-4 years)
+2. Registered Nurse License (NCLEX/Ghana Board)
+3. RN → Senior Nurse → Nurse Manager → Director
+
+**Specializations:**
+• Pediatric Nursing
+• Cardiac Nursing
+• Critical Care (ICU/CCU)
+• Maternity/OB Nursing
+• Public Health Nursing
+• Mental Health Nursing
+
+**Certifications:**
+• BLS (Basic Life Support)
+• ACLS (Advanced Cardiac Life Support)
+• PALS (Pediatric Advanced Life Support)
+
+**Salaries in Ghana:**
+• Entry Level RN: GHS 2,500-3,500/month
+• Experienced RN: GHS 4,000-6,000/month
+• Nurse Manager: GHS 6,000-9,000/month
+• Director of Nursing: GHS 10,000+
+
+**Institutions:**
+• University of Ghana (School of Nursing)
+• KNUST (Nursing)
+• Nursing Training Colleges nationwide
+
+💡 **Pro Tip:** BLS and ACLS certifications increase salary by 20-30%! 🏥"""
+    
+    def _handle_healthcare_pharmacy(self, question: str, experience: int) -> str:
+        """Pharmacy career path"""
+        return """💊 **Pharmacy Career in Ghana:**
+
+**Career Path:**
+1. Doctor of Pharmacy (PharmD) - 6 years OR
+2. BSc Pharmacy - 4 years
+3. Internship (1 year)
+4. Licensed Pharmacist
+
+**Practice Areas:**
+• Community Pharmacy (Retail)
+• Hospital Pharmacy
+• Clinical Pharmacy
+• Pharmaceutical Industry
+• Regulatory Affairs
+• Academia
+
+**Salaries:**
+• Entry Level: GHS 3,000-5,000/month
+• Experienced: GHS 5,000-8,000/month
+• Hospital Pharmacist: GHS 6,000-9,000/month
+• Industry/Corporate: GHS 8,000-15,000/month
+
+**Institutions:**
+• KNUST - Pharmacy
+• University of Ghana - Pharmacy
+• Central University - Pharmacy
+• University of Health and Allied Sciences
+
+💡 **Quick Tip:** Industrial pharmacy pays the highest! 💰"""
+    
+    def _handle_healthcare_salary(self, question: str, experience: int) -> str:
+        """Healthcare salary information"""
+        return """💰 **Healthcare Salaries in Ghana:**
+
+**Average Monthly Salaries (GHS):**
+• 🩺 Medical Doctor: 5,000-20,000
+• 💉 Registered Nurse: 3,000-9,000
+• 💊 Pharmacist: 3,000-15,000
+• 🔬 Lab Scientist: 2,500-6,000
+• 🏥 Public Health: 3,500-7,000
+• 🧠 Mental Health Counselor: 3,000-6,000
+
+**Factors Affecting Salary:**
+✅ Specialization increases pay significantly
+✅ Private hospitals pay more than public
+✅ Location: Accra > Kumasi > Other cities
+✅ Years of experience (2-5% increase/year)
+✅ Additional certifications (BLS, ACLS)
+
+**Top-Paying Specializations:**
+1. Surgery: GHS 12,000-20,000
+2. Anesthesiology: GHS 10,000-18,000
+3. Cardiology: GHS 10,000-16,000
+4. Radiology: GHS 9,000-15,000
+5. Obstetrics/Gynecology: GHS 8,000-14,000
+
+💡 **Pro Tip:** Private sector and international organizations pay the highest! 🌍"""
+    
+    def _handle_healthcare_general(self, question: str, intent: str, user_skills: List[str], experience: int) -> str:
+        """General healthcare questions"""
+        return """🏥 **Healthcare Careers in West Africa:**
+
+**Most In-Demand Healthcare Jobs:**
+1. 🩺 Medical Doctors (Specialists especially)
+2. 💉 Registered Nurses
+3. 💊 Pharmacists
+4. 🔬 Medical Laboratory Scientists
+5. 🏥 Public Health Specialists
+6. 🧠 Mental Health Counselors
+7. 👴 Elderly Care Specialists
+
+**Fastest Growing Areas:**
+• Telemedicine (+45% growth)
+• Health Informatics (+35%)
+• Public Health/Epidemiology (+30%)
+• Mental Health (+25%)
+
+**Top Employers:**
+• Government Hospitals (GHS)
+• Private Hospitals
+• NGOs (WHO, UNICEF, MSF)
+• Pharmaceutical Companies
+• Research Institutions
+
+❓ **Ask me about any specific healthcare role!** 🏥"""
+    
+    def _handle_law_question(self, question: str, intent: str, user_skills: List[str], experience: int) -> str:
+        """Law sector questions"""
+        
+        if 'career path' in question.lower() or 'become' in question.lower():
+            return """⚖️ **Law Career in West Africa:**
+
+**Career Path:**
+1. Bachelor of Laws (LLB) - 4 years
+2. Ghana School of Law (2 years professional)
+3. Call to Bar (pass bar exam)
+4. Pupillage (1 year)
+5. → Solicitor/Barrister → Senior Partner → Judge
+
+**Practice Areas:**
+• Corporate/Commercial Law
+• Criminal Law
+• Human Rights Law
+• Family Law
+• Property Law
+• Tax Law
+• Maritime Law
+• Intellectual Property
+
+**Institutions:**
+• University of Ghana - Faculty of Law
+• KNUST - Faculty of Law
+• University of Cape Coast - Faculty of Law
+• Ghana School of Law (Professional)
+
+**Salaries in Ghana:**
+• Pupil: GHS 2,000-3,000/month
+• Junior Associate: GHS 4,000-6,000/month
+• Associate: GHS 7,000-10,000/month
+• Senior Associate/Partner: GHS 12,000-20,000+
+• Judge: GHS 15,000-25,000
+
+💡 **Pro Tip:** Specializing in Corporate or Intellectual Property law pays the highest! ⚖️"""
+        
+        return """⚖️ **Legal Careers in West Africa:**
+
+**Most In-Demand Legal Roles:**
+1. ⚖️ Corporate Lawyers
+2. 📜 Contract Specialists
+3. 🔒 Compliance Officers
+4. 🏢 Legal Consultants
+5. ⚖️ Human Rights Lawyers
+6. 📝 Legal Researchers
+7. 🏛️ Litigators
+
+**Top Law Firms in Ghana:**
+• Bentsi-Enchill, Letsa & Ankomah
+• Sam Okudzeto & Associates
+• Akufo-Addo, Prempeh & Co.
+• AB & David Law Firm
+• Alisa Law Firm
+
+**Average Salaries (GHS/month):**
+• Entry Level: 3,000-5,000
+• Mid Level: 6,000-10,000
+• Senior Level: 12,000-20,000
+
+💡 **Tip:** The LLB is just the beginning - professional development is continuous! ⚖️"""
+    
+    def _handle_finance_question(self, question: str, intent: str, user_skills: List[str], experience: int) -> str:
+        """Finance sector questions"""
+        
+        if 'career path' in question.lower() or 'become' in question.lower():
+            return """💰 **Finance Career in West Africa:**
+
+**Career Paths:**
+
+1. **Banking:**
+   • Customer Service → Relationship Manager → Branch Manager
+   • Corporate Banking → Investment Banking → Private Banking
+
+2. **Accounting:**
+   • Junior Accountant → Finance Manager → CFO
+   • Auditor → Audit Manager → Audit Partner
+
+3. **Investment:**
+   • Analyst → Associate → Vice President → Managing Director
+
+**Key Certifications:**
+• ACCA (Ghanaian Employers love this!)
+• CPA
+• ICAEW
+• CIMA
+• CFA
+
+**Certifications Costs:**
+• ACCA: GHS 8,000-15,000 total
+• CIMA: GHS 10,000-20,000
+• CFA: GHS 15,000-25,000
+
+**Salaries in Ghana:**
+• Junior Accountant: GHS 3,000-5,000/month
+• Finance Manager: GHS 8,000-15,000/month
+• Investment Analyst: GHS 6,000-12,000/month
+• CFO: GHS 20,000-40,000/month
+
+💡 **Quick Tip:** ACCA is the most recognized qualification in Ghana! 💰"""
+        
+        return """💰 **Finance Careers in West Africa:**
+
+**Most In-Demand Roles:**
+1. 💰 Investment Bankers
+2. 📊 Financial Analysts
+3. 🧾 Accountants
+4. 🏦 Banking Professionals
+5. 📈 Risk Managers
+6. 💳 Fintech Specialists
+7. 📉 Portfolio Managers
+
+**Top Employers:**
+• GCB Bank, Stanbic, Standard Chartered
+• PwC, KPMG, Deloitte, EY
+• CFA Society Ghana
+• SEC Ghana, Bank of Ghana
+• Fintech Companies (Mobile Money)
+
+**Average Salaries (GHS/month):**
+• Entry Level: 3,000-5,000
+• Mid Level: 6,000-12,000
+• Senior Level: 15,000-40,000
+
+💡 **Tip:** Fintech is the fastest growing area! 💳"""
+    
+    def _handle_education_question(self, question: str, intent: str, user_skills: List[str], experience: int) -> str:
+        """Education sector questions"""
+        
+        return """📚 **Education Career in West Africa:**
+
+**Career Paths:**
+1. Classroom Teacher → Senior Teacher → Head of Department
+2. School Administrator → Dean → Principal
+3. University Professor → Department Head → Dean/VC
+
+**Teaching Levels:**
+• Early Childhood Education (Nursery/Primary)
+• Basic Education (JHS)
+• Secondary Education (SHS)
+• Tertiary Education (University/Polytechnic)
+
+**Teacher Licensure (GES):**
+• GES Licensure Exam
+• Teacher Professional Development (TPD) credits
+• Continuing education required
+
+**Salaries in Ghana (GES):**
+• Graduate Teacher: GHS 3,500-4,500/month
+• Senior Teacher: GHS 5,000-7,000/month
+• Principal Superintendent: GHS 7,000-10,000/month
+• University Lecturer: GHS 6,000-15,000/month
+• Headmaster/Principal: GHS 10,000-18,000/month
+
+**Institutions:**
+• University of Education, Winneba (UEW)
+• University of Ghana - Education
+• KNUST - Education
+• College of Education nationwide
+
+💡 **Pro Tip:** EdTech is growing fast - combine teaching with technology! 📱"""
+    
+    def _handle_agriculture_question(self, question: str, intent: str, user_skills: List[str], experience: int) -> str:
+        """Agriculture sector questions"""
+        
+        return """🌾 **Agriculture Career in West Africa:**
+
+**Career Paths:**
+
+1. **Crop Production:**
+   • Farmer → Large-Scale Farmer → Agro-industrial Owner
+
+2. **Agribusiness:**
+   • Agricultural Economist → Agribusiness Manager → Director
+
+3. **Agricultural Extension:**
+   • Extension Officer → District Agric Officer → Regional Director
+
+4. **AgriTech:**
+   • AgriTech Specialist → Product Manager → Co-Founder
+
+**Specializations:**
+• Crop Science (Maize/Cocoa/Rice/Cassava)
+• Livestock Management (Poultry/Cattle/Sheep)
+• Fisheries & Aquaculture
+• Soil Science & Irrigation
+• Agricultural Economics
+• Food Processing & Storage
+
+**Institutions in Ghana:**
+• UCC - Bachelor of Agriculture
+• KNUST - BSc Agricultural Science
+• University of Ghana - BSc Agriculture
+
+**Salaries in Ghana:**
+• Extension Officer: GHS 3,500-5,000/month
+• Agronomist: GHS 4,500-8,000/month
+• Agricultural Economist: GHS 5,000-10,000/month
+• AgriTech Manager: GHS 8,000-15,000/month
+
+💡 **Hot Trend:** AgriTech is booming - combine agriculture with technology! 🌱"""
+    
+    def _handle_business_question(self, question: str, intent: str, user_skills: List[str], experience: int) -> str:
+        """Business sector questions"""
+        
+        return """🏢 **Business Career in West Africa:**
+
+**Popular Career Paths:**
+
+1. **Management:**
+   • Trainee → Supervisor → Manager → Director
+
+2. **Human Resources:**
+   • HR Officer → HR Manager → HR Director
+
+3. **Marketing:**
+   • Marketing Executive → Marketing Manager → Brand Director
+
+4. **Operations:**
+   • Operations Officer → Operations Manager → COO
+
+5. **Consulting:**
+   • Junior Consultant → Consultant → Senior Manager → Partner
+
+**Key Certifications:**
+• Project Management Professional (PMP)
+• Certified Business Professional (CBP)
+• Six Sigma (Yellow/Green/Black Belt)
+
+**MBA Programs in Ghana:**
+• University of Ghana Business School
+• KNUST School of Business
+• GIMPA Business School
+• UCC School of Business
+
+**Salaries in Ghana:**
+• Entry Level: GHS 2,500-4,000/month
+• Manager: GHS 5,000-10,000/month
+• Senior Manager/Director: GHS 10,000-20,000/month
+• Consultant: GHS 8,000-15,000/month
+• CEO/MD: GHS 20,000-50,000/month
+
+💡 **Tip:** Digital Marketing and Data Analytics are the hottest skills now! 📊"""
+    
+    def _handle_creative_question(self, question: str, intent: str, user_skills: List[str], experience: int) -> str:
+        """Creative arts sector questions"""
+        
+        return """🎨 **Creative Arts Career in West Africa:**
+
+**Career Paths:**
+
+1. **Graphic Design:**
+   • Designer → Senior Designer → Art Director → Creative Director
+
+2. **Animation & Motion Graphics:**
+   • Animator → Senior Animator → Animation Director
+
+3. **Video Production:**
+   • Videographer → Video Editor → Production Manager → Director
+
+4. **Music Production:**
+   • Music Producer → Senior Producer → Record Label Owner
+
+5. **Content Creation:**
+   • Content Creator → Influencer → Brand Partner
+
+**Institutions in Ghana:**
+• KNUST - Bachelor of Fine Arts
+• UCC - Art Education
+• UEW - Visual Arts
+• Ghanatta College of Art
+
+**Essential Tools:**
+• Adobe Creative Suite (Photoshop, Illustrator, Premiere)
+• After Effects (Animation)
+• Final Cut Pro (Video Editing)
+• Blender (3D Animation)
+• Figma (UI/UX Design)
+
+**Salaries in Ghana:**
+• Entry Level Designer: GHS 2,000-3,500/month
+• Senior Designer: GHS 4,000-7,000/month
+• Art Director: GHS 6,000-10,000/month
+• Creative Director: GHS 10,000-20,000/month
+• Music Producer: GHS 5,000-15,000/month
+• Influencer: Varies widely
+
+💡 **Pro Tip:** Build a strong portfolio - it's your most important asset! 🎨"""
+    
+    def _handle_trades_question(self, question: str, intent: str, user_skills: List[str], experience: int) -> str:
+        """Trades sector questions"""
+        
+        return """🛠️ **Trades Career in West Africa:**
+
+**Career Paths:**
+
+1. **Carpentry:**
+   • Apprentice → Journeyman → Master Carpenter → Contractor
+
+2. **Plumbing:**
+   • Apprentice → Journeyman → Master Plumber → Plumbing Contractor
+
+3. **Electrical Work:**
+   • Apprentice → Journeyman → Electrician → Electrical Contractor
+
+4. **Welding:**
+   • Apprentice → Welder → Master Welder → Workshop Owner
+
+5. **Automotive:**
+   • Apprentice → Technician → Master Technician → Workshop Owner
+
+**Certifications:**
+• City & Guilds Certification
+• NVTI Apprenticeship Program
+• Ghana National Apprenticeship Program
+• Sector Skills Council Certification
+
+**Institutions:**
+• NVTI (Nationwide)
+• Technical Universities (Kumasi, Tema, Accra)
+• Private Technical Institutes
+
+**Salaries in Ghana:**
+• Apprentice: GHS 500-1,000/month
+• Journeyman: GHS 1,500-2,500/month
+• Master Craftsman: GHS 3,000-5,000/month
+• Contractor/Owner: GHS 5,000-15,000/month
+
+💡 **Pro Tip:** Start your own business - tradespeople are always in demand! 🔧"""
+    
+    def _handle_social_question(self, question: str, intent: str, user_skills: List[str], experience: int) -> str:
+        """Social services sector questions"""
+        
+        return """🏛️ **Social Services Career in West Africa:**
+
+**Career Paths:**
+
+1. **Social Work:**
+   • Social Worker → Senior Social Worker → Social Services Director
+
+2. **Counseling:**
+   • Counselor → Senior Counselor → Clinical Supervisor
+
+3. **Community Development:**
+   • Community Officer → Community Manager → Program Director
+
+4. **NGO/Non-Profit:**
+   • Program Officer → Program Manager → Country Director
+
+**Specializations:**
+• Mental Health Counseling
+• Child & Family Services
+• Community Health
+• International Development
+• Human Rights Advocacy
+
+**Institutions in Ghana:**
+• University of Ghana - Social Work
+• KNUST - Sociology & Social Work
+• UCC - Social Sciences
+• GIMPA - Development Studies
+
+**Salaries in Ghana:**
+• Entry Level Social Worker: GHS 2,500-3,500/month
+• Experienced Social Worker: GHS 4,000-6,000/month
+• Program Manager: GHS 6,000-10,000/month
+• Country Director: GHS 15,000-25,000/month
+
+💡 **Tip:** NGOs and International Organizations pay the highest! 🤝"""
+    
+    def _handle_engineering_question(self, question: str, intent: str, user_skills: List[str], experience: int) -> str:
+        """Engineering sector questions"""
+        
+        return """🏗️ **Engineering Career in West Africa:**
+
+**Major Engineering Fields:**
+
+1. **Civil Engineering:**
+   • Structural Design, Construction, Transportation, Water Resources
+
+2. **Mechanical Engineering:**
+   • Manufacturing, Automotive, Energy, HVAC Systems
+
+3. **Electrical Engineering:**
+   • Power Systems, Electronics, Telecommunications, Renewable Energy
+
+4. **Chemical Engineering:**
+   • Process Engineering, Oil & Gas, Pharmaceuticals, Materials Science
+
+**Professional Registration in Ghana:**
+• Graduate Engineer (GEng) - after graduation
+• Professional Engineer (PEng) - after 4+ years experience
+• Registered through EIB (Engineering Institution of Ghana)
+
+**Institutions in Ghana:**
+• KNUST - Engineering (All Branches)
+• University of Ghana - Engineering
+• UCC - Engineering
+• Accra Technical University - Engineering
+
+**Salaries in Ghana:**
+• Graduate Engineer: GHS 3,500-5,000/month
+• Engineer: GHS 5,000-8,000/month
+• Senior Engineer: GHS 8,000-12,000/month
+• Project Manager: GHS 12,000-18,000/month
+• Consultant Engineer: GHS 15,000-25,000/month
+
+💡 **Pro Tip:** Get your PEng - it significantly boosts your salary! 📐"""
+    
+    def _handle_tech_trends(self) -> str:
+        """Technology trends"""
+        
+        return """📊 **Top Tech Trends in Africa (2026):**
+
+**Hottest Skills:**
+1. 🤖 Artificial Intelligence/Machine Learning (+45% growth)
+2. ☁️ Cloud Computing (+35% growth)
+3. 🔒 Cybersecurity (+30% growth)
+4. 📊 Data Science (+28% growth)
+5. 🔗 Blockchain/Web3 (+25% growth)
+
+**Emerging Roles:**
+• AI/ML Engineer (GHS 8k-15k)
+• Cloud Architect (GHS 10k-18k)
+• Security Analyst (GHS 6k-12k)
+• Data Engineer (GHS 7k-14k)
+
+**Industries Growing Fast:**
+💳 Fintech (Mobile money, payments)
+🏥 HealthTech (Telemedicine, records)
+📚 EdTech (Online learning)
+🛒 E-commerce (Logistics, payments)
+🌾 AgriTech (Farmer solutions)
+
+**Future Predictions:**
+• Remote work becomes standard
+• AI tools boost productivity
+• Green tech emerges
+• Cross-border collaboration grows
+
+Which trend excites you most? 🚀"""
     
     def _handle_interview_prep(self, question: str) -> str:
-        """Provide interview preparation advice"""
+        """Interview preparation"""
         
         if 'technical' in question or 'coding' in question:
-            return """💻 **Technical Interview Preparation:**
+            return """💻 **Technical Interview Prep:**
 
 📚 **Study Plan:**
-• **Week 1-2:** Data Structures & Algorithms (Arrays, Strings, Hash Tables)
+• **Week 1-2:** Data Structures & Algorithms
 • **Week 3:** System Design basics
 • **Week 4:** Practice on LeetCode (Easy/Medium)
 
@@ -152,685 +958,188 @@ Would you like me to create a detailed weekly learning plan?"""
 • HackerRank
 • AlgoExpert
 
-💡 **Pro Tip:** Focus on solving problems and explaining your thought process out loud!"""
+💡 **Pro Tip:** Explain your thought process out loud!"""
         
-        return """🎤 **Complete Interview Preparation Guide:**
+        return """🎤 **Interview Preparation Guide:**
 
-**Before Interview (Week 1-2):**
+**Before Interview:**
 ✅ Research company and role thoroughly
-✅ Review your CV and prepare stories using STAR method
+✅ Review CV - prepare STAR stories
 ✅ Practice common behavioral questions
-✅ Prepare 5-7 questions to ask the interviewer
+✅ Prepare 5-7 questions to ask
 
 **Technical Prep:**
-✅ Review core concepts in your tech stack
+✅ Review core concepts
 ✅ Practice coding challenges (30 mins daily)
-✅ Build a small demo project if needed
+✅ Build a small demo project
 
 **Day of Interview:**
-✅ Test your tech setup (camera, mic, internet)
-✅ Dress professionally (even for remote)
+✅ Test tech setup (camera, mic, internet)
+✅ Dress professionally
 ✅ Have water and notes ready
 ✅ Arrive 5 minutes early
 
-**Sample Questions to Prepare:**
+**Sample Questions:**
 • "Tell me about yourself" (2-min version)
 • "Why do you want this role?"
 • "Describe a challenge you overcame"
-• "Where do you see yourself in 5 years?"
-
-Need specific practice questions for your role? Just ask! 🚀"""
+• "Where do you see yourself in 5 years?"""
     
-    def _handle_salary_info(self, question: str, experience: int) -> str:
-        """Provide salary information"""
+    def _handle_general_question(self, question: str, sector: str, intent: str, user_skills: List[str], experience: int) -> str:
+        """General question handler"""
         
-        role = self._extract_role(question)
-        
-        salaries = {
-            'entry': {'min': 2500, 'max': 4500},
-            'mid': {'min': 5000, 'max': 8500},
-            'senior': {'min': 9000, 'max': 15000}
+        sector_names = {
+            'technology': 'Tech',
+            'healthcare': 'Healthcare',
+            'law': 'Law',
+            'finance': 'Finance',
+            'education': 'Education',
+            'agriculture': 'Agriculture',
+            'business': 'Business',
+            'creative': 'Creative Arts',
+            'trades': 'Trades',
+            'social': 'Social Services',
+            'engineering': 'Engineering'
         }
         
-        if experience <= 2:
-            level = 'entry'
-        elif experience <= 5:
-            level = 'mid'
-        else:
-            level = 'senior'
-            
-        return f"""💰 **Salary Guide for {role if role else 'Tech Roles'} in Ghana/West Africa:**
+        if sector in sector_names:
+            return f"""🤖 **Let me help you with {sector_names[sector]}!**
 
-**{level.upper()} Level** ({experience} years experience)
-• Minimum: GHS {salaries[level]['min']:,}/month
-• Average: GHS {(salaries[level]['min'] + salaries[level]['max']) // 2:,}/month
-• Maximum: GHS {salaries[level]['max']:,}/month
+I can answer questions about:
+• 📚 **Skills** - What to learn for your career
+• 💰 **Salaries** - How much you can earn
+• 🎯 **Career Path** - How to advance
+• 📝 **CV Tips** - How to stand out
+• 🏆 **Certifications** - What to get
+• 💼 **Job Search** - Where to find opportunities
 
-**Factors Affecting Salary:**
-• Company size (Startup vs Enterprise)
-• Location (Accra has highest rates)
-• Specific skills (Cloud/AI add 20-30%)
-• Certifications (AWS adds +25%)
-• Negotiation skills
+**Your question:** "{question}"
 
-**Top Paying Skills:**
-1. Cloud Computing (+35%)
-2. Machine Learning (+30%)
-3. Cybersecurity (+25%)
+💡 **Tip:** Be specific about your sector, experience, and goals for better answers!
 
-💡 **Tip:** Always negotiate! Most companies expect it. Would you like negotiation tips?"""
-    
-    def _handle_career_path(self, question: str, user_skills: List[str]) -> str:
-        """Provide career path guidance"""
+What would you like to know? 🤔"""
         
-        return """🎯 **Career Progression Roadmap:**
+        return f"""🤖 **I'm your AI Career Assistant!**
 
-**Years 0-2 (Junior):**
-• Master fundamentals
-• Build portfolio projects
-• Get first certification
-• 💰 GHS 2.5k-4.5k/month
+I can help with:
+• 📚 **Skills** - "What should I learn for [role]?"
+• 💰 **Salaries** - "How much do [role] earn in Ghana?"
+• 🎯 **Career Path** - "How to become a [role]?"
+• 📝 **CV Tips** - "How to improve my CV?"
+• 🏆 **Certifications** - "Which certs are valuable?"
+• 💼 **Job Search** - "Where to find jobs?"
+• 🤝 **Networking** - "How to build connections?"
+• 🌍 **Remote Work** - "Tips for working remote?"
+• ⚖️ **Work-Life Balance** - "How to avoid burnout?"
 
-**Years 2-5 (Mid-Level):**
-• Specialize in 1-2 areas
-• Mentor juniors
-• Lead small projects
-• 💰 GHS 5k-8.5k/month
+**Your question:** "{question}"
 
-**Years 5-8 (Senior):**
-• Architecture decisions
-• Team leadership
-• Strategic planning
-• 💰 GHS 9k-12k/month
+💡 **Pro Tip:** Tell me your sector and experience for personalized advice!
 
-**Years 8+ (Lead/Principal):**
-• Technical strategy
-• Cross-team initiatives
-• Industry influence
-• 💰 GHS 12k-15k+/month
-
-**Fast-Track Tips:**
-• Get certified (AWS, Google, Azure)
-• Contribute to open source
-• Build a personal brand
-• Network actively
-
-What stage are you currently at? I can give more specific advice! 🚀"""
+What would you like to know? 🚀"""
     
-    def _handle_certification(self, question: str) -> str:
-        """Provide certification advice"""
-        
-        return """🏆 **Most Valuable Certifications in Africa:**
-
-**Cloud Certifications (Highest ROI):**
-• AWS Certified Cloud Practitioner (Beginner) - GHS +25%
-• AWS Solutions Architect (Advanced) - GHS +40%
-• Microsoft Azure Fundamentals
-• Google Cloud Associate
-
-**Data & AI:**
-• Google Data Analytics Professional
-• IBM Data Science
-• TensorFlow Developer Certificate
-• Microsoft Azure AI Fundamentals
-
-**Development:**
-• Meta Backend/Frontend Certificates
-• freeCodeCamp Certifications
-• Oracle Java/MySQL Certifications
-
-**Project Management:**
-• PMP (Project Management Professional)
-• Scrum Master Certification
-• Agile Certified Practitioner
-
-**Cost-Effective Options:**
-• Coursera ($39-59/month with financial aid)
-• edX (Free audit option)
-• LinkedIn Learning (Free with Premium trial)
-• YouTube (Free tutorials)
-
-🎯 **Recommended Path:**
-1. Start with AWS Cloud Practitioner (2 months)
-2. Then Google Data Analytics (3 months)
-3. Finally, PMP or Scrum (2 months)
-
-Which field interests you most? I can provide specific exam tips!"""
-    
-    def _handle_cv_tips(self) -> str:
-        """Provide CV writing tips"""
-        
-        return """📝 **Professional CV Tips for African Market:**
-
-**Format & Structure:**
-✅ Keep to 2 pages maximum
-✅ Use professional fonts (Arial, Calibri)
-✅ Save as PDF
-✅ Include LinkedIn and GitHub links
-
-**Must-Have Sections:**
-1. **Professional Summary** (3-4 lines, keyword-rich)
-2. **Technical Skills** (Categorized: Languages, Tools, Soft Skills)
-3. **Work Experience** (STAR format - Situation, Task, Action, Result)
-4. **Projects** (Live links if possible)
-5. **Education & Certifications**
-6. **Languages & Interests**
-
-**Avoid:**
-❌ Photos (may lead to bias)
-❌ Personal details (age, marital status)
-❌ Unnecessary formatting
-❌ Spelling errors
-
-**African Market Tips:**
-• Highlight remote work experience
-• Include local project examples
-• Mention community involvement
-• Show language skills (English, French)
-
-**Quick Wins:**
-• Use action verbs (Led, Developed, Managed)
-• Quantify achievements (Increased by 30%)
-• Tailor for each application
-• Get feedback from mentors
-
-Want me to review your CV? Upload it and I'll provide specific feedback! 📄"""
-    
-    def _handle_portfolio_advice(self) -> str:
-        """Provide portfolio building advice"""
-        
-        return """💼 **Building an Impressive Portfolio:**
-
-**Platforms to Use:**
-• GitHub (Code repository)
-• Personal website (Name.com, Netlify)
-• LinkedIn (Projects section)
-• Medium/Blog (Write about your work)
-
-**What to Include:**
-✅ 3-5 complete projects
-✅ Live demos (Vercel/Netlify)
-✅ Clean README files
-✅ Code documentation
-✅ Project screenshots/videos
-
-**Project Ideas for Africa:**
-1. **E-commerce platform** for local market
-2. **Job portal** for Ghanaian companies
-3. **Educational app** for students
-4. **Healthcare booking system**
-5. **Agricultural marketplace**
-
-**Standout Features:**
-• Real users/usage data
-• Testimonials
-• Case studies
-• Performance metrics
-• Mobile-responsive design
-
-**Pro Tips:**
-• Start with 1 solid project
-• Deploy everything (no local-only)
-• Get code reviews from seniors
-• Contribute to open source
-
-Need project ideas based on your skills? Share what you know! 🚀"""
-    
-    def _handle_networking_tips(self) -> str:
-        """Provide networking advice"""
-        
-        return """🤝 **Networking Strategies for African Tech:**
-
-**Online Platforms:**
-• LinkedIn (Optimize profile, post weekly)
-• Twitter/X (Follow industry leaders)
-• GitHub (Contribute to repos)
-• Slack/Discord communities
-
-**Local Communities:**
-• Google Developer Groups (GDG)
-• Facebook Developer Circles
-• Women in Tech chapters
-• University alumni groups
-
-**Events to Attend:**
-• Tech conferences (Africa Tech Summit)
-• Hackathons (Major League Hacking)
-• Meetups (Find on Meetup.com)
-• Webinars (Free learning)
-
-**Networking Tips:**
-✅ Send personalized connection requests
-✅ Engage with posts (comment meaningfully)
-✅ Share your work and learnings
-✅ Ask for informational interviews
-✅ Follow up after conversations
-
-**Cold Outreach Template:**
-"Hi [Name], I admire your work at [Company]. I'm a [Role] interested in [Field]. Would you have 15 mins for a quick chat about [Specific Topic]?"
-
-**Build Your Brand:**
-• Write on LinkedIn/Medium
-• Speak at local events
-• Mentor junior developers
-• Start a study group
-
-Remember: Quality > Quantity. Build genuine relationships! 🤝"""
-    
-    def _handle_job_search_tips(self) -> str:
-        """Provide job search advice"""
-        
-        return """🔍 **Effective Job Search Strategy in Africa:**
-
-**Where to Find Jobs:**
-• Jobberman Ghana/Nigeria
-• LinkedIn Jobs (Best for tech)
-• Indeed Africa
-• Brighter Monday (East Africa)
-• Company career pages
-• Remote Africa (RemoteOK, We Work Remotely)
-
-**Application Strategy:**
-📊 **Apply to 15-20 jobs/week**
-• Customize CV for each
-• Write tailored cover letters
-• Track applications in spreadsheet
-• Follow up after 1 week
-
-**When to Apply:**
-• Best days: Tuesday-Thursday
-• Best time: 9-11 AM
-• Avoid weekends and holidays
-• Apply within 24 hours of posting
-
-**Before Applying:**
-✅ Research company thoroughly
-✅ Network with employees
-✅ Prepare portfolio samples
-✅ Practice interview questions
-
-**Red Flags to Avoid:**
-❌ Unpaid "internships" with no learning
-❌ Pyramid schemes
-❌ Jobs requiring payment to apply
-❌ Vague job descriptions
-
-**Negotiation Tips:**
-• Know your worth (research salaries)
-• Get multiple offers if possible
-• Consider total compensation (benefits, learning)
-• Be professional but firm
-
-Want me to review your job search strategy? 🎯"""
-    
-    def _handle_remote_work(self) -> str:
-        """Provide remote work advice"""
-        
-        return """🏠 **Remote Work Success Guide:**
-
-**Setup Your Workspace:**
-✅ Dedicated desk/area
-✅ Good lighting
-✅ Ergonomic chair
-✅ Noise-cancelling headphones
-✅ Reliable internet (backup plan)
-
-**Tools You Need:**
-• Zoom/Google Meet (Video calls)
-• Slack/Teams (Communication)
-• Trello/Asana (Task management)
-• Google Drive (Collaboration)
-• Clockify (Time tracking)
-
-**Remote Work Best Practices:**
-📅 Maintain regular hours
-🎥 Always use video for meetings
-📝 Over-communicate clearly
-⏰ Respect time zones
-💪 Take real breaks
-
-**Finding Remote Jobs:**
-• We Work Remotely
-• Remote OK
-• AngelList (Startups)
-• LinkedIn (Filter: Remote)
-• FlexJobs (Curated)
-
-**Stay Productive:**
-• Get dressed for work
-• Use Pomodoro technique
-• Set daily/weekly goals
-• Avoid social media during work
-• End day with a routine
-
-**Build Connections:**
-• Join remote work communities
-• Schedule virtual coffee chats
-• Participate in team building
-• Share wins and challenges
-
-**Challenges & Solutions:**
-• Loneliness → Join co-working spaces
-• Distractions → Create boundaries
-• Burnout → Strict work hours
-• Communication → Over-communicate
-
-Remote work can boost your career! Ready to find your first remote role? 🌍"""
-    
-    def _handle_soft_skills(self) -> str:
-        """Provide soft skills advice"""
-        
-        return """⭐ **Essential Soft Skills for Career Growth:**
-
-**Most Valued Soft Skills:**
-1. **Communication** (Clear, concise, active listening)
-2. **Problem-Solving** (Analytical, creative thinking)
-3. **Teamwork** (Collaboration, conflict resolution)
-4. **Adaptability** (Learn fast, embrace change)
-5. **Leadership** (Mentor, take initiative)
-6. **Time Management** (Prioritize, meet deadlines)
-7. **Emotional Intelligence** (Self-awareness, empathy)
-
-**How to Develop Them:**
-📚 **Communication:**
-• Join Toastmasters
-• Practice presentations
-• Write daily on LinkedIn
-• Seek feedback
-
-🎯 **Problem-Solving:**
-• Solve puzzles daily
-• Take on challenging tasks
-• Learn root cause analysis
-• Participate in hackathons
-
-🤝 **Teamwork:**
-• Volunteer for group projects
-• Practice active listening
-• Give constructive feedback
-• Celebrate team wins
-
-🔄 **Adaptability:**
-• Learn new tools monthly
-• Accept stretch assignments
-• Embrace feedback
-• Stay curious
-
-**Showcase in Interviews:**
-• STAR method examples
-• Quantify achievements
-• Share specific stories
-• Demonstrate self-awareness
-
-**Fast-Track Tips:**
-• Take online courses (Coursera: "Learning How to Learn")
-• Get a mentor
-• Record yourself speaking
-• Ask for 360-degree feedback
-
-Soft skills + Technical skills = Unstoppable career! 💪"""
-    
-    def _handle_tech_trends(self) -> str:
-        """Provide technology trends"""
-        
-        return """📊 **Top Tech Trends in Africa (2026):**
-
-**Hottest Skills:**
-1. **Artificial Intelligence/Machine Learning** (+45% growth)
-   • Natural Language Processing
-   • Computer Vision
-   • Generative AI
-
-2. **Cloud Computing** (+35% growth)
-   • AWS, Azure, GCP
-   • Serverless architecture
-   • Cloud security
-
-3. **Cybersecurity** (+30% growth)
-   • Fintech security
-   • Data privacy
-   • Threat detection
-
-4. **Data Science** (+28% growth)
-   • Big Data analytics
-   • Business intelligence
-   • Data engineering
-
-5. **Blockchain/Web3** (+25% growth)
-   • Cryptocurrency
-   • Smart contracts
-   • DeFi applications
-
-**Emerging Roles:**
-• AI/ML Engineer (GHS 8k-15k)
-• Cloud Architect (GHS 10k-18k)
-• Security Analyst (GHS 6k-12k)
-• Data Engineer (GHS 7k-14k)
-
-**Industries Growing Fast:**
-💳 **Fintech** (Mobile money, payments)
-🏥 **HealthTech** (Telemedicine, records)
-📚 **EdTech** (Online learning)
-🛒 **E-commerce** (Logistics, payments)
-🌾 **AgriTech** (Farmer solutions)
-
-**Learning Resources:**
-• Coursera Specializations
-• AWS Training
-• Google Digital Skills
-• Local bootcamps (MEST, ALX)
-
-**Future Predictions:**
-• Remote work becomes standard
-• AI tools boost productivity
-• Green tech emerges
-• Cross-border collaboration grows
-
-Which trend excites you most? I can provide learning resources! 🚀"""
-    
-    def _handle_salary_negotiation(self) -> str:
-        """Provide salary negotiation tips"""
-        
-        return """💰 **Salary Negotiation Masterclass:**
-
-**Before Negotiation (Research Phase):**
-✅ Know market rates (Glassdoor, LinkedIn)
-✅ Understand your worth (skills, experience)
-✅ Calculate minimum acceptable offer
-✅ Prepare your case with evidence
-✅ Practice with a friend
-
-**The Negotiation Script:**
-
-**When They Ask "What's your salary expectation?":**
-*"Based on my skills and market research, I'm looking for GHS [X] - [Y]. However, I'm open to discussing total compensation including benefits and growth opportunities."*
-
-**If Offer is Too Low:**
-*"Thank you for the offer! I'm excited about the role. Based on my experience in [skills] and market rates, I was expecting GHS [higher amount]. Could we explore meeting somewhere in the middle?"*
-
-**What to Negotiate (Beyond Salary):**
-• Signing bonus
-• Annual bonus potential
-• Stock options/equity
-• Vacation days
-• Remote work flexibility
-• Professional development budget
-• Flexible hours
-• Home office stipend
-
-**Power Phrases:**
-💪 "Based on my track record of [achievement]..."
-💪 "Market data for this role shows..."
-💪 "Given my experience with [skill]..."
-💪 "I'm very interested, but the offer is below market..."
-
-**Red Flags (Walk Away):**
-• Company refuses to negotiate
-• Salary below minimum needs
-• Unclear growth path
-• Toxic culture signs
-
-**After Negotiation:**
-• Get everything in writing
-• Thank them professionally
-• Consider the full package
-• Trust your instincts
-
-**Pro Tips:**
-• Never give first number if possible
-• Always negotiate (90% expect it)
-• Be professional, not aggressive
-• Have a BATNA (Best Alternative)
-
-Want to role-play a negotiation? I can help you practice! 💪"""
-    
-    def _handle_work_life_balance(self) -> str:
-        """Provide work-life balance advice"""
-        
-        return """⚖️ **Work-Life Balance for Tech Professionals:**
-
-**Warning Signs of Burnout:**
-• Constantly tired
-• Lack of motivation
-• Reduced performance
-• Irritability
-• Physical symptoms (headaches)
-
-**Prevention Strategies:**
-
-📅 **Set Boundaries:**
-• Define work hours strictly
-• Turn off notifications after hours
-• Use separate devices if possible
-• Learn to say "no" politely
-
-⏰ **Time Management:**
-• Use Pomodoro technique (25 min work, 5 min break)
-• Take real lunch breaks (away from screen)
-• Schedule focused work blocks
-• Prioritize important tasks
-
-💪 **Health Habits:**
-• Exercise 30 mins daily
-• Sleep 7-8 hours
-• Stay hydrated
-• Take vacation days
-
-🧠 **Mental Health:**
-• Practice mindfulness/meditation
-• Talk to someone about stress
-• Seek therapy if needed
-• Join support groups
-
-**Daily Routine Example:**
-08:00 - Wake up, exercise
-09:00 - Start work
-12:00 - Lunch break (no screens)
-13:00 - Resume work
-17:00 - End work (strictly!)
-18:00 - Hobbies/family time
-22:00 - Wind down, no screens
-23:00 - Sleep
-
-**Remote Work Balance:**
-• Create physical separation (different room)
-• Get dressed for "work"
-• Take walking breaks
-• Have social connections
-
-**Company Red Flags:**
-• Expecting 24/7 availability
-• No vacation policy
-• Constant overtime
-• Guilt for taking breaks
-
-**Remember:**
-• You're replaceable at work, not at home
-• Rest increases productivity
-• Happiness matters
-• It's okay to disconnect
-
-Need specific strategies for your situation? Let's talk! 🌟"""
-    
-    def _handle_general_question(self, question: str) -> str:
-        """Handle general career questions"""
-        
-        return f"""🤖 **Great question! Here's what I can help with:**
-
-**Career Paths:**
-• "What skills should I learn for [role]?"
-• "How do I become a [job title]?"
-• "What's the career progression for [field]?"
-
-**Job Search:**
-• "Where can I find remote jobs?"
-• "How to prepare for interviews?"
-• "What should be in my portfolio?"
-
-**Skills & Learning:**
-• "Which certifications are valuable?"
-• "How long to learn [skill]?"
-• "Best resources for [topic]?"
-
-**Salary & Negotiation:**
-• "What's the salary for [role]?"
-• "How to negotiate higher pay?"
-• "Freelance vs full-time?"
-
-**African Market Specific:**
-• "Tech trends in Ghana/Nigeria"
-• "Local companies hiring"
-• "Remote work opportunities"
-
-**Your question: "{question}"**
-
-Could you be more specific about what you'd like to know? For example:
-• "What skills do I need for a Data Science role in Accra?"
-• "How much do Python developers earn in Ghana?"
-• "What certifications should I get for cloud computing?"
-
-I'm here to help with detailed, personalized advice! 🎯"""
-    
-    def _get_suggested_followups(self, intent: str) -> List[str]:
-        """Get suggested follow-up questions based on intent"""
+    def _get_suggested_followups(self, intent: str, sector: str) -> List[str]:
+        """Get suggested follow-up questions based on intent and sector"""
         
         followups = {
             'skill_recommendation': [
-                "How long will it take to learn Python?",
-                "What's the best way to practice coding?",
-                "Can you create a weekly learning plan?"
+                "How long will it take to learn?",
+                "What's the best way to practice?",
+                "Can you create a weekly plan?",
+                "What certifications should I get?"
             ],
             'interview_prep': [
-                "Can you give me sample interview questions?",
-                "How should I answer 'Tell me about yourself'?",
-                "What questions should I ask the interviewer?"
+                "Give me sample interview questions",
+                "How to answer 'Tell me about yourself'?",
+                "What questions should I ask the interviewer?",
+                "How to handle technical interviews?"
             ],
             'salary_info': [
                 "How can I negotiate a higher salary?",
                 "What benefits should I ask for?",
-                "Salary comparison between Accra and Lagos?"
+                "Salary comparison between Accra and other cities?",
+                "What skills increase salary most?"
+            ],
+            'career_path': [
+                "How long to reach senior level?",
+                "What's the fastest way to advance?",
+                "Should I get a master's degree?",
+                "How to transition to this career?"
             ],
             'certification': [
-                "Which certification is best for beginners?",
-                "How to prepare for AWS exam?",
-                "Are free certifications worth it?"
+                "Which cert is best for beginners?",
+                "How to prepare for the exam?",
+                "Are free certifications worth it?",
+                "What's the ROI of certification?"
             ],
             'general': [
                 "What skills are in demand now?",
                 "How to find a mentor?",
-                "Tips for remote interviews?"
+                "Tips for remote work?",
+                "How to build a portfolio?"
             ]
         }
         
-        return followups.get(intent, followups['general'])
-
-    def _extract_role(self, question: str) -> str:
-        """Extract job role from question"""
+        sector_followups = {
+            'technology': [
+                "What programming language should I learn first?",
+                "How to get a remote tech job?",
+                "Is a coding bootcamp worth it?"
+            ],
+            'healthcare': [
+                "How to become a specialist doctor?",
+                "What are the best nursing schools?",
+                "How to get into public health?"
+            ],
+            'law': [
+                "How to become a corporate lawyer?",
+                "What's the bar exam like?",
+                "How to get a pupillage?"
+            ],
+            'finance': [
+                "Is ACCA better than CPA?",
+                "How to get into investment banking?",
+                "How to become a CFO?"
+            ],
+            'education': [
+                "How to become a university lecturer?",
+                "What's the GES licensure exam?",
+                "How to advance in education?"
+            ],
+            'agriculture': [
+                "How to start a farm business?",
+                "What's AgriTech all about?",
+                "How to get agricultural loans?"
+            ],
+            'business': [
+                "Should I get an MBA?",
+                "How to start a consulting career?",
+                "What's the best business certification?"
+            ],
+            'creative': [
+                "How to build a design portfolio?",
+                "How to get freelance clients?",
+                "What design tools to learn?"
+            ],
+            'trades': [
+                "How to start a trades business?",
+                "What certifications are needed?",
+                "How to get apprenticeships?"
+            ],
+            'social': [
+                "How to work for NGOs?",
+                "What's the best social work specialization?",
+                "How to get funding for community projects?"
+            ],
+            'engineering': [
+                "What engineering field is most in demand?",
+                "How to get PEng certification?",
+                "How to transition to construction management?"
+            ]
+        }
         
-        roles = ['developer', 'engineer', 'scientist', 'analyst', 'architect', 
-                 'manager', 'consultant', 'designer', 'tester', 'admin']
+        result = followups.get(intent, followups['general'])
+        if sector in sector_followups:
+            result = result + sector_followups[sector]
         
-        for role in roles:
-            if role in question.lower():
-                return role.capitalize()
-        return "Tech Professional"
+        return result[:5]

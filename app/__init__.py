@@ -1,6 +1,7 @@
 from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify
 from flask_login import login_required, current_user
 from extensions import db, login_manager
+from flask_migrate import Migrate
 from werkzeug.utils import secure_filename
 import os
 import sys
@@ -15,9 +16,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.auth.routes import auth_bp
 from app.utils.cv_parser import CVParser
 from app.utils.skill_analyzer import SkillAnalyzer
-from app.utils.ai_assistant import CareerAssistant
 from app.utils.course_api import CourseAPI
 from app.utils.hybrid_parser import HybridParser
+from app.utils.openai_assistant import OpenAIAssistant
+
+# IMPORT THE USER MODEL
+from models import User, Profile  # <-- ADDED THIS LINE
 
 # Configure upload settings
 UPLOAD_FOLDER = 'uploads'
@@ -112,7 +116,6 @@ def get_department_performance():
 
 def get_top_skill_gaps(parsed_data):
     """Get top skill gaps from parsed CV data"""
-    # Debug: Print to see what's coming in
     print(f"DEBUG: parsed_data received: {parsed_data is not None}")
     
     if parsed_data and parsed_data.get('skills'):
@@ -122,12 +125,16 @@ def get_top_skill_gaps(parsed_data):
         
         print(f"DEBUG: all_skills extracted: {all_skills}")
         
-        # Use the actual skill analyzer to get gaps
-        gaps = SkillAnalyzer.analyze_gaps(all_skills)
+        # Detect sector for better analysis
+        detected_sector = SkillAnalyzer.detect_sector(all_skills)
+        market_demands = SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get(
+            detected_sector, 
+            SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get('technology', {})
+        )
         
+        gaps = SkillAnalyzer.analyze_gaps(all_skills, market_demands)
         print(f"DEBUG: gaps found: {len(gaps)}")
         
-        # Format gaps for display
         formatted_gaps = []
         for gap in gaps[:5]:
             formatted_gaps.append({
@@ -139,7 +146,6 @@ def get_top_skill_gaps(parsed_data):
         
         return formatted_gaps
     
-    # If no CV data, return mock data (fallback)
     print("DEBUG: No parsed_data, using mock data")
     return [
         {'skill': 'Machine Learning', 'demand': 88, 'priority': 'Critical', 'growth': '+45%'},
@@ -168,12 +174,16 @@ def get_curriculum_recommendations(parsed_data):
         for category, skills in parsed_data['skills'].items():
             all_skills.extend(skills)
         
-        gaps = SkillAnalyzer.analyze_gaps(all_skills)
+        detected_sector = SkillAnalyzer.detect_sector(all_skills)
+        market_demands = SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get(
+            detected_sector, 
+            SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get('technology', {})
+        )
         
-        # Group gaps by category/department
+        gaps = SkillAnalyzer.analyze_gaps(all_skills, market_demands)
+        
         recommendations = []
         
-        # Map skills to departments
         skill_departments = {
             'Python': 'Computer Science',
             'Machine Learning': 'Computer Science',
@@ -192,10 +202,24 @@ def get_curriculum_recommendations(parsed_data):
             'Agile': 'Business Administration',
             'Project Management': 'Business Administration',
             'Cybersecurity': 'Cybersecurity',
-            'DevOps': 'Information Technology'
+            'DevOps': 'Information Technology',
+            'Patient Care': 'Medicine and Surgery',
+            'Medical Diagnosis': 'Medicine and Surgery',
+            'Nursing Care': 'Nursing and Midwifery',
+            'Pharmacy': 'Pharmacy',
+            'Public Health': 'Nursing and Midwifery',
+            'Teaching': 'Education',
+            'Curriculum Development': 'Education',
+            'Financial Analysis': 'Business Administration',
+            'Accounting': 'Business Administration',
+            'Crop Production': 'Agriculture',
+            'Agribusiness': 'Agriculture',
+            'Social Work': 'Social Science',
+            'Counseling': 'Social Science',
+            'Civil Engineering': 'Engineering',
+            'Construction': 'Engineering'
         }
         
-        # Group gaps by department
         dept_gaps = {}
         for gap in gaps[:10]:
             dept = skill_departments.get(gap['skill'], 'General')
@@ -203,19 +227,17 @@ def get_curriculum_recommendations(parsed_data):
                 dept_gaps[dept] = []
             dept_gaps[dept].append(gap['skill'])
         
-        # Create recommendations
         for dept, skills in dept_gaps.items():
             priority = 'High' if len(skills) >= 3 else 'Medium'
             recommendations.append({
                 'department': dept,
                 'add_skills': skills[:3],
-                'remove_skills': [],  # Would need real data
+                'remove_skills': [],
                 'priority': priority
             })
         
         return recommendations
     
-    # Default recommendations if no CV data
     return get_curriculum_recommendations_default()
 
 
@@ -335,7 +357,6 @@ def register_routes(app):
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
             
-            # Show processing status
             flash('Processing CV... Please wait.', 'info')
             
             try:
@@ -343,12 +364,45 @@ def register_routes(app):
                 parsed_data = hybrid_parser.parse_hybrid(filepath, current_user.id)
                 
                 if parsed_data:
-                    # Compress data before storing in session
+                    # Save to database
+                    user = User.query.get(current_user.id)
+                    if user:
+                        # Add additional data to parsed_data
+                        all_skills = []
+                        for category, skills in parsed_data.get('skills', {}).items():
+                            all_skills.extend(skills)
+                        
+                        detected_sector = SkillAnalyzer.detect_sector(all_skills)
+                        parsed_data['detected_sector'] = detected_sector
+                        
+                        market_demands = SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get(
+                            detected_sector, 
+                            SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get('technology', {})
+                        )
+                        
+                        employability = SkillAnalyzer.calculate_employability_score(
+                            all_skills, 
+                            parsed_data.get('experience_years', 0),
+                            market_demands
+                        )
+                        
+                        parsed_data['employability_score'] = employability['score']
+                        
+                        # Save to database
+                        user.save_cv_analysis(parsed_data)
+                        user.detected_sector = detected_sector
+                        user.employability_score = employability['score']
+                        db.session.commit()
+                        
+                        print(f"✅ CV data saved to database for user {user.email}")
+                    
+                    # Store in session for display
                     compressed_data = compress_parsed_data(parsed_data)
                     if compressed_data:
                         session['parsed_cv'] = compressed_data
                         session['cv_filename'] = file.filename
-                        session['parsing_status'] = 'processing'
+                        session['parsing_status'] = parsed_data.get('status', 'processing')
+                        
                         flash(f'✅ CV uploaded! Quick analysis complete. Found {parsed_data["total_skills"]} skills. Deep analysis running in background...', 'success')
                         return redirect(url_for('skill_analysis'))
                     else:
@@ -358,6 +412,7 @@ def register_routes(app):
                     flash('Could not parse CV. Please ensure it\'s readable.', 'error')
                     return redirect(url_for('upload_cv'))
             except Exception as e:
+                print(f"Error: {e}")
                 flash(f'Error parsing CV: {str(e)}', 'error')
                 return redirect(url_for('upload_cv'))
         
@@ -367,28 +422,46 @@ def register_routes(app):
     @app.route('/skill-analysis')
     @login_required
     def skill_analysis():
-        """Skill gap analysis page"""
+        """Skill gap analysis page with sector detection"""
+        
+        # First try to get from session (new upload)
         parsed_data = get_parsed_data_from_session()
         
-        # Check if deep parsing is complete
-        parsing_status = session.get('parsing_status', 'complete')
-        is_processing = parsing_status == 'processing'
+        # If not in session, get from database
+        if not parsed_data:
+            user = User.query.get(current_user.id)
+            if user and user.cv_analysis:
+                parsed_data = user.get_cv_analysis()
+                print(f"📄 Loaded CV data from database for {user.email}")
+                
+                # Store in session for this request
+                if parsed_data:
+                    compressed_data = compress_parsed_data(parsed_data)
+                    if compressed_data:
+                        session['parsed_cv'] = compressed_data
+                        session['cv_filename'] = user.cv_filename
         
         if parsed_data and parsed_data.get('skills'):
             all_skills = []
             for category, skills in parsed_data['skills'].items():
                 all_skills.extend(skills)
             
-            # Show progress indicator if still processing
-            if is_processing:
-                flash('🔄 Deep analysis is still running in the background. Results will update automatically when complete.', 'info')
+            detected_sector = SkillAnalyzer.detect_sector(all_skills)
+            session['detected_sector'] = detected_sector
+            
+            # Get sector-specific market demands
+            market_demands = SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get(
+                detected_sector, 
+                SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get('technology', {})
+            )
             
             employability = SkillAnalyzer.calculate_employability_score(
                 all_skills, 
-                parsed_data.get('experience_years', 0)
+                parsed_data.get('experience_years', 0),
+                market_demands
             )
             
-            gaps = SkillAnalyzer.analyze_gaps(all_skills)
+            gaps = SkillAnalyzer.analyze_gaps(all_skills, market_demands)
             roadmap = SkillAnalyzer.generate_learning_roadmap(gaps)
             job_matches = SkillAnalyzer.get_job_recommendations(all_skills)
             
@@ -400,7 +473,8 @@ def register_routes(app):
                                  roadmap=roadmap,
                                  job_matches=job_matches,
                                  all_skills=all_skills,
-                                 is_processing=is_processing)
+                                 is_processing=False,
+                                 detected_sector=detected_sector.capitalize())
         
         return render_template('skill_analysis.html', user=current_user, parsed_data=None, is_processing=False)
     
@@ -443,14 +517,14 @@ def register_routes(app):
     @app.route('/career-assistant')
     @login_required
     def career_assistant():
-        """AI career assistant chat page"""
+        """AI career assistant chat page - Powered by OpenAI"""
         parsed_data = get_parsed_data_from_session()
         return render_template('career_assistant.html', user=current_user, parsed_data=parsed_data)
     
     @app.route('/api/ask', methods=['POST'])
     @login_required
     def api_ask():
-        """API endpoint for career assistant questions"""
+        """API endpoint for career assistant questions - NOW WITH OPENAI"""
         data = request.get_json()
         question = data.get('question', '')
         
@@ -458,15 +532,19 @@ def register_routes(app):
         parsed_data = get_parsed_data_from_session()
         user_skills = []
         experience = 0
+        sector = 'general'
         
         if parsed_data:
             for category, skills in parsed_data.get('skills', {}).items():
                 user_skills.extend(skills)
             experience = parsed_data.get('experience_years', 0)
+            
+            # Detect sector from skills
+            sector = SkillAnalyzer.detect_sector(user_skills)
         
-        # Get AI response
-        assistant = CareerAssistant()
-        response = assistant.get_response(question, user_skills, experience)
+        # Get AI response from OpenAI
+        assistant = OpenAIAssistant()
+        response = assistant.get_response(question, user_skills, experience, sector)
         
         return jsonify(response)
     
@@ -485,22 +563,98 @@ def register_routes(app):
         """User profile page"""
         return render_template('profile.html', user=current_user)
     
+    # ========== PROFILE PICTURE UPLOAD ROUTE ==========
+    @app.route('/upload-profile-pic', methods=['POST'])
+    @login_required
+    def upload_profile_pic():
+        """Upload profile picture"""
+        import os
+        from werkzeug.utils import secure_filename
+        
+        if 'profile_pic' not in request.files:
+            return jsonify({'success': False, 'message': 'No file uploaded'})
+        
+        file = request.files['profile_pic']
+        
+        if file.filename == '':
+            return jsonify({'success': False, 'message': 'No file selected'})
+        
+        # Check file type
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+        if not file.filename.lower().endswith(tuple(allowed_extensions)):
+            return jsonify({'success': False, 'message': 'Invalid file type. Please upload PNG, JPG, JPEG, GIF, or WEBP.'})
+        
+        # Save file
+        filename = secure_filename(f"{current_user.id}_{file.filename}")
+        filepath = os.path.join('static/profile_pics', filename)
+        
+        # Create directory if it doesn't exist
+        os.makedirs('static/profile_pics', exist_ok=True)
+        
+        # Delete old profile picture if exists
+        if current_user.profile_image:
+            old_path = os.path.join('static/profile_pics', current_user.profile_image)
+            if os.path.exists(old_path):
+                os.remove(old_path)
+        
+        file.save(filepath)
+        
+        # Update user
+        current_user.profile_image = filename
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Profile picture updated successfully!'})
+    
+    # ========== CHANGE PASSWORD ROUTE ==========
+    @app.route('/change-password', methods=['POST'])
+    @login_required
+    def change_password():
+        """Change user password"""
+        from werkzeug.security import generate_password_hash, check_password_hash
+        
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if not current_password or not new_password or not confirm_password:
+            flash('All fields are required.', 'error')
+            return redirect(url_for('profile'))
+        
+        # Check current password
+        if not check_password_hash(current_user.password, current_password):
+            flash('Current password is incorrect.', 'error')
+            return redirect(url_for('profile'))
+        
+        # Check new password length
+        if len(new_password) < 8:
+            flash('New password must be at least 8 characters long.', 'error')
+            return redirect(url_for('profile'))
+        
+        # Check if passwords match
+        if new_password != confirm_password:
+            flash('New passwords do not match.', 'error')
+            return redirect(url_for('profile'))
+        
+        # Update password
+        current_user.password = generate_password_hash(new_password)
+        db.session.commit()
+        
+        flash('Password changed successfully!', 'success')
+        return redirect(url_for('profile'))
+    
     # ========== UNIVERSITY DASHBOARD ROUTE ==========
     @app.route('/university-dashboard')
     @login_required
     def university_dashboard():
         """University intelligence dashboard"""
-        # Get parsed data from session
         parsed_data = get_parsed_data_from_session()
         
-        # Debug: Print to console
         print(f"=== UNIVERSITY DASHBOARD ===")
         print(f"parsed_data exists: {parsed_data is not None}")
         if parsed_data:
             print(f"skills keys: {parsed_data.get('skills', {}).keys()}")
             print(f"total_skills: {parsed_data.get('total_skills', 0)}")
         
-        # Get university analytics using helper functions
         analytics = {
             'total_students': 1247,
             'employability_rate': 87,
@@ -512,7 +666,6 @@ def register_routes(app):
             'curriculum_recommendations': get_curriculum_recommendations(parsed_data)
         }
         
-        # Get current time for display
         current_time = datetime.now().strftime('%H:%M')
         
         return render_template('university_dashboard.html',
@@ -551,10 +704,9 @@ def register_routes(app):
 
 def create_app():
     """Application factory pattern"""
-    # Option 2: Configure Flask to use static folder at root level
     app = Flask(__name__, 
-                static_folder='../static',      # Look for static in parent directory
-                static_url_path='/static')      # URL path remains /static
+                static_folder='../static',
+                static_url_path='/static')
     app.config.from_object('config.Config')
     
     # Configure upload
@@ -563,15 +715,18 @@ def create_app():
     
     # Set session configuration
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-    app.config['PERMANENT_SESSION_LIFETIME'] = 3600  # 1 hour
+    app.config['PERMANENT_SESSION_LIFETIME'] = 3600
     
     # Initialize extensions
     initialize_extensions(app)
     
+    # Initialize Flask-Migrate
+    migrate = Migrate(app, db)
+    
     # Configure login manager
     configure_login_manager()
     
-    # Initialize OAuth (MUST be called after app is created)
+    # Initialize OAuth
     from app.utils.oauth import configure_oauth
     configure_oauth(app)
     

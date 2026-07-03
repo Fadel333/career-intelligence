@@ -56,6 +56,39 @@
         </div>
     </div>
 
+
+<!-- Add this after the CV Analysis Success Banner -->
+{% if is_processing %}
+<div class="mb-6 p-4 bg-yellow-500/20 rounded-xl border border-yellow-400/30" data-aos="fade-up">
+    <div class="flex items-center gap-3 flex-wrap">
+        <i class="fas fa-spinner fa-spin text-yellow-400 text-xl"></i>
+        <div class="flex-1">
+            <p class="text-white font-semibold">🔄 Deep analysis in progress...</p>
+            <p class="text-white/60 text-sm">
+                Your CV is being analyzed in the background. Results will update automatically when complete.
+            </p>
+        </div>
+        <div class="w-32 h-1.5 bg-white/10 rounded-full overflow-hidden">
+            <div class="h-full bg-yellow-400 rounded-full animate-pulse" style="width: 60%"></div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+    <!-- Add this after the CV Analysis Success Banner -->
+<div class="mb-6 p-4 bg-purple-500/20 rounded-xl border border-purple-400/30" data-aos="fade-up">
+    <div class="flex items-center gap-3 flex-wrap">
+        <i class="fas fa-industry text-purple-400 text-xl"></i>
+        <div class="flex-1">
+            <p class="text-white font-semibold">Industry Sector Detected</p>
+            <p class="text-white/60 text-sm">
+                We've identified your skills as belonging to the 
+                <span class="text-purple-400 font-bold">{{ detected_sector }}</span> sector
+            </p>
+        </div>
+    </div>
+</div>
+
     <!-- ========================================================== -->
     <!-- MAIN CONTENT GRID -->
     <!-- ========================================================== -->

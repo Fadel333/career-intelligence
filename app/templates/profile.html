@@ -8,9 +8,24 @@
         <!-- Profile Sidebar -->
         <div class="lg:col-span-1">
             <div class="glass-card p-6 text-center" data-aos="fade-right">
-                <div class="w-24 h-24 bg-gradient-to-br from-teal-400 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-user text-4xl text-white"></i>
+                <!-- Profile Picture -->
+                <div class="relative w-24 h-24 mx-auto mb-4">
+                    {% if current_user.profile_image %}
+                        <img src="{{ url_for('static', filename='profile_pics/' + current_user.profile_image) }}" 
+                             alt="{{ current_user.fullname }}" 
+                             class="w-24 h-24 rounded-full object-cover border-2 border-teal-400/30">
+                    {% else %}
+                        <div class="w-24 h-24 bg-gradient-to-br from-teal-400 to-purple-600 rounded-full flex items-center justify-center">
+                            <i class="fas fa-user text-4xl text-white"></i>
+                        </div>
+                    {% endif %}
+                    <!-- Upload button overlay -->
+                    <label for="profile_pic" class="absolute bottom-0 right-0 bg-teal-500 hover:bg-teal-600 rounded-full p-1.5 cursor-pointer border-2 border-white/20 transition">
+                        <i class="fas fa-camera text-white text-sm"></i>
+                        <input type="file" id="profile_pic" name="profile_pic" accept="image/*" class="hidden" onchange="uploadProfilePic(this)">
+                    </label>
                 </div>
+                
                 <h2 class="text-xl font-bold text-white">{{ current_user.fullname }}</h2>
                 <p class="text-teal-400 text-sm mt-1">{{ current_user.user_type|capitalize }}</p>
                 <p class="text-white/60 text-sm mt-2">{{ current_user.email }}</p>
@@ -26,83 +41,254 @@
                     </div>
                 </div>
                 
-                <button class="btn-primary w-full mt-6 py-2 rounded-full text-white font-semibold">
+                <button onclick="document.getElementById('editForm').scrollIntoView({behavior:'smooth'})" 
+                        class="btn-primary w-full mt-6 py-2 rounded-full text-white font-semibold">
                     <i class="fas fa-edit mr-2"></i> Edit Profile
                 </button>
+            </div>
+
+            <!-- CV Analysis Summary -->
+            <div class="glass-card p-6 mt-6" data-aos="fade-right" data-aos-delay="100">
+                <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <i class="fas fa-file-alt text-teal-400"></i> CV Analysis
+                </h3>
+                {% if current_user.cv_analysis %}
+                    {% set cv_data = current_user.get_cv_analysis() %}
+                    <div class="space-y-3">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-white/60">Skills Found</span>
+                            <span class="text-teal-400 font-bold">{{ current_user.get_total_skills() }}</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-white/60">Employability Score</span>
+                            <span class="text-purple-400 font-bold">{{ current_user.employability_score }}%</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-white/60">Experience</span>
+                            <span class="text-white">{{ cv_data.get('experience_years', 0) }}+ years</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-white/60">Sector</span>
+                            <span class="text-pink-400">{{ current_user.detected_sector|capitalize or 'N/A' }}</span>
+                        </div>
+                        <div class="mt-3 pt-3 border-t border-white/10">
+                            <p class="text-white/40 text-xs">
+                                <i class="fas fa-clock mr-1"></i> 
+                                CV uploaded: {{ current_user.cv_uploaded_at.strftime('%d %b %Y') if current_user.cv_uploaded_at else 'Not uploaded yet' }}
+                            </p>
+                        </div>
+                        <a href="{{ url_for('upload_cv') }}" class="btn-outline w-full mt-3 py-1.5 rounded-full text-white text-sm font-semibold text-center inline-block">
+                            <i class="fas fa-sync-alt mr-1"></i> Update CV
+                        </a>
+                    </div>
+                {% else %}
+                    <p class="text-white/60 text-sm text-center py-4">No CV uploaded yet</p>
+                    <a href="{{ url_for('upload_cv') }}" class="btn-primary w-full mt-2 py-1.5 rounded-full text-white text-sm font-semibold text-center inline-block">
+                        <i class="fas fa-upload mr-1"></i> Upload CV
+                    </a>
+                {% endif %}
             </div>
         </div>
         
         <!-- Profile Details -->
         <div class="lg:col-span-2">
-            <div class="glass-card p-6" data-aos="fade-left">
+            <div id="editForm" class="glass-card p-6" data-aos="fade-left">
                 <h2 class="text-xl font-bold text-white mb-6">
                     <i class="fas fa-user-circle text-teal-400 mr-2"></i> Personal Information
                 </h2>
                 
                 <form method="POST" action="{{ url_for('profile') }}" class="space-y-4">
+                    {{ form.hidden_tag() if form else '' }}
+                    
                     <div class="grid md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-white/80 text-sm font-semibold mb-2">Full Name</label>
                             <input type="text" name="fullname" value="{{ current_user.fullname }}" 
-                                   class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:border-teal-400 outline-none">
+                                   class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:border-teal-400 outline-none transition">
                         </div>
                         <div>
                             <label class="block text-white/80 text-sm font-semibold mb-2">Email Address</label>
                             <input type="email" name="email" value="{{ current_user.email }}" 
-                                   class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:border-teal-400 outline-none">
+                                   class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:border-teal-400 outline-none transition">
                         </div>
                     </div>
                     
                     <div>
                         <label class="block text-white/80 text-sm font-semibold mb-2">Bio / About</label>
                         <textarea name="bio" rows="3" 
-                                  class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:border-teal-400 outline-none"
-                                  placeholder="Tell us about yourself, your career goals, and what you're looking for..."></textarea>
+                                  class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:border-teal-400 outline-none transition"
+                                  placeholder="Tell us about yourself, your career goals, and what you're looking for...">{{ current_user.bio or '' }}</textarea>
                     </div>
                     
                     <div class="grid md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-white/80 text-sm font-semibold mb-2">Location</label>
-                            <input type="text" name="location" placeholder="Accra, Ghana" 
-                                   class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:border-teal-400 outline-none">
+                            <input type="text" name="location" value="{{ current_user.location or '' }}" placeholder="Accra, Ghana" 
+                                   class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:border-teal-400 outline-none transition">
                         </div>
                         <div>
                             <label class="block text-white/80 text-sm font-semibold mb-2">Phone Number</label>
-                            <input type="tel" name="phone" placeholder="+233 XX XXX XXXX" 
-                                   class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:border-teal-400 outline-none">
+                            <input type="tel" name="phone" value="{{ current_user.phone or '' }}" placeholder="+233 XX XXX XXXX" 
+                                   class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:border-teal-400 outline-none transition">
                         </div>
                     </div>
                     
                     <div class="grid md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-white/80 text-sm font-semibold mb-2">Current Job Title</label>
-                            <input type="text" name="current_job" placeholder="e.g., Software Developer" 
-                                   class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:border-teal-400 outline-none">
+                            <input type="text" name="current_job" value="{{ current_user.profile.current_job if current_user.profile else '' }}" placeholder="e.g., Software Developer" 
+                                   class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:border-teal-400 outline-none transition">
                         </div>
                         <div>
                             <label class="block text-white/80 text-sm font-semibold mb-2">Company</label>
-                            <input type="text" name="company" placeholder="e.g., FADTECH Labs" 
-                                   class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:border-teal-400 outline-none">
+                            <input type="text" name="company" value="{{ current_user.profile.company if current_user.profile else '' }}" placeholder="e.g., FADTECH Labs" 
+                                   class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:border-teal-400 outline-none transition">
                         </div>
                     </div>
                     
                     <div>
                         <label class="block text-white/80 text-sm font-semibold mb-2">Skills (comma separated)</label>
-                        <input type="text" name="skills" placeholder="Python, Machine Learning, SQL, Cloud Computing" 
-                               class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:border-teal-400 outline-none">
+                        <input type="text" name="skills" value="{{ current_user.profile.skills if current_user.profile else '' }}" placeholder="Python, Machine Learning, SQL, Cloud Computing" 
+                               class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:border-teal-400 outline-none transition">
                     </div>
                     
-                    <div class="flex gap-3 pt-4">
+                    <div class="flex flex-wrap gap-3 pt-4">
                         <button type="submit" class="btn-primary px-6 py-2 rounded-full text-white font-semibold">
                             <i class="fas fa-save mr-2"></i> Save Changes
                         </button>
-                        <button type="button" class="btn-outline px-6 py-2 rounded-full text-white font-semibold">
+                        <button type="button" onclick="showChangePassword()" class="btn-outline px-6 py-2 rounded-full text-white font-semibold">
                             <i class="fas fa-key mr-2"></i> Change Password
+                        </button>
+                        <button type="reset" class="text-white/60 hover:text-white text-sm px-4 py-2 transition">
+                            <i class="fas fa-undo mr-1"></i> Reset
                         </button>
                     </div>
                 </form>
             </div>
+
+            <!-- Recent Activity -->
+            <div class="glass-card p-6 mt-6" data-aos="fade-left" data-aos-delay="100">
+                <h2 class="text-xl font-bold text-white mb-4">
+                    <i class="fas fa-history text-teal-400 mr-2"></i> Recent Activity
+                </h2>
+                <div class="space-y-3">
+                    {% if current_user.cv_analysis %}
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-teal-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-file-upload text-teal-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-white text-sm">CV uploaded</p>
+                            <p class="text-white/40 text-xs">{{ current_user.cv_uploaded_at.strftime('%d %b %Y at %H:%M') if current_user.cv_uploaded_at else 'Recently' }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if current_user.last_login %}
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-sign-in-alt text-purple-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-white text-sm">Last login</p>
+                            <p class="text-white/40 text-xs">{{ current_user.last_login.strftime('%d %b %Y at %H:%M') }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="flex items-start gap-3">
+                        <div class="w-8 h-8 bg-pink-500/20 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-user-edit text-pink-400 text-sm"></i>
+                        </div>
+                        <div>
+                            <p class="text-white text-sm">Profile updated</p>
+                            <p class="text-white/40 text-xs">{{ current_user.profile.updated_at.strftime('%d %b %Y') if current_user.profile and current_user.profile.updated_at else 'Never' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </section>
+
+<!-- Change Password Modal -->
+<div id="changePasswordModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center">
+    <div class="glass-card p-8 max-w-md w-full">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-white">Change Password</h3>
+            <button onclick="hideChangePassword()" class="text-white/60 hover:text-white text-2xl">&times;</button>
+        </div>
+        <form id="changePasswordForm" method="POST" action="{{ url_for('change_password') }}" class="space-y-4">
+            <div>
+                <label class="block text-white/80 text-sm font-semibold mb-2">Current Password</label>
+                <input type="password" name="current_password" required placeholder="Enter current password" 
+                       class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:border-teal-400 outline-none">
+            </div>
+            <div>
+                <label class="block text-white/80 text-sm font-semibold mb-2">New Password</label>
+                <input type="password" name="new_password" required placeholder="Enter new password (min 8 characters)" 
+                       class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:border-teal-400 outline-none">
+            </div>
+            <div>
+                <label class="block text-white/80 text-sm font-semibold mb-2">Confirm New Password</label>
+                <input type="password" name="confirm_password" required placeholder="Confirm new password" 
+                       class="w-full px-4 py-2 rounded-xl bg-white/10 border border-white/20 text-white focus:border-teal-400 outline-none">
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="submit" class="btn-primary px-6 py-2 rounded-full text-white font-semibold flex-1">
+                    Update Password
+                </button>
+                <button type="button" onclick="hideChangePassword()" class="btn-outline px-6 py-2 rounded-full text-white font-semibold">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Profile Picture Upload Script -->
+<script>
+function uploadProfilePic(input) {
+    if (input.files && input.files[0]) {
+        const formData = new FormData();
+        formData.append('profile_pic', input.files[0]);
+        
+        fetch('/upload-profile-pic', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error uploading image: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error uploading image');
+        });
+    }
+}
+
+function showChangePassword() {
+    document.getElementById('changePasswordModal').classList.remove('hidden');
+}
+
+function hideChangePassword() {
+    document.getElementById('changePasswordModal').classList.add('hidden');
+}
+
+// Close modal on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        hideChangePassword();
+    }
+});
+
+// Close modal on click outside
+document.getElementById('changePasswordModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideChangePassword();
+    }
+});
+</script>
 {% endblock %}
