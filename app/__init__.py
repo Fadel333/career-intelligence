@@ -19,9 +19,7 @@ from app.utils.skill_analyzer import SkillAnalyzer
 from app.utils.course_api import CourseAPI
 from app.utils.hybrid_parser import HybridParser
 from app.utils.openai_assistant import OpenAIAssistant
-
-# IMPORT THE USER MODEL
-from models import User, Profile  # <-- ADDED THIS LINE
+from models import User, Profile
 
 # Configure upload settings
 UPLOAD_FOLDER = 'uploads'
@@ -441,6 +439,21 @@ def register_routes(app):
                         session['parsed_cv'] = compressed_data
                         session['cv_filename'] = user.cv_filename
         
+        # If still no data, show empty state
+        if not parsed_data:
+            return render_template('skill_analysis.html', 
+                                 user=current_user, 
+                                 parsed_data=None, 
+                                 is_processing=False,
+                                 detected_sector=None,
+                                 employability={'score': 0, 'level': 'Beginner', 'color': 'red',
+                                              'total_skills_matched': 0, 'base_score': 0, 'experience_bonus': 0},
+                                 gaps=[],
+                                 roadmap={'immediate': [], 'short_term': [], 'medium_term': [], 'long_term': []},
+                                 job_matches=[],
+                                 all_skills=[],
+                                 no_cv=True)
+        
         if parsed_data and parsed_data.get('skills'):
             all_skills = []
             for category, skills in parsed_data['skills'].items():
@@ -474,9 +487,10 @@ def register_routes(app):
                                  job_matches=job_matches,
                                  all_skills=all_skills,
                                  is_processing=False,
-                                 detected_sector=detected_sector.capitalize())
+                                 detected_sector=detected_sector.capitalize(),
+                                 no_cv=False)
         
-        return render_template('skill_analysis.html', user=current_user, parsed_data=None, is_processing=False)
+        return render_template('skill_analysis.html', user=current_user, parsed_data=None, is_processing=False, no_cv=True)
     
     # ========== LEARNING ROADMAP ROUTE ==========
     @app.route('/learning-roadmap')
@@ -484,13 +498,25 @@ def register_routes(app):
     def learning_roadmap():
         """Personalized learning roadmap page"""
         parsed_data = get_parsed_data_from_session()
+        
+        # If no data, show empty state
+        if not parsed_data:
+            user = User.query.get(current_user.id)
+            if user and user.cv_analysis:
+                parsed_data = user.get_cv_analysis()
+                if parsed_data:
+                    compressed_data = compress_parsed_data(parsed_data)
+                    if compressed_data:
+                        session['parsed_cv'] = compressed_data
+        
         course_api = CourseAPI()
         
         return render_template('learning_roadmap.html', 
                              user=current_user, 
                              parsed_data=parsed_data,
                              skill_analyzer=SkillAnalyzer,
-                             course_api=course_api)
+                             course_api=course_api,
+                             no_cv=not parsed_data)
     
     # ========== JOB MATCHES ROUTE ==========
     @app.route('/job-matches')
@@ -498,6 +524,15 @@ def register_routes(app):
     def job_matches():
         """Job recommendations page"""
         parsed_data = get_parsed_data_from_session()
+        
+        if not parsed_data:
+            user = User.query.get(current_user.id)
+            if user and user.cv_analysis:
+                parsed_data = user.get_cv_analysis()
+                if parsed_data:
+                    compressed_data = compress_parsed_data(parsed_data)
+                    if compressed_data:
+                        session['parsed_cv'] = compressed_data
         
         if parsed_data and parsed_data.get('skills'):
             all_skills = []
@@ -509,9 +544,10 @@ def register_routes(app):
                                  user=current_user, 
                                  job_matches=job_matches,
                                  parsed_data=parsed_data,
-                                 skill_analyzer=SkillAnalyzer)
+                                 skill_analyzer=SkillAnalyzer,
+                                 no_cv=False)
         
-        return render_template('job_matches.html', user=current_user, job_matches=None, skill_analyzer=SkillAnalyzer)
+        return render_template('job_matches.html', user=current_user, job_matches=None, skill_analyzer=SkillAnalyzer, no_cv=True)
     
     # ========== CAREER ASSISTANT ROUTES ==========
     @app.route('/career-assistant')
@@ -519,6 +555,16 @@ def register_routes(app):
     def career_assistant():
         """AI career assistant chat page - Powered by OpenAI"""
         parsed_data = get_parsed_data_from_session()
+        
+        if not parsed_data:
+            user = User.query.get(current_user.id)
+            if user and user.cv_analysis:
+                parsed_data = user.get_cv_analysis()
+                if parsed_data:
+                    compressed_data = compress_parsed_data(parsed_data)
+                    if compressed_data:
+                        session['parsed_cv'] = compressed_data
+        
         return render_template('career_assistant.html', user=current_user, parsed_data=parsed_data)
     
     @app.route('/api/ask', methods=['POST'])
@@ -530,6 +576,12 @@ def register_routes(app):
         
         # Get user skills from session
         parsed_data = get_parsed_data_from_session()
+        
+        if not parsed_data:
+            user = User.query.get(current_user.id)
+            if user and user.cv_analysis:
+                parsed_data = user.get_cv_analysis()
+        
         user_skills = []
         experience = 0
         sector = 'general'
@@ -538,8 +590,6 @@ def register_routes(app):
             for category, skills in parsed_data.get('skills', {}).items():
                 user_skills.extend(skills)
             experience = parsed_data.get('experience_years', 0)
-            
-            # Detect sector from skills
             sector = SkillAnalyzer.detect_sector(user_skills)
         
         # Get AI response from OpenAI
@@ -554,13 +604,62 @@ def register_routes(app):
     def dashboard():
         """Main user dashboard"""
         parsed_data = get_parsed_data_from_session()
+        
+        if not parsed_data:
+            user = User.query.get(current_user.id)
+            if user and user.cv_analysis:
+                parsed_data = user.get_cv_analysis()
+                if parsed_data:
+                    compressed_data = compress_parsed_data(parsed_data)
+                    if compressed_data:
+                        session['parsed_cv'] = compressed_data
+        
         return render_template('dashboard.html', user=current_user, parsed_data=parsed_data)
     
     # ========== PROFILE ROUTE ==========
-    @app.route('/profile')
+    @app.route('/profile', methods=['GET', 'POST'])
     @login_required
     def profile():
         """User profile page"""
+        if request.method == 'POST':
+            # Get form data
+            fullname = request.form.get('fullname')
+            email = request.form.get('email')
+            bio = request.form.get('bio')
+            location = request.form.get('location')
+            phone = request.form.get('phone')
+            current_job = request.form.get('current_job')
+            company = request.form.get('company')
+            skills = request.form.get('skills')
+            
+            # Update user
+            user = User.query.get(current_user.id)
+            if user:
+                user.fullname = fullname or user.fullname
+                user.email = email or user.email
+                user.bio = bio or user.bio
+                user.location = location or user.location
+                user.phone = phone or user.phone
+                
+                # Update or create profile
+                if user.profile:
+                    user.profile.current_job = current_job or user.profile.current_job
+                    user.profile.company = company or user.profile.company
+                    user.profile.skills = skills or user.profile.skills
+                else:
+                    profile = Profile(
+                        user_id=user.id,
+                        current_job=current_job,
+                        company=company,
+                        skills=skills
+                    )
+                    db.session.add(profile)
+                
+                db.session.commit()
+                flash('Profile updated successfully!', 'success')
+            
+            return redirect(url_for('profile'))
+        
         return render_template('profile.html', user=current_user)
     
     # ========== PROFILE PICTURE UPLOAD ROUTE ==========

@@ -16,13 +16,30 @@
     </div>
 
     <!-- ========================================================== -->
-    <!-- NO CV UPLOADED YET -->
+    <!-- NO CV UPLOADED YET - EMPTY STATE -->
     <!-- ========================================================== -->
-    {% if not parsed_data %}
+    {% if no_cv or not parsed_data %}
     <div class="glass-card p-12 text-center" data-aos="fade-up">
-        <i class="fas fa-cloud-upload-alt text-6xl text-white/30 mb-4"></i>
-        <h2 class="text-2xl font-bold text-white mb-2">No CV Uploaded Yet</h2>
-        <p class="text-white/60 mb-6">Upload your CV to get personalized skill gap analysis</p>
+        <i class="fas fa-file-alt text-6xl text-white/30 mb-4"></i>
+        <h2 class="text-2xl font-bold text-white mb-2">No CV Analyzed Yet</h2>
+        <p class="text-white/60 mb-6">Upload your CV to get personalized skill analysis, employability score, and job matches.</p>
+        
+        <!-- Empty Stats -->
+        <div class="grid md:grid-cols-3 gap-4 max-w-2xl mx-auto mb-6">
+            <div class="bg-white/5 rounded-xl p-4">
+                <div class="text-2xl font-bold text-white/30">0</div>
+                <div class="text-white/40 text-sm">Skills Identified</div>
+            </div>
+            <div class="bg-white/5 rounded-xl p-4">
+                <div class="text-2xl font-bold text-white/30">0%</div>
+                <div class="text-white/40 text-sm">Employability Score</div>
+            </div>
+            <div class="bg-white/5 rounded-xl p-4">
+                <div class="text-2xl font-bold text-white/30">0</div>
+                <div class="text-white/40 text-sm">Job Matches</div>
+            </div>
+        </div>
+        
         <a href="{{ url_for('upload_cv') }}" class="btn-primary px-8 py-3 rounded-full text-white font-semibold inline-flex items-center gap-2">
             <i class="fas fa-upload"></i> Upload CV Now
         </a>
@@ -56,38 +73,39 @@
         </div>
     </div>
 
-
-<!-- Add this after the CV Analysis Success Banner -->
-{% if is_processing %}
-<div class="mb-6 p-4 bg-yellow-500/20 rounded-xl border border-yellow-400/30" data-aos="fade-up">
-    <div class="flex items-center gap-3 flex-wrap">
-        <i class="fas fa-spinner fa-spin text-yellow-400 text-xl"></i>
-        <div class="flex-1">
-            <p class="text-white font-semibold">🔄 Deep analysis in progress...</p>
-            <p class="text-white/60 text-sm">
-                Your CV is being analyzed in the background. Results will update automatically when complete.
-            </p>
-        </div>
-        <div class="w-32 h-1.5 bg-white/10 rounded-full overflow-hidden">
-            <div class="h-full bg-yellow-400 rounded-full animate-pulse" style="width: 60%"></div>
-        </div>
-    </div>
-</div>
-{% endif %}
-
-    <!-- Add this after the CV Analysis Success Banner -->
-<div class="mb-6 p-4 bg-purple-500/20 rounded-xl border border-purple-400/30" data-aos="fade-up">
-    <div class="flex items-center gap-3 flex-wrap">
-        <i class="fas fa-industry text-purple-400 text-xl"></i>
-        <div class="flex-1">
-            <p class="text-white font-semibold">Industry Sector Detected</p>
-            <p class="text-white/60 text-sm">
-                We've identified your skills as belonging to the 
-                <span class="text-purple-400 font-bold">{{ detected_sector }}</span> sector
-            </p>
+    <!-- ==== DEEP PROCESSING INDICATOR ==== -->
+    {% if is_processing %}
+    <div class="mb-6 p-4 bg-yellow-500/20 rounded-xl border border-yellow-400/30" data-aos="fade-up">
+        <div class="flex items-center gap-3 flex-wrap">
+            <i class="fas fa-spinner fa-spin text-yellow-400 text-xl"></i>
+            <div class="flex-1">
+                <p class="text-white font-semibold">🔄 Deep analysis in progress...</p>
+                <p class="text-white/60 text-sm">
+                    Your CV is being analyzed in the background. Results will update automatically when complete.
+                </p>
+            </div>
+            <div class="w-32 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div class="h-full bg-yellow-400 rounded-full animate-pulse" style="width: 60%"></div>
+            </div>
         </div>
     </div>
-</div>
+    {% endif %}
+
+    <!-- ==== SECTOR DETECTION BANNER ==== -->
+    {% if detected_sector and detected_sector != 'General' %}
+    <div class="mb-6 p-4 bg-purple-500/20 rounded-xl border border-purple-400/30" data-aos="fade-up">
+        <div class="flex items-center gap-3 flex-wrap">
+            <i class="fas fa-industry text-purple-400 text-xl"></i>
+            <div class="flex-1">
+                <p class="text-white font-semibold">Industry Sector Detected</p>
+                <p class="text-white/60 text-sm">
+                    We've identified your skills as belonging to the 
+                    <span class="text-purple-400 font-bold">{{ detected_sector }}</span> sector
+                </p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
     <!-- ========================================================== -->
     <!-- MAIN CONTENT GRID -->
