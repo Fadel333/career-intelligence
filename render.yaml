@@ -1,14 +1,29 @@
- services:
+services:
   - type: web
     name: career-intelligence
     runtime: python
     repo: https://github.com/Fadel333/career-intelligence
+    branch: main
     plan: free
     region: oregon
+
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn run:app
+
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
+
       - key: SECRET_KEY
         generateValue: true
+
+      - key: DATABASE_URL
+        fromDatabase:
+          name: career-db
+          property: connectionString
+
+databases:
+  - name: career-db
+    databaseName: career_db
+    user: career_user
+    plan: free
