@@ -35,14 +35,15 @@ class AdvancedCVParser:
     def _initialize_spacy(self):
         """Initialize spaCy with the best available model"""
         try:
-            return spacy.load("en_core_web_md")
+            return spacy.load("en_core_web_sm")
         except:
             try:
-                return spacy.load("en_core_web_sm")
-            except:
                 import subprocess
                 subprocess.run(["python", "-m", "spacy", "download", "en_core_web_sm"])
                 return spacy.load("en_core_web_sm")
+            except:
+                print("⚠️ spaCy model not available, using fallback")
+                return None
     
     def _load_skill_database(self) -> Dict[str, List[str]]:
         """Comprehensive skill database with expanded categories"""
@@ -202,28 +203,37 @@ class AdvancedCVParser:
         Main parsing function returning comprehensive analysis
         Uses spaCy for deep NLP analysis (slower but more accurate)
         """
-        doc = self.nlp(text)
+        # If spaCy failed to load, fallback to quick parse
+        if self.nlp is None:
+            return self.parse_cv_quick(text)
         
-        results = {
-            'text': self._truncate_text(text),
-            'skills': self._extract_skills(doc, text),
-            'soft_skills': self._extract_soft_skills(text),
-            'experience_years': self._extract_experience_years(text),
-            'education': self._extract_education(doc, text),
-            'work_experience': self._extract_work_experience(doc, text),
-            'certifications': self._extract_certifications(text),
-            'email': self._extract_email(text),
-            'phone': self._extract_phone(text),
-            'current_job_title': self._extract_job_title(doc, text),
-            'summary': self._extract_summary(doc, text),
-            'word_count': len(text.split()),
-            'languages': self._extract_languages(text)
-        }
-        
-        results['skill_level'] = self._calculate_skill_level(results['skills'])
-        results['total_skills'] = sum(len(skills) for skills in results['skills'].values())
-        
-        return results
+        try:
+            doc = self.nlp(text)
+            
+            results = {
+                'text': self._truncate_text(text),
+                'skills': self._extract_skills(doc, text),
+                'soft_skills': self._extract_soft_skills(text),
+                'experience_years': self._extract_experience_years(text),
+                'education': self._extract_education(doc, text),
+                'work_experience': self._extract_work_experience(doc, text),
+                'certifications': self._extract_certifications(text),
+                'email': self._extract_email(text),
+                'phone': self._extract_phone(text),
+                'current_job_title': self._extract_job_title(doc, text),
+                'summary': self._extract_summary(doc, text),
+                'word_count': len(text.split()),
+                'languages': self._extract_languages(text)
+            }
+            
+            results['skill_level'] = self._calculate_skill_level(results['skills'])
+            results['total_skills'] = sum(len(skills) for skills in results['skills'].values())
+            
+            return results
+            
+        except Exception as e:
+            print(f"⚠️ spaCy error: {e}, falling back to quick parse")
+            return self.parse_cv_quick(text)
     
     def parse_cv_quick(self, text: str) -> Dict[str, Any]:
         """
@@ -255,13 +265,15 @@ class AdvancedCVParser:
         found_skills = {category: [] for category in self.skill_database.keys()}
         text_lower = text.lower()
         
-        # Method 1: Direct keyword matching
+        # Method 1: Direct keyword matching with variations
         for category, skills in self.skill_database.items():
             for skill in skills:
+                # Check exact match
                 pattern = r'\b' + re.escape(skill.lower()) + r'\b'
                 if re.search(pattern, text_lower):
                     found_skills[category].append(skill)
                 else:
+                    # Check variations
                     variations = self._get_skill_variations(skill)
                     for variation in variations:
                         if variation in text_lower:
@@ -269,11 +281,22 @@ class AdvancedCVParser:
                             break
         
         # Method 2: Use spaCy's named entities
-        for ent in doc.ents:
-            if ent.label_ in ['PRODUCT', 'ORG', 'WORK_OF_ART']:
+        if doc:
+            for ent in doc.ents:
+                if ent.label_ in ['PRODUCT', 'ORG', 'WORK_OF_ART']:
+                    for category, skills in self.skill_database.items():
+                        for skill in skills:
+                            if skill.lower() in ent.text.lower():
+                                if skill not in found_skills[category]:
+                                    found_skills[category].append(skill)
+        
+        # Method 3: Check noun phrases
+        if doc:
+            for chunk in doc.noun_chunks:
+                chunk_text = chunk.text.lower()
                 for category, skills in self.skill_database.items():
                     for skill in skills:
-                        if skill.lower() in ent.text.lower():
+                        if skill.lower() in chunk_text:
                             if skill not in found_skills[category]:
                                 found_skills[category].append(skill)
         
@@ -284,7 +307,7 @@ class AdvancedCVParser:
         return {k: v for k, v in found_skills.items() if v}
     
     def _extract_skills_fast(self, text: str) -> Dict[str, List[str]]:
-        """FAST skill extraction - simple keyword matching only (0.5 seconds)"""
+        """FAST skill extraction - simple keyword matching with variations (0.5 seconds)"""
         found_skills = {category: [] for category in self.skill_database.keys()}
         text_lower = text.lower()
         
@@ -292,6 +315,13 @@ class AdvancedCVParser:
             for skill in skills:
                 if skill.lower() in text_lower:
                     found_skills[category].append(skill)
+                else:
+                    # Check variations
+                    variations = self._get_skill_variations(skill)
+                    for variation in variations:
+                        if variation in text_lower:
+                            found_skills[category].append(skill)
+                            break
         
         for category in found_skills:
             found_skills[category] = list(set(found_skills[category]))
