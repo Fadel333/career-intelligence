@@ -501,6 +501,53 @@ class Shortlist(db.Model):
     job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'), nullable=True)
     notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# models.py - Add after the Placement model
+
+class JobApplication(db.Model):
+    """Job applications submitted by candidates"""
+    __tablename__ = 'job_applications'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  # If logged in
+    
+    # Applicant info
+    applicant_name = db.Column(db.String(255), nullable=False)
+    applicant_email = db.Column(db.String(255), nullable=False, index=True)
+    applicant_phone = db.Column(db.String(50))
+    
+    # Application details
+    cover_letter = db.Column(db.Text)
+    cv_filename = db.Column(db.String(255))  # Uploaded CV
+    cv_filepath = db.Column(db.String(500))
+    
+    # Status
+    status = db.Column(db.String(50), default='pending')  # pending, reviewed, shortlisted, rejected, hired
+    notes = db.Column(db.Text)
+    
+    # Metadata
+    applied_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    reviewed_at = db.Column(db.DateTime, nullable=True)
+    
+    # Relationships
+    job = db.relationship('Job', backref='applications', lazy=True)
+    user = db.relationship('User', backref='applications', lazy=True)
+    
+    def __repr__(self):
+        return f'<JobApplication {self.applicant_name} -> {self.job.title if self.job else "Unknown"}>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'job_id': self.job_id,
+            'job_title': self.job.title if self.job else None,
+            'applicant_name': self.applicant_name,
+            'applicant_email': self.applicant_email,
+            'status': self.status,
+            'applied_at': self.applied_at.isoformat() if self.applied_at else None
+        }
     
     def __repr__(self):
         return f'<Shortlist {self.recruiter.company_name if self.recruiter else "Unknown"} - {self.candidate.name if self.candidate else "Unknown"}>'

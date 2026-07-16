@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}{{ job.title }} - FADTECH Labs{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <!-- Back Button -->
+    <a href="{{ url_for('jobs.job_board') }}" class="text-white/60 hover:text-white transition mb-4 inline-block">
+        <i class="fas fa-arrow-left mr-2"></i> Back to Jobs
+    </a>
+
+    <!-- Job Header -->
+    <div class="glass-card p-8 mb-6" data-aos="fade-up">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-white">{{ job.title }}</h1>
+                <p class="text-white/60 mt-1">
+                    <i class="fas fa-building mr-2"></i> {{ job.poster.company_name if job.poster and job.poster.company_name else 'Company' }}
+                </p>
+            </div>
+            <div class="flex gap-3">
+                {% if not has_applied %}
+                    <a href="{{ url_for('jobs.apply', job_id=job.id) }}" 
+                       class="btn-primary px-8 py-3 rounded-xl text-white font-bold">
+                        <i class="fas fa-paper-plane mr-2"></i> Apply Now
+                    </a>
+                {% else %}
+                    <span class="bg-green-500/20 text-green-400 px-8 py-3 rounded-xl font-bold">
+                        <i class="fas fa-check-circle mr-2"></i> Applied
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Job Meta -->
+        <div class="flex flex-wrap gap-4 mt-4 pt-4 border-t border-white/10">
+            <span class="text-white/60 text-sm">
+                <i class="fas fa-clock mr-1"></i> {{ job.employment_type.value.replace('_', ' ').title() if job.employment_type else 'Full Time' }}
+            </span>
+            <span class="text-white/60 text-sm">
+                <i class="fas fa-map-marker-alt mr-1"></i> {{ job.location or 'Remote' }}
+            </span>
+            {% if job.salary_min and job.salary_max %}
+                <span class="text-white/60 text-sm">
+                    <i class="fas fa-money-bill-wave mr-1"></i> {{ job.currency }} {{ "%.0f"|format(job.salary_min) }} - {{ "%.0f"|format(job.salary_max) }}
+                </span>
+            {% endif %}
+            <span class="text-white/60 text-sm">
+                <i class="fas fa-calendar mr-1"></i> Posted: {{ job.posted_at.strftime('%B %d, %Y') }}
+            </span>
+            <span class="text-white/60 text-sm">
+                <i class="fas fa-users mr-1"></i> {{ job.applications_count or 0 }} applicants
+            </span>
+        </div>
+    </div>
+
+    <!-- Job Description -->
+    <div class="glass-card p-8 mb-6" data-aos="fade-up" data-aos-delay="100">
+        <h2 class="text-xl font-bold text-white mb-4">📝 Job Description</h2>
+        <div class="text-white/80 whitespace-pre-line">{{ job.description }}</div>
+    </div>
+
+    <!-- Requirements -->
+    {% if job.requirements and job.requirements|length > 0 %}
+    <div class="glass-card p-8 mb-6" data-aos="fade-up" data-aos-delay="200">
+        <h2 class="text-xl font-bold text-white mb-4">✅ Requirements</h2>
+        <ul class="space-y-2">
+            {% for req in job.requirements %}
+                <li class="flex items-start gap-2 text-white/80">
+                    <i class="fas fa-check-circle text-teal-400 mt-1"></i>
+                    <span>{{ req }}</span>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- Responsibilities -->
+    {% if job.responsibilities and job.responsibilities|length > 0 %}
+    <div class="glass-card p-8 mb-6" data-aos="fade-up" data-aos-delay="300">
+        <h2 class="text-xl font-bold text-white mb-4">💡 Responsibilities</h2>
+        <ul class="space-y-2">
+            {% for resp in job.responsibilities %}
+                <li class="flex items-start gap-2 text-white/80">
+                    <i class="fas fa-arrow-right text-teal-400 mt-1"></i>
+                    <span>{{ resp }}</span>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- Skills -->
+    {% if job.required_skills and job.required_skills|length > 0 %}
+    <div class="glass-card p-8 mb-6" data-aos="fade-up" data-aos-delay="400">
+        <h2 class="text-xl font-bold text-white mb-4">🛠️ Required Skills</h2>
+        <div class="flex flex-wrap gap-2">
+            {% for skill in job.required_skills %}
+                <span class="bg-teal-500/20 text-teal-300 px-4 py-2 rounded-full text-sm font-medium">{{ skill }}</span>
+            {% endfor %}
+        </div>
+        {% if job.preferred_skills and job.preferred_skills|length > 0 %}
+            <p class="text-white/40 text-sm mt-3"><strong>Preferred:</strong> {{ job.preferred_skills|join(', ') }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Apply Button -->
+    <div class="text-center" data-aos="fade-up" data-aos-delay="500">
+        {% if not has_applied %}
+            <a href="{{ url_for('jobs.apply', job_id=job.id) }}" 
+               class="btn-primary px-12 py-4 rounded-xl text-white font-bold text-lg hover:scale-105 transition inline-block">
+                <i class="fas fa-paper-plane mr-2"></i> Apply Now
+            </a>
+        {% else %}
+            <span class="bg-green-500/20 text-green-400 px-12 py-4 rounded-xl font-bold text-lg inline-block">
+                <i class="fas fa-check-circle mr-2"></i> You have already applied for this position
+            </span>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

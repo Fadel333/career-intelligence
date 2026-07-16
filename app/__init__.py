@@ -21,7 +21,8 @@ from app.utils.hybrid_parser import HybridParser
 from app.utils.openai_assistant import OpenAIAssistant
 from models import User, Profile, RecruiterProfile, Candidate, Job, Placement  # Renamed models
 from app.recruiter import recruiter_bp 
-from app.admin.routes import admin_bp  
+from app.admin.routes import admin_bp 
+from app.jobs.routes import jobs_bp 
 
 # Configure upload settings
 UPLOAD_FOLDER = 'uploads'
@@ -909,5 +910,7 @@ def create_app():
     app.register_blueprint(recruiter_bp)
 
     app.register_blueprint(admin_bp) 
+
+    app.register_blueprint(jobs_bp) 
     
     return app
