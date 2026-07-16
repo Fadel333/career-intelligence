@@ -14,4 +14,8 @@ static/verification_docs/
 
 # Database
 *.db
-*.sqlite
+*.sqlite"create_admin.py" 
+"reset_admin.py" 
+"check_user.py" 
+"setup_admin.py" 
+".env" 
