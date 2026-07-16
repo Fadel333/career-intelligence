@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}My Jobs - Recruiter Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-white">💼 My Jobs</h1>
+            <p class="text-white/60">Manage your job postings</p>
+        </div>
+        <a href="{{ url_for('recruiter.create_job') }}" 
+           class="btn-primary px-6 py-2.5 rounded-xl text-white font-semibold inline-flex items-center gap-2 hover:scale-105 transition">
+            <i class="fas fa-plus"></i> Post New Job
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex flex-wrap gap-3 mb-6">
+        <a href="{{ url_for('recruiter.jobs') }}" 
+           class="px-4 py-2 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition {% if not status_filter %}bg-white/10 text-white{% endif %}">
+            All
+        </a>
+        <a href="{{ url_for('recruiter.jobs', status='published') }}" 
+           class="px-4 py-2 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition {% if status_filter == 'published' %}bg-white/10 text-white{% endif %}">
+            <i class="fas fa-check-circle text-green-400 mr-1"></i> Published
+        </a>
+        <a href="{{ url_for('recruiter.jobs', status='draft') }}" 
+           class="px-4 py-2 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition {% if status_filter == 'draft' %}bg-white/10 text-white{% endif %}">
+            <i class="fas fa-pen text-yellow-400 mr-1"></i> Draft
+        </a>
+        <a href="{{ url_for('recruiter.jobs', status='closed') }}" 
+           class="px-4 py-2 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition {% if status_filter == 'closed' %}bg-white/10 text-white{% endif %}">
+            <i class="fas fa-times-circle text-red-400 mr-1"></i> Closed
+        </a>
+        <a href="{{ url_for('recruiter.jobs', status='filled') }}" 
+           class="px-4 py-2 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition {% if status_filter == 'filled' %}bg-white/10 text-white{% endif %}">
+            <i class="fas fa-check-double text-blue-400 mr-1"></i> Filled
+        </a>
+    </div>
+
+    <!-- Jobs List -->
+    <div class="space-y-4">
+        <div class="flex justify-between items-center text-white/40 text-sm">
+            <span>{{ pagination.total if pagination else 0 }} jobs</span>
+            <span>Page {{ pagination.page if pagination else 1 }} of {{ pagination.pages if pagination else 1 }}</span>
+        </div>
+
+        {% if jobs and jobs.items %}
+            {% for job in jobs.items %}
+            <div class="glass-card p-6 hover:border-teal-400/30 transition" data-aos="fade-up">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <h3 class="text-xl font-bold text-white">{{ job.title }}</h3>
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold
+                                {% if job.status.value == 'published' %}bg-green-500/20 text-green-400
+                                {% elif job.status.value == 'draft' %}bg-yellow-500/20 text-yellow-400
+                                {% elif job.status.value == 'filled' %}bg-blue-500/20 text-blue-400
+                                {% else %}bg-red-500/20 text-red-400{% endif %}">
+                                {{ job.status.value|title }}
+                            </span>
+                        </div>
+                        <div class="flex flex-wrap gap-4 mt-2 text-sm text-white/60">
+                            <span><i class="fas fa-map-marker-alt mr-1"></i> {{ job.location or 'Remote' }}</span>
+                            <span><i class="fas fa-users mr-1"></i> {{ job.applications_count or 0 }} applicants</span>
+                            <span><i class="fas fa-eye mr-1"></i> {{ job.views_count or 0 }} views</span>
+                            {% if job.salary_min %}
+                            <span><i class="fas fa-money-bill-wave mr-1"></i> {{ job.currency }} {{ "%.0f"|format(job.salary_min) }} - {{ "%.0f"|format(job.salary_max or job.salary_min) }}</span>
+                            {% endif %}
+                            <span><i class="fas fa-calendar mr-1"></i> Posted: {{ job.posted_at.strftime('%b %d, %Y') }}</span>
+                        </div>
+                        <div class="flex flex-wrap gap-1 mt-2">
+                            {% for skill in (job.required_skills or [])[:3] %}
+                                <span class="bg-teal-500/20 text-teal-300 px-2 py-0.5 rounded-full text-xs">{{ skill }}</span>
+                            {% endfor %}
+                            {% if (job.required_skills or [])|length > 3 %}
+                                <span class="text-white/40 text-xs">+{{ (job.required_skills|length) - 3 }} more</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{{ url_for('recruiter.edit_job', job_id=job.id) }}" 
+                           class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl text-white transition text-sm">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <form method="POST" action="{{ url_for('recruiter.update_job_status', job_id=job.id) }}" class="inline">
+                            <select name="status" onchange="this.form.submit()" 
+                                    class="bg-white/10 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:border-teal-400 focus:outline-none transition">
+                                <option value="draft" {% if job.status.value == 'draft' %}selected{% endif %}>Draft</option>
+                                <option value="published" {% if job.status.value == 'published' %}selected{% endif %}>Publish</option>
+                                <option value="filled" {% if job.status.value == 'filled' %}selected{% endif %}>Filled</option>
+                                <option value="closed" {% if job.status.value == 'closed' %}selected{% endif %}>Close</option>
+                            </select>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Pagination -->
+            {% if pagination and pagination.pages > 1 %}
+            <div class="flex justify-center gap-2 mt-6">
+                {% if pagination.has_prev %}
+                    <a href="{{ url_for('recruiter.jobs', page=pagination.prev_num, status=status_filter) }}" 
+                       class="px-4 py-2 bg-white/10 rounded-xl text-white hover:bg-white/20 transition">Previous</a>
+                {% endif %}
+                <span class="px-4 py-2 bg-teal-500/20 rounded-xl text-white">
+                    Page {{ pagination.page }} of {{ pagination.pages }}
+                </span>
+                {% if pagination.has_next %}
+                    <a href="{{ url_for('recruiter.jobs', page=pagination.next_num, status=status_filter) }}" 
+                       class="px-4 py-2 bg-white/10 rounded-xl text-white hover:bg-white/20 transition">Next</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="glass-card p-12 text-center">
+                <i class="fas fa-file-alt text-5xl text-white/20 mb-4"></i>
+                <p class="text-xl text-white/60">No jobs posted yet</p>
+                <p class="text-white/40">Post your first job to start recruiting</p>
+                <a href="{{ url_for('recruiter.create_job') }}" 
+                   class="btn-primary px-6 py-2.5 rounded-xl text-white font-semibold inline-block mt-4">
+                    <i class="fas fa-plus mr-2"></i> Post Now
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

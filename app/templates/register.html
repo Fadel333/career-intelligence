@@ -68,25 +68,29 @@
                        class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-400/30 transition">
             </div>
 
-            <!-- User Type Selection -->
+            <!-- User Type Selection - UPDATED with Partner option -->
             <div>
                 <label class="block text-white/80 text-sm font-semibold mb-2">
                     <i class="fas fa-user-tag mr-2 text-teal-400"></i> I am a
                 </label>
                 <div class="grid grid-cols-2 gap-3">
-                    <label class="flex items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition">
+                    <label class="flex items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition has-[:checked]:border-teal-400 has-[:checked]:bg-teal-400/10">
                         <input type="radio" name="user_type" value="student" checked class="text-teal-400">
                         <span class="text-white/80 text-sm">
                             <i class="fas fa-graduation-cap mr-1"></i> Student
                         </span>
                     </label>
-                    <label class="flex items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition">
-                        <input type="radio" name="user_type" value="professional" class="text-teal-400">
+                    <label class="flex items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition has-[:checked]:border-teal-400 has-[:checked]:bg-teal-400/10">
+                        <input type="radio" name="user_type" value="recruiter" class="text-teal-400">
                         <span class="text-white/80 text-sm">
-                            <i class="fas fa-briefcase mr-1"></i> Professional
+                            <i class="fas fa-briefcase mr-1"></i>  Recruiter
                         </span>
                     </label>
                 </div>
+                <p class="text-white/40 text-xs mt-2">
+                    <i class="fas fa-info-circle mr-1"></i> 
+                    <span id="userTypeDescription">Students get personalized career guidance and skill analysis</span>
+                </p>
             </div>
 
             <!-- Terms & Conditions -->
@@ -97,9 +101,9 @@
                        class="w-4 h-4 mt-1 rounded border-white/20 bg-white/10 text-teal-400 focus:ring-teal-400">
                 <label class="text-white/60 text-sm">
                     I agree to the 
-                    <a href="#" class="text-teal-400 hover:text-teal-300 transition">Terms of Service</a> 
+                    <a href="{{ url_for('privacy_policy') }}" class="text-teal-400 hover:text-teal-300 transition">Terms of Service</a> 
                     and 
-                    <a href="#" class="text-teal-400 hover:text-teal-300 transition">Privacy Policy</a>
+                    <a href="{{ url_for('privacy_policy') }}" class="text-teal-400 hover:text-teal-300 transition">Privacy Policy</a>
                 </label>
             </div>
 
@@ -153,4 +157,27 @@
         
     </div>
 </section>
+
+<!-- ========== JAVASCRIPT FOR USER TYPE DESCRIPTION ========== -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const descriptions = {
+        'student': 'Students get personalized career guidance, skill analysis, and job recommendations',
+        'professional': 'Professionals get advanced skill gap analysis, career roadmaps, and job matching',
+        'partner': 'Partners can post vacancies, find candidates, and track placements',
+        'university': 'Universities get curriculum intelligence and student employability analytics'
+    };
+    
+    const radioButtons = document.querySelectorAll('input[name="user_type"]');
+    const descriptionEl = document.getElementById('userTypeDescription');
+    
+    radioButtons.forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                descriptionEl.textContent = descriptions[this.value] || '';
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

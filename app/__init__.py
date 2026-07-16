@@ -19,7 +19,9 @@ from app.utils.skill_analyzer import SkillAnalyzer
 from app.utils.course_api import CourseAPI
 from app.utils.hybrid_parser import HybridParser
 from app.utils.openai_assistant import OpenAIAssistant
-from models import User, Profile
+from models import User, Profile, RecruiterProfile, Candidate, Job, Placement  # Renamed models
+from app.recruiter import recruiter_bp 
+from app.admin.routes import admin_bp  
 
 # Configure upload settings
 UPLOAD_FOLDER = 'uploads'
@@ -316,6 +318,33 @@ def get_curriculum_recommendations_default():
     ]
 
 
+# ========== RECRUITER HUB HELPER FUNCTIONS (Renamed from Partner) ==========
+def get_recruiter_stats(recruiter_id):  # Renamed from get_partner_stats
+    """Get recruiter hub statistics"""
+    from models import Job, Placement  # Renamed from Vacancy
+    
+    total_jobs = Job.query.filter_by(recruiter_id=recruiter_id).count()  # Renamed from total_vacancies
+    active_jobs = Job.query.filter_by(recruiter_id=recruiter_id, status='published').count()  # Renamed from active_vacancies
+    total_placements = Placement.query.filter_by(recruiter_id=recruiter_id).count()
+    
+    # Earnings
+    from sqlalchemy import func
+    total_earnings = db.session.query(func.sum(Placement.commission_amount))\
+        .filter_by(recruiter_id=recruiter_id, commission_paid=True).scalar() or 0
+    
+    pending_earnings = db.session.query(func.sum(Placement.commission_amount))\
+        .filter_by(recruiter_id=recruiter_id, commission_paid=False)\
+        .filter(Placement.status == 'hired').scalar() or 0
+    
+    return {
+        'total_jobs': total_jobs,  # Renamed from total_vacancies
+        'active_jobs': active_jobs,  # Renamed from active_vacancies
+        'total_placements': total_placements,
+        'total_earnings': total_earnings,
+        'pending_earnings': pending_earnings
+    }
+
+
 def register_routes(app):
     """Register all application routes"""
     
@@ -390,9 +419,43 @@ def register_routes(app):
                         user.save_cv_analysis(parsed_data)
                         user.detected_sector = detected_sector
                         user.employability_score = employability['score']
-                        db.session.commit()
                         
+                        # ALSO save to Candidate table for recruiter matching
+                        # Check if candidate already exists for this user
+                        existing_candidate = Candidate.query.filter_by(user_id=current_user.id).first()
+                        if existing_candidate:
+                            # Update existing candidate
+                            existing_candidate.name = user.fullname
+                            existing_candidate.email = user.email
+                            existing_candidate.skills = all_skills
+                            existing_candidate.experience_years = parsed_data.get('experience_years', 0)
+                            existing_candidate.education = parsed_data.get('education', [])
+                            existing_candidate.certifications = parsed_data.get('certifications', [])
+                            existing_candidate.employability_score = employability['score']
+                            existing_candidate.cv_text = parsed_data.get('raw_text', '')
+                            existing_candidate.is_processed = True
+                            existing_candidate.last_updated = datetime.utcnow()
+                        else:
+                            # Create new candidate
+                            candidate = Candidate(
+                                user_id=current_user.id,
+                                name=user.fullname,
+                                email=user.email,
+                                phone=user.phone,
+                                skills=all_skills,
+                                experience_years=parsed_data.get('experience_years', 0),
+                                education=parsed_data.get('education', []),
+                                certifications=parsed_data.get('certifications', []),
+                                employability_score=employability['score'],
+                                cv_text=parsed_data.get('raw_text', ''),
+                                cv_filename=file.filename,
+                                is_processed=True
+                            )
+                            db.session.add(candidate)
+                        
+                        db.session.commit()
                         print(f"✅ CV data saved to database for user {user.email}")
+                        print(f"✅ Candidate record created/updated for recruiter matching")
                     
                     # Store in session for display
                     compressed_data = compress_parsed_data(parsed_data)
@@ -614,7 +677,14 @@ def register_routes(app):
                     if compressed_data:
                         session['parsed_cv'] = compressed_data
         
-        return render_template('dashboard.html', user=current_user, parsed_data=parsed_data)
+        # If user is a recruiter, show recruiter stats
+        recruiter_stats = None
+        if current_user.is_recruiter():
+            recruiter_profile = RecruiterProfile.query.filter_by(user_id=current_user.id).first()
+            if recruiter_profile:
+                recruiter_stats = get_recruiter_stats(recruiter_profile.id)
+        
+        return render_template('dashboard.html', user=current_user, parsed_data=parsed_data, recruiter_stats=recruiter_stats)
     
     # ========== PROFILE ROUTE ==========
     @app.route('/profile', methods=['GET', 'POST'])
@@ -834,5 +904,10 @@ def create_app():
     
     # Register routes
     register_routes(app)
+
+    # Register Recruiter Blueprint (Renamed from Partner)
+    app.register_blueprint(recruiter_bp)
+
+    app.register_blueprint(admin_bp) 
     
     return app

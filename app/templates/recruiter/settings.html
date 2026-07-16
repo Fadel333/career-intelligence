@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Recruiter Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="flex items-center gap-4 mb-8">
+        <a href="{{ url_for('recruiter.hub') }}" class="text-white/60 hover:text-white transition">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="text-3xl font-bold text-white">⚙️ Settings</h1>
+            <p class="text-white/60">Manage your recruiter account and preferences</p>
+        </div>
+    </div>
+
+    <div class="space-y-6">
+        <!-- Company Profile -->
+        <div class="glass-card p-6" data-aos="fade-up">
+            <h2 class="text-xl font-bold text-white mb-4">🏢 Company Profile</h2>
+            <form method="POST" action="{{ url_for('recruiter.setup_profile') }}" class="space-y-4">
+                <div>
+                    <label class="text-white/60 text-sm block mb-1">Company Name</label>
+                    <input type="text" name="company_name" value="{{ recruiter.company_name or '' }}" 
+                           class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none transition">
+                </div>
+                <div>
+                    <label class="text-white/60 text-sm block mb-1">Company Description</label>
+                    <textarea name="company_description" rows="4" 
+                              class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none transition">{{ recruiter.company_description or '' }}</textarea>
+                </div>
+                <div>
+                    <label class="text-white/60 text-sm block mb-1">Website</label>
+                    <input type="url" name="company_website" value="{{ recruiter.company_website or '' }}" 
+                           class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none transition"
+                           placeholder="https://yourcompany.com">
+                </div>
+                <div>
+                    <label class="text-white/60 text-sm block mb-1">Industry</label>
+                    <input type="text" name="industry" value="{{ recruiter.industry or '' }}" 
+                           class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none transition"
+                           placeholder="Technology, Education, Finance...">
+                </div>
+                <div>
+                    <label class="text-white/60 text-sm block mb-1">Location</label>
+                    <input type="text" name="location" value="{{ recruiter.location or '' }}" 
+                           class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none transition"
+                           placeholder="Accra, Ghana">
+                </div>
+                <button type="submit" class="btn-primary px-6 py-2.5 rounded-xl text-white font-semibold">
+                    <i class="fas fa-save mr-2"></i> Save Changes
+                </button>
+            </form>
+        </div>
+
+        <!-- Verification Status -->
+        <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="100">
+            <h2 class="text-xl font-bold text-white mb-4">✅ Verification Status</h2>
+            <div class="flex items-center gap-4 p-4 bg-white/5 rounded-xl">
+                {% if recruiter and recruiter.verification_status == 'approved' %}
+                    <div class="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-check-circle text-green-400 text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-white font-semibold">Verified Account</p>
+                        <p class="text-white/60 text-sm">Your account has been verified</p>
+                        {% if recruiter.verified_at %}
+                            <p class="text-white/40 text-xs">Verified on {{ recruiter.verified_at.strftime('%B %d, %Y') }}</p>
+                        {% endif %}
+                    </div>
+                {% elif recruiter and recruiter.verification_status == 'pending' %}
+                    <div class="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-clock text-yellow-400 text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-white font-semibold">Awaiting Verification</p>
+                        <p class="text-white/60 text-sm">Your account is being reviewed</p>
+                        <p class="text-white/40 text-xs">You'll receive an email once verified</p>
+                    </div>
+                {% else %}
+                    <div class="w-12 h-12 bg-red-500/20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-exclamation-triangle text-red-400 text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-white font-semibold">Not Verified</p>
+                        <p class="text-white/60 text-sm">Please complete your profile to get verified</p>
+                        <button class="text-teal-400 text-sm hover:text-teal-300 transition mt-1">
+                            <i class="fas fa-upload mr-1"></i> Upload Documents
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Account Settings -->
+        <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="200">
+            <h2 class="text-xl font-bold text-white mb-4">🔒 Account Settings</h2>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center p-3 bg-white/5 rounded-xl">
+                    <div>
+                        <p class="text-white font-medium">Email Notifications</p>
+                        <p class="text-white/60 text-sm">Receive updates about candidates and jobs</p>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" checked class="sr-only peer">
+                        <div class="w-11 h-6 bg-white/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+                    </label>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-white/5 rounded-xl">
+                    <div>
+                        <p class="text-white font-medium">Two-Factor Authentication</p>
+                        <p class="text-white/60 text-sm">Extra security for your account</p>
+                    </div>
+                    <button class="bg-white/10 hover:bg-white/20 px-4 py-1.5 rounded-xl text-white text-sm transition">
+                        Enable
+                    </button>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-white/5 rounded-xl">
+                    <div>
+                        <p class="text-white font-medium">API Access</p>
+                        <p class="text-white/60 text-sm">Generate API keys for integrations</p>
+                    </div>
+                    <button class="bg-white/10 hover:bg-white/20 px-4 py-1.5 rounded-xl text-white text-sm transition">
+                        Generate
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="glass-card p-6 border-red-500/20" data-aos="fade-up" data-aos-delay="300">
+            <h2 class="text-xl font-bold text-red-400 mb-4">⚠️ Danger Zone</h2>
+            <div class="space-y-3">
+                <div class="flex justify-between items-center p-3 bg-red-500/5 rounded-xl border border-red-500/10">
+                    <div>
+                        <p class="text-white font-medium">Deactivate Account</p>
+                        <p class="text-white/60 text-sm">Temporarily disable your recruiter account</p>
+                    </div>
+                    <button class="bg-red-500/20 hover:bg-red-500/30 px-4 py-1.5 rounded-xl text-red-400 text-sm transition">
+                        Deactivate
+                    </button>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-red-500/5 rounded-xl border border-red-500/10">
+                    <div>
+                        <p class="text-white font-medium">Delete Account</p>
+                        <p class="text-white/60 text-sm">Permanently delete all your data</p>
+                    </div>
+                    <button class="bg-red-500/20 hover:bg-red-500/30 px-4 py-1.5 rounded-xl text-red-400 text-sm transition">
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

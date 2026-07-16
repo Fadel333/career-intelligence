@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Candidate Profile - Recruiter Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div class="flex items-center gap-4">
+            <a href="{{ url_for('recruiter.candidates') }}" class="text-white/60 hover:text-white transition">
+                <i class="fas fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="text-3xl font-bold text-white">{{ candidate.name or 'Unknown Candidate' }}</h1>
+                <p class="text-white/60">{{ candidate.email or 'No email provided' }}</p>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-3">
+            <button onclick="document.getElementById('flagModal').classList.remove('hidden')" 
+                    class="btn-primary px-6 py-2.5 rounded-xl text-white font-semibold">
+                <i class="fas fa-flag mr-2"></i> Flag for Job
+            </button>
+            <a href="mailto:{{ candidate.email }}" 
+               class="bg-white/10 hover:bg-white/20 px-6 py-2.5 rounded-xl text-white transition">
+                <i class="fas fa-envelope mr-2"></i> Contact
+            </a>
+            <a href="{{ url_for('recruiter.candidates') }}" 
+               class="bg-white/10 hover:bg-white/20 px-6 py-2.5 rounded-xl text-white transition">
+                Back to Search
+            </a>
+        </div>
+    </div>
+
+    <!-- Match Score Banner -->
+    {% if existing_placements and existing_placements|length > 0 %}
+    <div class="glass-card p-6 mb-6 border-l-4 border-teal-400">
+        <div class="flex items-center gap-4">
+            <div class="w-24 h-24 relative">
+                <svg class="w-24 h-24 transform -rotate-90">
+                    <circle cx="48" cy="48" r="40" stroke="rgba(255,255,255,0.1)" stroke-width="8" fill="none"/>
+                    <circle cx="48" cy="48" r="40" stroke="#4ecdc4" stroke-width="8" fill="none"
+                        stroke-dasharray="{{ (251 * existing_placements[0].match_percentage|default(0) / 100) }} 251"
+                        stroke-linecap="round"/>
+                </svg>
+                <span class="absolute inset-0 flex items-center justify-center text-white font-bold text-lg">
+                    {{ "%.0f"|format(existing_placements[0].match_percentage|default(0)) }}%
+                </span>
+            </div>
+            <div>
+                <p class="text-white font-bold text-xl">AI Match Score</p>
+                <p class="text-white/60">{{ existing_placements[0].job.title if existing_placements[0].job else 'No job' }}</p>
+                <div class="flex gap-3 mt-2 text-sm">
+                    <span class="text-teal-400"><i class="fas fa-check-circle mr-1"></i> Skills: {{ existing_placements[0].match_details.skills|default(0) }}%</span>
+                    <span class="text-blue-400"><i class="fas fa-briefcase mr-1"></i> Experience: {{ existing_placements[0].match_details.experience|default(0) }}%</span>
+                    <span class="text-purple-400"><i class="fas fa-graduation-cap mr-1"></i> Education: {{ existing_placements[0].match_details.education|default(0) }}%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Profile Info -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Basic Info -->
+            <div class="glass-card p-6" data-aos="fade-up">
+                <h2 class="text-xl font-bold text-white mb-4">👤 Profile Information</h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-white/60 text-sm">Full Name</p>
+                        <p class="text-white font-medium">{{ candidate.name or 'Not provided' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-white/60 text-sm">Email</p>
+                        <p class="text-white font-medium">{{ candidate.email or 'Not provided' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-white/60 text-sm">Phone</p>
+                        <p class="text-white font-medium">{{ candidate.phone or 'Not provided' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-white/60 text-sm">Experience</p>
+                        <p class="text-white font-medium">{{ candidate.experience_years or 0 }} years</p>
+                    </div>
+                    <div>
+                        <p class="text-white/60 text-sm">Employability Score</p>
+                        <p class="text-white font-medium">{{ candidate.employability_score or 0 }}/100</p>
+                    </div>
+                    <div>
+                        <p class="text-white/60 text-sm">CV Uploaded</p>
+                        <p class="text-white font-medium">{{ candidate.uploaded_at.strftime('%b %d, %Y') if candidate.uploaded_at else 'N/A' }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Skills -->
+            <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="100">
+                <h2 class="text-xl font-bold text-white mb-4">🛠️ Skills</h2>
+                <div class="flex flex-wrap gap-2">
+                    {% for skill in (candidate.skills or []) %}
+                        <span class="bg-teal-500/20 text-teal-300 px-4 py-2 rounded-full text-sm font-medium">{{ skill }}</span>
+                    {% else %}
+                        <p class="text-white/40">No skills extracted</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Education -->
+            <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="200">
+                <h2 class="text-xl font-bold text-white mb-4">🎓 Education</h2>
+                {% for edu in (candidate.education or []) %}
+                    <div class="border-b border-white/10 last:border-0 py-3">
+                        <p class="text-white font-medium">{{ edu.degree or 'Unknown degree' }}</p>
+                        <p class="text-white/60">{{ edu.field or '' }} • {{ edu.school or '' }}</p>
+                        {% if edu.year %}
+                            <p class="text-white/40 text-sm">{{ edu.year }}</p>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <p class="text-white/40">No education information available</p>
+                {% endfor %}
+            </div>
+
+            <!-- Work Experience -->
+            <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="300">
+                <h2 class="text-xl font-bold text-white mb-4">💼 Work Experience</h2>
+                {% if candidate.cv_text %}
+                    <div class="bg-white/5 rounded-xl p-4 max-h-64 overflow-y-auto custom-scrollbar">
+                        <p class="text-white/70 text-sm whitespace-pre-line">{{ candidate.cv_text[:1500] }}{% if candidate.cv_text|length > 1500 %}...{% endif %}</p>
+                    </div>
+                {% else %}
+                    <p class="text-white/40">No work experience extracted</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="space-y-6">
+            <!-- Quick Actions -->
+            <div class="glass-card p-6" data-aos="fade-left">
+                <h2 class="text-xl font-bold text-white mb-4">⚡ Quick Actions</h2>
+                <div class="space-y-2">
+                    <button onclick="document.getElementById('flagModal').classList.remove('hidden')" 
+                            class="w-full btn-primary px-4 py-2.5 rounded-xl text-white font-semibold transition text-sm">
+                        <i class="fas fa-flag mr-2"></i> Flag for Job
+                    </button>
+                    <a href="mailto:{{ candidate.email }}" 
+                       class="w-full bg-white/10 hover:bg-white/20 rounded-xl px-4 py-2.5 text-white transition text-sm block text-center">
+                        <i class="fas fa-envelope mr-2"></i> Contact Candidate
+                    </a>
+                    <button class="w-full bg-white/10 hover:bg-white/20 rounded-xl px-4 py-2.5 text-white transition text-sm">
+                        <i class="fas fa-download mr-2"></i> Download CV
+                    </button>
+                    <button class="w-full bg-white/10 hover:bg-white/20 rounded-xl px-4 py-2.5 text-white transition text-sm">
+                        <i class="fas fa-user-plus mr-2"></i> Add to Shortlist
+                    </button>
+                </div>
+            </div>
+
+            <!-- Similar Candidates -->
+            <div class="glass-card p-6" data-aos="fade-left" data-aos-delay="100">
+                <h2 class="text-xl font-bold text-white mb-4">👥 Similar Candidates</h2>
+                <p class="text-white/40 text-sm">AI-powered recommendations</p>
+                <div class="space-y-2 mt-2">
+                    <div class="bg-white/5 rounded-xl p-3 hover:bg-white/10 transition">
+                        <p class="text-white font-medium">Michael O.</p>
+                        <p class="text-white/60 text-xs">92% match • 6 years exp</p>
+                    </div>
+                    <div class="bg-white/5 rounded-xl p-3 hover:bg-white/10 transition">
+                        <p class="text-white font-medium">Ama A.</p>
+                        <p class="text-white/60 text-xs">88% match • 5 years exp</p>
+                    </div>
+                    <div class="bg-white/5 rounded-xl p-3 hover:bg-white/10 transition">
+                        <p class="text-white font-medium">Kofi M.</p>
+                        <p class="text-white/60 text-xs">85% match • 4 years exp</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Flag Modal -->
+<div id="flagModal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="glass-card max-w-md w-full p-6" data-aos="zoom-in">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold text-white">🏴 Flag for Job</h3>
+            <button onclick="document.getElementById('flagModal').classList.add('hidden')" 
+                    class="text-white/60 hover:text-white transition">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <form action="{{ url_for('recruiter.flag_candidate', candidate_id=candidate.id) }}" method="POST">
+            <div class="mb-4">
+                <label class="text-white/60 text-sm block mb-1">Select Job</label>
+                <select name="job_id" required 
+                        class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:border-teal-400 focus:outline-none transition">
+                    <option value="" class="bg-gray-800">Choose a job...</option>
+                    {% for job in jobs %}
+                        <option value="{{ job.id }}" class="bg-gray-800">{{ job.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-4">
+                <label class="text-white/60 text-sm block mb-1">Notes (optional)</label>
+                <textarea name="notes" rows="3" 
+                          class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none transition"
+                          placeholder="Any notes about this candidate..."></textarea>
+            </div>
+            <div class="flex gap-3">
+                <button type="submit" class="flex-1 btn-primary px-6 py-2.5 rounded-xl text-white font-semibold">
+                    <i class="fas fa-flag mr-2"></i> Flag Candidate
+                </button>
+                <button type="button" onclick="document.getElementById('flagModal').classList.add('hidden')" 
+                        class="flex-1 bg-white/10 hover:bg-white/20 rounded-xl px-6 py-2.5 text-white transition">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #4ecdc4, #8e2de2);
+    border-radius: 10px;
+}
+</style>
+{% endblock %}

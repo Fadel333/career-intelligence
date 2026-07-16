@@ -1,7 +1,8 @@
+# app/auth/routes.py
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import User
+from models import User, Profile, RecruiterProfile
 from extensions import db
 from app.utils.oauth import oauth
 import secrets
@@ -16,7 +17,7 @@ def register():
         email = request.form.get("email")
         password = request.form.get("password")
         confirm_password = request.form.get("confirm_password")
-        user_type = request.form.get("user_type")
+        user_type = request.form.get("user_type", "student")
         terms = request.form.get("terms")
         
         # Validation
@@ -48,19 +49,53 @@ def register():
             fullname=name,
             email=email,
             password=hashed_password,
-            user_type=user_type or 'student'
+            user_type=user_type,
+            is_active=True,
+            is_verified=True
         )
         
         try:
             db.session.add(user)
+            db.session.flush()
+            
+            # Create profile for user
+            profile = Profile(user_id=user.id)
+            db.session.add(profile)
+            
+            # If user is a recruiter, create recruiter profile
+            if user_type == 'recruiter':
+                recruiter_profile = RecruiterProfile(
+                    user_id=user.id,
+                    company_name=name + "'s Company",
+                    min_match_percentage=70.0,
+                    verification_status='pending'
+                )
+                db.session.add(recruiter_profile)
+            
             db.session.commit()
-            flash("Account created successfully! Please login.", "success")
-            return redirect(url_for("auth.login"))
+            
+            flash("Account created successfully! Welcome!", "success")
+            
+            # Log the user in
+            login_user(user)
+            
+            # Redirect based on user type
+            if user_type == 'recruiter':
+                return redirect(url_for('recruiter.setup_profile'))
+            elif user_type == 'university':
+                return redirect(url_for('university_dashboard'))
+            elif user_type == 'admin':
+                return redirect(url_for('admin.index'))
+            else:
+                return redirect(url_for('dashboard'))
+                
         except Exception as e:
             db.session.rollback()
+            print(f"Registration error: {e}")
             flash("An error occurred. Please try again.", "error")
             return redirect(url_for("auth.register"))
     
+    # GET request - show registration form
     return render_template("register.html")
 
 
@@ -81,10 +116,20 @@ def login():
             login_user(user, remember=bool(remember))
             flash(f"Welcome back, {user.fullname}!", "success")
             
+            # Check for next parameter
             next_page = request.args.get('next')
             if next_page:
                 return redirect(next_page)
-            return redirect(url_for('dashboard'))
+            
+            # Redirect based on user type
+            if user.user_type == 'admin':
+                return redirect(url_for('admin.index'))
+            elif user.user_type == 'recruiter':
+                return redirect(url_for('recruiter.dashboard'))
+            elif user.user_type == 'university':
+                return redirect(url_for('university_dashboard'))
+            else:
+                return redirect(url_for('dashboard'))
         else:
             flash("Invalid email or password.", "error")
             return redirect(url_for("auth.login"))

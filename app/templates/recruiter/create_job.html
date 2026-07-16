@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Post a Job - Recruiter Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <div class="flex items-center gap-4 mb-8">
+        <a href="{{ url_for('recruiter.jobs') }}" class="text-white/60 hover:text-white transition">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="text-3xl font-bold text-white">📝 Post a New Job</h1>
+            <p class="text-white/60">Find the right talent with AI-powered job posting</p>
+        </div>
+    </div>
+
+    <div class="glass-card p-6 md:p-8" data-aos="fade-up">
+        <form method="POST" action="{{ url_for('recruiter.create_job') }}" class="space-y-6">
+            {{ form.hidden_tag() }}
+
+            <!-- AI Generate Button -->
+            <div class="bg-white/5 rounded-xl p-4 border border-teal-400/20">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-white font-semibold">✨ AI-Powered Job Description</p>
+                        <p class="text-white/60 text-sm">Let AI help you write a compelling job description</p>
+                    </div>
+                    <button type="button" onclick="generateAIDescription()" 
+                            class="btn-primary px-6 py-2 rounded-xl text-white font-semibold text-sm">
+                        <i class="fas fa-wand-magic-sparkles mr-2"></i> Generate
+                    </button>
+                </div>
+            </div>
+
+            <!-- Job Title -->
+            <div>
+                <label class="text-white font-medium block mb-1">{{ form.title.label }}</label>
+                {{ form.title(class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none transition") }}
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label class="text-white font-medium block mb-1">{{ form.description.label }}</label>
+                {{ form.description(class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none transition", rows="6", id="jobDescription") }}
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="text-white font-medium block mb-1">{{ form.employment_type.label }}</label>
+                    {{ form.employment_type(class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-teal-400 focus:outline-none transition") }}
+                </div>
+                <div>
+                    <label class="text-white font-medium block mb-1">{{ form.experience_level.label }}</label>
+                    {{ form.experience_level(class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-teal-400 focus:outline-none transition") }}
+                </div>
+            </div>
+
+            <!-- Location & Remote -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="text-white font-medium block mb-1">{{ form.location.label }}</label>
+                    {{ form.location(class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none transition") }}
+                </div>
+                <div class="flex items-center pt-6">
+                    {{ form.remote_available(class="w-5 h-5 accent-teal-400 bg-white/5 border-white/10 rounded") }}
+                    <label class="text-white ml-2">{{ form.remote_available.label }}</label>
+                </div>
+            </div>
+
+            <!-- Salary -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="text-white font-medium block mb-1">{{ form.salary_min.label }}</label>
+                    {{ form.salary_min(class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none transition", placeholder="0") }}
+                </div>
+                <div>
+                    <label class="text-white font-medium block mb-1">{{ form.salary_max.label }}</label>
+                    {{ form.salary_max(class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none transition", placeholder="0") }}
+                </div>
+                <div>
+                    <label class="text-white font-medium block mb-1">{{ form.currency.label }}</label>
+                    {{ form.currency(class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-teal-400 focus:outline-none transition") }}
+                </div>
+            </div>
+
+            <!-- Skills -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="text-white font-medium block mb-1">{{ form.required_skills.label }}</label>
+                    {{ form.required_skills(class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none transition", placeholder="Python, Django, React") }}
+                    <p class="text-white/40 text-xs mt-1">Separate skills with commas</p>
+                </div>
+                <div>
+                    <label class="text-white font-medium block mb-1">{{ form.preferred_skills.label }}</label>
+                    {{ form.preferred_skills(class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none transition", placeholder="TypeScript, Docker") }}
+                    <p class="text-white/40 text-xs mt-1">Separate skills with commas</p>
+                </div>
+            </div>
+
+            <!-- Requirements & Responsibilities -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="text-white font-medium block mb-1">{{ form.requirements.label }}</label>
+                    {{ form.requirements(class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none transition", rows="4") }}
+                    <p class="text-white/40 text-xs mt-1">One per line</p>
+                </div>
+                <div>
+                    <label class="text-white font-medium block mb-1">{{ form.responsibilities.label }}</label>
+                    {{ form.responsibilities(class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none transition", rows="4") }}
+                    <p class="text-white/40 text-xs mt-1">One per line</p>
+                </div>
+            </div>
+
+            <!-- Expiry -->
+            <div>
+                <label class="text-white font-medium block mb-1">{{ form.expires_at.label }}</label>
+                {{ form.expires_at(class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none transition") }}
+                <p class="text-white/40 text-xs mt-1">Format: YYYY-MM-DD HH:MM</p>
+            </div>
+
+            <!-- Submit -->
+            <div class="flex gap-4 pt-4">
+                <button type="submit" class="flex-1 btn-primary px-8 py-3 rounded-xl text-white font-bold hover:scale-105 transition">
+                    <i class="fas fa-paper-plane mr-2"></i> Publish Job
+                </button>
+                <button type="submit" name="save_draft" value="true" 
+                        class="flex-1 bg-white/10 hover:bg-white/20 rounded-xl px-8 py-3 text-white text-center transition">
+                    <i class="fas fa-save mr-2"></i> Save Draft
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function generateAIDescription() {
+    const title = document.querySelector('input[name="title"]').value;
+    const skills = document.querySelector('textarea[name="required_skills"]').value;
+    
+    if (!title) {
+        alert('Please enter a job title first');
+        return;
+    }
+
+    // Show loading state
+    const descField = document.getElementById('jobDescription');
+    descField.value = '⏳ Generating description...';
+
+    // Send request to AI
+    fetch('{{ url_for("recruiter.api_generate_description") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            title: title,
+            skills: skills.split(',').map(s => s.trim())
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        descField.value = data.description || '';
+    })
+    .catch(error => {
+        descField.value = 'Error generating description. Please try again.';
+        console.error('Error:', error);
+    });
+}
+</script>
+{% endblock %}

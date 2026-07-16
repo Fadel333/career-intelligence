@@ -1,10 +1,17 @@
-# Write to .gitignore
-echo "venv/
-__pycache__/
-*.pyc
-instance/
-uploads/
-*.db
+# Environment variables
 .env
-.DS_Store
-*.log" > .gitignore
+.env.local
+.env.production
+
+# Config with secrets
+config.py
+
+# Uploads
+uploads/
+static/uploads/
+static/profile_pics/
+static/verification_docs/
+
+# Database
+*.db
+*.sqlite

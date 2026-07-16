@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Find Candidates - Recruiter Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-white">🔍 Find Candidates</h1>
+            <p class="text-white/60">AI-powered search through our talent database</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="{{ url_for('recruiter.hub') }}" class="text-white/60 hover:text-white transition">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Hub
+            </a>
+        </div>
+    </div>
+
+    <!-- Search & Filters -->
+    <div class="glass-card p-6 mb-8" data-aos="fade-up">
+        <form method="GET" action="{{ url_for('recruiter.candidates') }}" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="md:col-span-2">
+                    <label class="text-white/60 text-sm block mb-1">Search</label>
+                    <input type="text" name="q" value="{{ query or '' }}" 
+                           placeholder="Name, email, or skills..." 
+                           class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none transition">
+                </div>
+                <div>
+                    <label class="text-white/60 text-sm block mb-1">Minimum Match (%)</label>
+                    <input type="number" name="min_match" value="{{ min_match or 50 }}" min="0" max="100"
+                           class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none transition">
+                </div>
+                <div class="flex items-end">
+                    <button type="submit" class="w-full btn-primary px-6 py-2.5 rounded-xl text-white font-semibold">
+                        <i class="fas fa-search mr-2"></i> Search
+                    </button>
+                </div>
+            </div>
+            
+            <div>
+                <label class="text-white/60 text-sm block mb-1">Skills Filter (comma separated)</label>
+                <input type="text" name="skills" value="{{ skills|join(', ') if skills else '' }}"
+                       placeholder="e.g. Python, JavaScript, React"
+                       class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none transition">
+            </div>
+        </form>
+    </div>
+
+    <!-- Results Summary -->
+    <div class="flex justify-between items-center mb-4">
+        <p class="text-white/60">
+            <i class="fas fa-users mr-2"></i> 
+            {{ pagination.total if pagination else 0 }} candidates found
+            {% if query %} for "{{ query }}"{% endif %}
+        </p>
+        <p class="text-white/40 text-sm">Page {{ pagination.page if pagination else 1 }} of {{ pagination.pages if pagination else 1 }}</p>
+    </div>
+
+    <!-- Candidate Cards -->
+    <div class="space-y-4">
+        {% if candidates and candidates|length > 0 %}
+            {% for item in candidates %}
+            <div class="glass-card p-6 hover:border-teal-400/30 transition" data-aos="fade-up" data-aos-delay="{{ loop.index * 50 }}">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                    <div class="flex items-start gap-4">
+                        <div class="w-14 h-14 rounded-full bg-gradient-to-br from-teal-500 to-purple-600 flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
+                            {{ item.candidate.name[0]|upper if item.candidate.name else '?' }}
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-xl font-bold text-white">{{ item.candidate.name or 'Unknown' }}</h3>
+                                {% if item.match.overall and item.match.overall > 85 %}
+                                    <span class="bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full text-xs font-semibold">🏆 Top Match</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-white/60">{{ item.candidate.email or 'No email' }}</p>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                {% for skill in (item.candidate.skills or [])[:5] %}
+                                    <span class="bg-white/10 px-3 py-1 rounded-full text-white/70 text-xs">{{ skill }}</span>
+                                {% endfor %}
+                                {% if (item.candidate.skills or [])|length > 5 %}
+                                    <span class="text-white/40 text-xs">+{{ (item.candidate.skills|length) - 5 }} more</span>
+                                {% endif %}
+                            </div>
+                            <div class="flex flex-wrap gap-3 mt-1 text-xs text-white/40">
+                                <span><i class="fas fa-briefcase mr-1"></i> {{ item.candidate.experience_years or 0 }} years</span>
+                                <span><i class="fas fa-map-marker-alt mr-1"></i> {{ item.candidate.location or 'Unknown' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col items-end gap-2 w-full lg:w-auto">
+                        <div class="flex items-center gap-4 w-full lg:w-auto">
+                            <div class="text-right">
+                                <p class="text-white/60 text-sm">Match Score</p>
+                                <p class="text-3xl font-bold text-teal-400">{{ "%.0f"|format(item.match.overall|default(0)) }}%</p>
+                            </div>
+                            <div class="w-20 h-20 relative">
+                                <svg class="w-20 h-20 transform -rotate-90">
+                                    <circle cx="40" cy="40" r="32" stroke="rgba(255,255,255,0.1)" stroke-width="8" fill="none"/>
+                                    <circle cx="40" cy="40" r="32" stroke="#4ecdc4" stroke-width="8" fill="none"
+                                        stroke-dasharray="{{ (201 * item.match.overall|default(0) / 100) }} 201"
+                                        stroke-linecap="round"/>
+                                </svg>
+                                <span class="absolute inset-0 flex items-center justify-center text-white font-bold text-sm">
+                                    {{ "%.0f"|format(item.match.overall|default(0)) }}%
+                                </span>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 w-full lg:w-auto">
+                            <a href="{{ url_for('recruiter.candidate_detail', candidate_id=item.candidate.id) }}" 
+                               class="flex-1 lg:flex-none text-center bg-teal-500/20 hover:bg-teal-500/30 px-4 py-2 rounded-xl text-teal-400 text-sm font-semibold transition">
+                                <i class="fas fa-eye mr-1"></i> View
+                            </a>
+                            <button onclick="flagCandidate({{ item.candidate.id }})" 
+                                    class="flex-1 lg:flex-none text-center bg-white/10 hover:bg-white/20 px-4 py-2 rounded-xl text-white/80 text-sm transition">
+                                <i class="fas fa-flag mr-1"></i> Flag
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <!-- Pagination -->
+            {% if pagination and pagination.pages > 1 %}
+            <div class="flex justify-center gap-2 mt-6">
+                {% if pagination.has_prev %}
+                    <a href="{{ url_for('recruiter.candidates', page=pagination.prev_num, q=query, min_match=min_match, skills=skills|join(',') if skills else '') }}" 
+                       class="px-4 py-2 bg-white/10 rounded-xl text-white hover:bg-white/20 transition">Previous</a>
+                {% endif %}
+                <span class="px-4 py-2 bg-teal-500/20 rounded-xl text-white">
+                    Page {{ pagination.page }} of {{ pagination.pages }}
+                </span>
+                {% if pagination.has_next %}
+                    <a href="{{ url_for('recruiter.candidates', page=pagination.next_num, q=query, min_match=min_match, skills=skills|join(',') if skills else '') }}" 
+                       class="px-4 py-2 bg-white/10 rounded-xl text-white hover:bg-white/20 transition">Next</a>
+                {% endif %}
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="glass-card p-12 text-center">
+                <i class="fas fa-users-slash text-5xl text-white/20 mb-4"></i>
+                <p class="text-xl text-white/60">No candidates found</p>
+                <p class="text-white/40">Try adjusting your search filters</p>
+                <p class="text-white/30 text-sm mt-4">Make sure candidates have uploaded their CVs</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+function flagCandidate(candidateId) {
+    // Simple flag action - you can expand this
+    const jobId = prompt('Enter the Job ID to flag this candidate for:');
+    if (jobId) {
+        fetch(`/recruiter/candidates/${candidateId}/flag`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `job_id=${jobId}&notes=Flagged from search`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ Candidate flagged successfully!');
+            } else {
+                alert('❌ Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('❌ Error flagging candidate');
+        });
+    }
+}
+</script>
+{% endblock %}

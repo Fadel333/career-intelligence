@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Analytics - Recruiter Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-white mb-8">📊 Recruiter Analytics</h1>
+
+    <!-- Summary Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="glass-card p-6">
+            <p class="text-white/60 text-sm">Total Candidates</p>
+            <p class="text-3xl font-bold text-white">{{ total_candidates|default(0) }}</p>
+            <p class="text-green-400 text-sm mt-1">↑ {{ new_candidates|default(0) }} this week</p>
+        </div>
+        <div class="glass-card p-6">
+            <p class="text-white/60 text-sm">Average Match Score</p>
+            <p class="text-3xl font-bold text-teal-400">{{ avg_match|default(0) }}%</p>
+            <p class="text-blue-400 text-sm mt-1">Based on {{ total_jobs|default(0) }} jobs</p>
+        </div>
+        <div class="glass-card p-6">
+            <p class="text-white/60 text-sm">Time to Hire</p>
+            <p class="text-3xl font-bold text-yellow-400">{{ avg_time_to_hire|default(0) }} days</p>
+            <p class="text-green-400 text-sm mt-1">↓ {{ time_to_hire_change|default(0) }} days from last month</p>
+        </div>
+        <div class="glass-card p-6">
+            <p class="text-white/60 text-sm">Success Rate</p>
+            <p class="text-3xl font-bold text-green-400">{{ success_rate|default(0) }}%</p>
+            <p class="text-purple-400 text-sm mt-1">↑ {{ success_rate_change|default(0) }}% improvement</p>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <!-- Candidate Skills Distribution -->
+        <div class="glass-card p-6" data-aos="fade-up">
+            <h3 class="text-white font-semibold mb-4">🛠️ Top Skills in Candidate Pool</h3>
+            <canvas id="skillsChart" height="250"></canvas>
+        </div>
+
+        <!-- Experience Distribution -->
+        <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="100">
+            <h3 class="text-white font-semibold mb-4">💼 Experience Distribution</h3>
+            <canvas id="experienceChart" height="250"></canvas>
+        </div>
+    </div>
+
+    <!-- Location Heatmap -->
+    <div class="glass-card p-6 mb-8" data-aos="fade-up">
+        <h3 class="text-white font-semibold mb-4">📍 Candidate Locations</h3>
+        <div class="space-y-3">
+            {% if locations and locations|length > 0 %}
+                {% for location in locations %}
+                <div>
+                    <div class="flex justify-between text-white/60 text-sm mb-1">
+                        <span>{{ location.name }}</span>
+                        <span>{{ location.count }} candidates</span>
+                    </div>
+                    <div class="w-full bg-white/10 rounded-full h-2.5">
+                        <div class="bg-gradient-to-r from-teal-400 to-purple-500 rounded-full h-2.5" 
+                             style="width: {{ location.percentage }}%"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-white/40 text-center py-4">No location data available</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Job Match Distribution -->
+    <div class="glass-card p-6 mb-8" data-aos="fade-up">
+        <h3 class="text-white font-semibold mb-4">🎯 Top Candidates by Match Score</h3>
+        <div class="space-y-4">
+            {% if top_candidates and top_candidates|length > 0 %}
+                {% for candidate in top_candidates %}
+                <div class="flex items-center gap-4 p-3 bg-white/5 rounded-xl hover:bg-white/10 transition">
+                    <div class="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-purple-600 flex items-center justify-center text-white font-bold">
+                        {{ candidate.name[0]|upper if candidate.name else '?' }}
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-white font-medium">{{ candidate.name or 'Unknown' }}</p>
+                        <p class="text-white/60 text-sm">{{ candidate.skills[:3]|join(', ') if candidate.skills else 'No skills listed' }}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-2xl font-bold text-teal-400">{{ candidate.match|default(0) }}%</p>
+                        <p class="text-white/40 text-xs">{{ candidate.experience|default(0) }} years</p>
+                    </div>
+                    <div class="w-16 h-16 relative">
+                        <svg class="w-16 h-16 transform -rotate-90">
+                            <circle cx="32" cy="32" r="26" stroke="rgba(255,255,255,0.1)" stroke-width="6" fill="none"/>
+                            <circle cx="32" cy="32" r="26" stroke="#4ecdc4" stroke-width="6" fill="none"
+                                stroke-dasharray="{{ (163 * candidate.match|default(0) / 100) }} 163"
+                                stroke-linecap="round"/>
+                        </svg>
+                        <span class="absolute inset-0 flex items-center justify-center text-white font-bold text-xs">
+                            {{ candidate.match|default(0) }}%
+                        </span>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-white/40 text-center py-4">No candidate match data available</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- AI Insights -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="glass-card p-6" data-aos="fade-up">
+            <h3 class="text-white font-semibold mb-4">💡 AI Insights</h3>
+            <div class="space-y-3">
+                <div class="bg-white/5 rounded-xl p-3 border-l-4 border-teal-400">
+                    <p class="text-teal-400 text-sm font-semibold">Strong Skill Pool</p>
+                    <p class="text-white/80 text-sm">Your candidate pool has strong Python skills (85%)</p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-3 border-l-4 border-yellow-400">
+                    <p class="text-yellow-400 text-sm font-semibold">Skill Gap Alert</p>
+                    <p class="text-white/80 text-sm">Consider recruiting for React as demand is high</p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-3 border-l-4 border-blue-400">
+                    <p class="text-blue-400 text-sm font-semibold">Remote Opportunity</p>
+                    <p class="text-white/80 text-sm">62% of candidates are open to remote work</p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-3 border-l-4 border-purple-400">
+                    <p class="text-purple-400 text-sm font-semibold">Salary Insight</p>
+                    <p class="text-white/80 text-sm">Average salary expectation: GHS 9,500</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="100">
+            <h3 class="text-white font-semibold mb-4">📈 Trends</h3>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center p-3 bg-white/5 rounded-xl">
+                    <div>
+                        <p class="text-white/60 text-sm">Job Views</p>
+                        <p class="text-white font-bold text-lg">{{ total_views|default(0) }}</p>
+                    </div>
+                    <span class="text-green-400 text-sm">↑ {{ views_growth|default(0) }}%</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-white/5 rounded-xl">
+                    <div>
+                        <p class="text-white/60 text-sm">Applications</p>
+                        <p class="text-white font-bold text-lg">{{ total_applications|default(0) }}</p>
+                    </div>
+                    <span class="text-green-400 text-sm">↑ {{ apps_growth|default(0) }}%</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-white/5 rounded-xl">
+                    <div>
+                        <p class="text-white/60 text-sm">Hires per Job</p>
+                        <p class="text-white font-bold text-lg">{{ avg_hires_per_job|default(0) }}</p>
+                    </div>
+                    <span class="text-blue-400 text-sm">Industry avg: 1.2</span>
+                </div>
+                <div class="flex justify-between items-center p-3 bg-white/5 rounded-xl">
+                    <div>
+                        <p class="text-white/60 text-sm">Cost per Hire</p>
+                        <p class="text-white font-bold text-lg">₵{{ cost_per_hire|default(0) }}</p>
+                    </div>
+                    <span class="text-green-400 text-sm">↓ {{ cost_savings|default(0) }}%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Skills Chart - Using data from backend
+    const skillsCtx = document.getElementById('skillsChart').getContext('2d');
+    
+    // Get skills data from backend or use default
+    const skillsData = {{ top_skills|tojson|default('[]') }};
+    const skillsLabels = skillsData.map(item => item[0] || 'Unknown');
+    const skillsCounts = skillsData.map(item => item[1] || 0);
+    
+    new Chart(skillsCtx, {
+        type: 'bar',
+        data: {
+            labels: skillsLabels.length > 0 ? skillsLabels : ['Python', 'JavaScript', 'React', 'AWS', 'Docker', 'SQL', 'Node.js'],
+            datasets: [{
+                label: 'Number of Candidates',
+                data: skillsCounts.length > 0 ? skillsCounts : [45, 38, 32, 28, 25, 30, 22],
+                backgroundColor: [
+                    'rgba(78, 205, 196, 0.8)',
+                    'rgba(78, 205, 196, 0.7)',
+                    'rgba(78, 205, 196, 0.6)',
+                    'rgba(78, 205, 196, 0.5)',
+                    'rgba(78, 205, 196, 0.4)',
+                    'rgba(78, 205, 196, 0.7)',
+                    'rgba(78, 205, 196, 0.5)'
+                ],
+                borderColor: '#4ecdc4',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { 
+                    ticks: { color: '#ffffff80' },
+                    grid: { color: 'rgba(255,255,255,0.05)' }
+                },
+                x: { 
+                    ticks: { color: '#ffffff80' },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+
+    // Experience Chart - Using data from backend
+    const expCtx = document.getElementById('experienceChart').getContext('2d');
+    
+    // Get experience data from backend
+    const expData = {{ exp_ranges|tojson|default('{}') }};
+    const expLabels = ['0-2 years', '3-5 years', '6-10 years', '10+ years'];
+    const expValues = expLabels.map(label => expData[label] || 0);
+    
+    new Chart(expCtx, {
+        type: 'doughnut',
+        data: {
+            labels: expLabels,
+            datasets: [{
+                data: expValues.length > 0 && expValues.some(v => v > 0) ? expValues : [25, 35, 28, 12],
+                backgroundColor: [
+                    '#4ecdc4',
+                    '#60a5fa',
+                    '#a78bfa',
+                    '#f472b6'
+                ],
+                borderWidth: 2,
+                borderColor: 'rgba(0,0,0,0.2)'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { color: '#ffffff80', padding: 15 }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

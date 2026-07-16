@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Recruiter Hub - FADTECH Labs{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Hero Section -->
+    <div class="glass-card p-8 mb-8" data-aos="fade-up">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-bold text-white">
+                    🎯 Recruiter Hub
+                </h1>
+                <p class="text-white/60 mt-1">
+                    Welcome back, {{ current_user.fullname }}!
+                    {% if recruiter and recruiter.verification_status == 'approved' %}
+                        <span class="text-green-400 text-sm ml-2">
+                            <i class="fas fa-check-circle"></i> Verified Account
+                        </span>
+                    {% elif recruiter and recruiter.verification_status == 'pending' %}
+                        <span class="text-yellow-400 text-sm ml-2">
+                            <i class="fas fa-clock"></i> Awaiting Verification
+                        </span>
+                    {% endif %}
+                </p>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                <a href="{{ url_for('recruiter.create_job') }}" 
+                   class="btn-primary px-6 py-2.5 rounded-xl text-white font-semibold inline-flex items-center gap-2 hover:scale-105 transition">
+                    <i class="fas fa-plus"></i> Post a Job
+                </a>
+                <a href="{{ url_for('recruiter.candidates') }}" 
+                   class="bg-white/10 hover:bg-white/20 backdrop-blur-sm px-6 py-2.5 rounded-xl text-white font-semibold inline-flex items-center gap-2 transition border border-white/10">
+                    <i class="fas fa-search"></i> Find Talent
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="0">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-white/60 text-sm font-medium">Total Jobs</p>
+                    <p class="text-3xl font-bold text-white mt-1">{{ total_jobs|default(0) }}</p>
+                </div>
+                <div class="w-12 h-12 bg-teal-500/20 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-briefcase text-teal-400 text-xl"></i>
+                </div>
+            </div>
+            <p class="text-teal-400 text-sm mt-2">
+                <i class="fas fa-circle text-xs mr-1"></i> {{ active_jobs|default(0) }} active
+            </p>
+        </div>
+
+        <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="100">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-white/60 text-sm font-medium">Total Candidates</p>
+                    <p class="text-3xl font-bold text-white mt-1">{{ total_candidates|default(0) }}</p>
+                </div>
+                <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-users text-blue-400 text-xl"></i>
+                </div>
+            </div>
+            <p class="text-blue-400 text-sm mt-2">
+                <i class="fas fa-arrow-up text-xs mr-1"></i> {{ new_candidates|default(0) }} new this week
+            </p>
+        </div>
+
+        <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="200">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-white/60 text-sm font-medium">Placements</p>
+                    <p class="text-3xl font-bold text-white mt-1">{{ total_placements|default(0) }}</p>
+                </div>
+                <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-user-check text-green-400 text-xl"></i>
+                </div>
+            </div>
+            <p class="text-green-400 text-sm mt-2">
+                <i class="fas fa-check-circle text-xs mr-1"></i> {{ hired_this_month|default(0) }} hired this month
+            </p>
+        </div>
+
+        <div class="glass-card p-6" data-aos="fade-up" data-aos-delay="300">
+            <div class="flex items-start justify-between">
+                <div>
+                    <p class="text-white/60 text-sm font-medium">Match Rate</p>
+                    <p class="text-3xl font-bold text-white mt-1">{{ match_rate|default(0) }}%</p>
+                </div>
+                <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-brain text-purple-400 text-xl"></i>
+                </div>
+            </div>
+            <p class="text-purple-400 text-sm mt-2">
+                <i class="fas fa-robot text-xs mr-1"></i> AI-powered ranking
+            </p>
+        </div>
+    </div>
+
+    <!-- Two Column Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Active Jobs -->
+        <div class="lg:col-span-2 glass-card p-6" data-aos="fade-right">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-white">🔥 Active Jobs</h2>
+                <a href="{{ url_for('recruiter.jobs') }}" class="text-teal-400 hover:text-teal-300 text-sm transition">
+                    View All →
+                </a>
+            </div>
+            {% if active_jobs_list and active_jobs_list|length > 0 %}
+                <div class="space-y-3 max-h-96 overflow-y-auto custom-scrollbar">
+                    {% for job in active_jobs_list %}
+                    <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl hover:bg-white/10 transition border border-white/5 hover:border-teal-400/30">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-white font-semibold">{{ job.title }}</h3>
+                                {% if job.applications_count > 0 %}
+                                    <span class="bg-teal-500/20 text-teal-300 text-xs px-2 py-0.5 rounded-full">
+                                        {{ job.applications_count }} applicants
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <div class="flex flex-wrap gap-3 mt-1 text-sm text-white/50">
+                                <span><i class="fas fa-map-marker-alt mr-1"></i> {{ job.location or 'Remote' }}</span>
+                                <span><i class="fas fa-clock mr-1"></i> {{ job.posted_at.strftime('%b %d, %Y') }}</span>
+                                {% if job.expires_at %}
+                                    {% set days_left = (job.expires_at - now).days if now else 0 %}
+                                    <span class="{% if days_left < 3 %}text-red-400{% else %}text-yellow-400{% endif %}">
+                                        <i class="fas fa-hourglass-end mr-1"></i> {{ days_left }} days left
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-400">
+                                Active
+                            </span>
+                            <a href="{{ url_for('recruiter.edit_job', job_id=job.id) }}" 
+                               class="text-white/40 hover:text-white transition text-sm">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-8">
+                    <i class="fas fa-file-alt text-4xl text-white/20 mb-3"></i>
+                    <p class="text-white/60">No active jobs</p>
+                    <p class="text-white/40 text-sm">Post your first job to start hiring</p>
+                    <a href="{{ url_for('recruiter.create_job') }}" 
+                       class="btn-primary px-6 py-2 rounded-xl text-white font-semibold inline-block mt-3 text-sm">
+                        <i class="fas fa-plus mr-2"></i> Post a Job
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- AI Insights -->
+        <div class="glass-card p-6" data-aos="fade-left">
+            <h2 class="text-xl font-bold text-white mb-4">🤖 AI Insights</h2>
+            <div class="space-y-4">
+                <div class="bg-white/5 rounded-xl p-4 border-l-4 border-teal-400">
+                    <p class="text-teal-400 text-sm font-semibold">Top Candidate Match</p>
+                    <p class="text-white font-medium">Sarah K. - 95% match</p>
+                    <p class="text-white/40 text-xs">For Senior Developer role</p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-4 border-l-4 border-yellow-400">
+                    <p class="text-yellow-400 text-sm font-semibold">Skill Gap Alert</p>
+                    <p class="text-white/80 text-sm">Python candidates are limited in your area</p>
+                    <p class="text-white/40 text-xs">Consider broadening your search</p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-4 border-l-4 border-blue-400">
+                    <p class="text-blue-400 text-sm font-semibold">Salary Insight</p>
+                    <p class="text-white/80 text-sm">Market rate for React devs ↑12%</p>
+                    <p class="text-white/40 text-xs">Based on 50+ job postings</p>
+                </div>
+                <div class="bg-white/5 rounded-xl p-4 border-l-4 border-purple-400">
+                    <p class="text-purple-400 text-sm font-semibold">Candidate Suggestion</p>
+                    <p class="text-white/80 text-sm">3 new candidates match your job</p>
+                    <a href="{{ url_for('recruiter.candidates') }}" class="text-teal-400 text-xs hover:text-teal-300 transition">
+                        View suggestions →
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+        <a href="{{ url_for('recruiter.create_job') }}" 
+           class="glass-card p-4 text-center hover:border-teal-400/30 transition group">
+            <div class="w-12 h-12 bg-teal-500/20 rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition">
+                <i class="fas fa-plus text-teal-400 text-xl"></i>
+            </div>
+            <p class="text-white/80 text-sm font-medium">Post Job</p>
+        </a>
+        <a href="{{ url_for('recruiter.candidates') }}" 
+           class="glass-card p-4 text-center hover:border-blue-400/30 transition group">
+            <div class="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition">
+                <i class="fas fa-search text-blue-400 text-xl"></i>
+            </div>
+            <p class="text-white/80 text-sm font-medium">Find Talent</p>
+        </a>
+        <a href="{{ url_for('recruiter.placements') }}" 
+           class="glass-card p-4 text-center hover:border-green-400/30 transition group">
+            <div class="w-12 h-12 bg-green-500/20 rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition">
+                <i class="fas fa-user-check text-green-400 text-xl"></i>
+            </div>
+            <p class="text-white/80 text-sm font-medium">Placements</p>
+        </a>
+        <a href="{{ url_for('recruiter.analytics') }}" 
+           class="glass-card p-4 text-center hover:border-purple-400/30 transition group">
+            <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center mx-auto mb-2 group-hover:scale-110 transition">
+                <i class="fas fa-chart-bar text-purple-400 text-xl"></i>
+            </div>
+            <p class="text-white/80 text-sm font-medium">Analytics</p>
+        </a>
+    </div>
+</div>
+
+<style>
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.05);
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #4ecdc4, #8e2de2);
+    border-radius: 10px;
+}
+</style>
+{% endblock %}
