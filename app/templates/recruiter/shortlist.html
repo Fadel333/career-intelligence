@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Shortlist - Recruiter Hub{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <div class="flex items-center gap-4 mb-8">
+        <a href="{{ url_for('recruiter.dashboard') }}" class="text-white/60 hover:text-white transition">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="text-3xl font-bold text-white">⭐ Shortlist</h1>
+            <p class="text-white/60">Your saved candidates</p>
+            <p class="text-white/40 text-sm">{{ shortlisted|length if shortlisted else 0 }} candidates shortlisted</p>
+        </div>
+    </div>
+
+    {% if shortlisted and shortlisted|length > 0 %}
+        <div class="space-y-4">
+            {% for item in shortlisted %}
+            <div class="glass-card p-6 hover:border-teal-400/30 transition">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="flex items-start gap-4">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-teal-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                            {{ item.candidate.name[0]|upper if item.candidate and item.candidate.name else '?' }}
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-white">{{ item.candidate.name if item.candidate else 'Unknown' }}</h3>
+                            <p class="text-white/60">{{ item.candidate.email if item.candidate else 'No email' }}</p>
+                            <div class="flex flex-wrap gap-3 mt-1 text-sm text-white/40">
+                                <span><i class="fas fa-calendar mr-1"></i> Added: {{ item.created_at.strftime('%b %d, %Y') }}</span>
+                                {% if item.job %}
+                                    <span><i class="fas fa-briefcase mr-1"></i> For: {{ item.job.title }}</span>
+                                {% endif %}
+                            </div>
+                            {% if item.candidate and item.candidate.skills %}
+                            <div class="flex flex-wrap gap-1 mt-2">
+                                {% for skill in item.candidate.skills[:3] %}
+                                    <span class="bg-teal-500/20 text-teal-300 px-2 py-0.5 rounded-full text-xs">{{ skill }}</span>
+                                {% endfor %}
+                                {% if item.candidate.skills|length > 3 %}
+                                    <span class="text-white/40 text-xs">+{{ item.candidate.skills|length - 3 }} more</span>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col items-end gap-2 w-full md:w-auto">
+                        <!-- Notes -->
+                        <form method="POST" action="{{ url_for('recruiter.update_shortlist_note', shortlist_id=item.id) }}" class="flex gap-2 w-full">
+                            <input type="text" name="notes" value="{{ item.notes or '' }}" 
+                                   placeholder="Add a note..."
+                                   class="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder-white/40 focus:border-teal-400 focus:outline-none transition w-full md:w-48">
+                            <button type="submit" class="bg-teal-500/20 hover:bg-teal-500/30 px-3 py-2 rounded-xl text-teal-300 text-sm transition whitespace-nowrap">
+                                <i class="fas fa-save"></i>
+                            </button>
+                        </form>
+                        
+                        <div class="flex gap-2 w-full">
+                            <a href="{{ url_for('recruiter.candidate_detail', candidate_id=item.candidate_id) }}" 
+                               class="flex-1 md:flex-none text-center bg-teal-500/20 hover:bg-teal-500/30 px-4 py-2 rounded-xl text-teal-400 text-sm font-semibold transition">
+                                <i class="fas fa-eye mr-1"></i> View Profile
+                            </a>
+                            <form method="POST" action="{{ url_for('recruiter.remove_from_shortlist', shortlist_id=item.id) }}" class="inline">
+                                <button type="submit" class="bg-red-500/20 hover:bg-red-500/30 px-4 py-2 rounded-xl text-red-400 text-sm transition" 
+                                        onclick="return confirm('Remove {{ item.candidate.name if item.candidate else 'candidate' }} from shortlist?')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% if item.notes %}
+                <div class="mt-3 pt-3 border-t border-white/10">
+                    <p class="text-white/40 text-sm"><i class="fas fa-sticky-note mr-1"></i> {{ item.notes }}</p>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="glass-card p-12 text-center">
+            <i class="fas fa-star text-5xl text-white/20 mb-4"></i>
+            <p class="text-xl text-white/60">Your shortlist is empty</p>
+            <p class="text-white/40">Start saving promising candidates to review later</p>
+            <a href="{{ url_for('recruiter.candidates') }}" 
+               class="btn-primary px-6 py-2.5 rounded-xl text-white font-semibold inline-block mt-4">
+                <i class="fas fa-search mr-2"></i> Find Candidates
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

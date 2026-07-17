@@ -116,7 +116,6 @@ def login():
             login_user(user, remember=bool(remember))
             flash(f"Welcome back, {user.fullname}!", "success")
             
-            # Check for next parameter
             next_page = request.args.get('next')
             if next_page:
                 return redirect(next_page)
@@ -129,13 +128,13 @@ def login():
             elif user.user_type == 'university':
                 return redirect(url_for('university_dashboard'))
             else:
+                # Students and professionals
                 return redirect(url_for('dashboard'))
         else:
             flash("Invalid email or password.", "error")
             return redirect(url_for("auth.login"))
     
     return render_template("login.html")
-
 
 @auth_bp.route("/logout")
 @login_required

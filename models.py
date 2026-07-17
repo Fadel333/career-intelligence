@@ -82,12 +82,12 @@ class User(UserMixin, db.Model):
     total_earnings = db.Column(db.Float, default=0.0)
     total_placements = db.Column(db.Integer, default=0)
     
-    # Relationships - WITH foreign_keys specified
-    profile = db.relationship('Profile', backref='user', uselist=False, cascade='all, delete-orphan')
+    # Relationships - ALL BACKREF NAMES ARE UNIQUE
+    profile = db.relationship('Profile', backref='user_profile', uselist=False, cascade='all, delete-orphan')
     
     recruiter_profile = db.relationship(
         'RecruiterProfile', 
-        backref='user', 
+        backref='user_recruiter_profile', 
         uselist=False, 
         cascade='all, delete-orphan',
         foreign_keys='RecruiterProfile.user_id'
@@ -95,12 +95,13 @@ class User(UserMixin, db.Model):
     
     jobs = db.relationship(
         'Job', 
-        backref='poster', 
+        backref='job_poster', 
         lazy=True, 
         foreign_keys='Job.poster_id'
     )
     
-    candidates = db.relationship('Candidate', backref='user', lazy=True)
+    candidates = db.relationship('Candidate', backref='user_candidate', lazy=True)
+    applications = db.relationship('JobApplication', backref='user_applicant', lazy=True)
     
     def __repr__(self):
         return f'<User {self.email}>'
@@ -265,10 +266,10 @@ class RecruiterProfile(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    jobs = db.relationship('Job', backref='recruiter', lazy=True, foreign_keys='Job.recruiter_id')
-    placements = db.relationship('Placement', backref='recruiter', lazy=True, foreign_keys='Placement.recruiter_id')
+    jobs = db.relationship('Job', backref='recruiter_jobs', lazy=True, foreign_keys='Job.recruiter_id')
+    placements = db.relationship('Placement', backref='recruiter_placements', lazy=True, foreign_keys='Placement.recruiter_id')
     verified_by_user = db.relationship('User', foreign_keys=[verified_by])
-    shortlists = db.relationship('Shortlist', backref='recruiter', lazy=True, foreign_keys='Shortlist.recruiter_id')
+    shortlists = db.relationship('Shortlist', backref='recruiter_shortlists', lazy=True, foreign_keys='Shortlist.recruiter_id')
     
     def __repr__(self):
         return f'<RecruiterProfile {self.company_name or self.user_id}>'
@@ -337,8 +338,8 @@ class Candidate(db.Model):
     is_processed = db.Column(db.Boolean, default=False)
     
     # Relationships
-    placements = db.relationship('Placement', backref='candidate', lazy=True, foreign_keys='Placement.candidate_id')
-    shortlists = db.relationship('Shortlist', backref='candidate', lazy=True, foreign_keys='Shortlist.candidate_id')
+    placements = db.relationship('Placement', backref='candidate_placements', lazy=True, foreign_keys='Placement.candidate_id')
+    shortlists = db.relationship('Shortlist', backref='candidate_shortlists', lazy=True, foreign_keys='Shortlist.candidate_id')
     
     def __repr__(self):
         return f'<Candidate {self.name}>'
@@ -404,8 +405,9 @@ class Job(db.Model):
     preferred_skills = db.Column(db.JSON, default=list)
     
     # Relationships
-    placements = db.relationship('Placement', backref='job', lazy=True, foreign_keys='Placement.job_id')
-    shortlists = db.relationship('Shortlist', backref='job', lazy=True, foreign_keys='Shortlist.job_id')
+    placements = db.relationship('Placement', backref='job_placements', lazy=True, foreign_keys='Placement.job_id')
+    shortlists = db.relationship('Shortlist', backref='job_shortlists', lazy=True, foreign_keys='Shortlist.job_id')
+    applications = db.relationship('JobApplication', backref='job_applications', lazy=True)
     
     def __repr__(self):
         return f'<Job {self.title}>'
@@ -501,8 +503,32 @@ class Shortlist(db.Model):
     job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'), nullable=True)
     notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    recruiter = db.relationship('RecruiterProfile', backref='shortlist_recruiter', lazy=True)
+    candidate = db.relationship('Candidate', backref='shortlist_candidate', lazy=True)
+    job = db.relationship('Job', backref='shortlist_job', lazy=True)
+    
+    def __repr__(self):
+        return f'<Shortlist {self.recruiter.company_name if self.recruiter else "Unknown"} - {self.candidate.name if self.candidate else "Unknown"}>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'recruiter_id': self.recruiter_id,
+            'candidate_id': self.candidate_id,
+            'candidate_name': self.candidate.name if self.candidate else None,
+            'job_id': self.job_id,
+            'job_title': self.job.title if self.job else None,
+            'notes': self.notes,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
 
-# models.py - Add after the Placement model
+
+# ============================================
+# JOB APPLICATION MODEL
+# ============================================
 
 class JobApplication(db.Model):
     """Job applications submitted by candidates"""
@@ -510,7 +536,7 @@ class JobApplication(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)  # If logged in
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     
     # Applicant info
     applicant_name = db.Column(db.String(255), nullable=False)
@@ -519,11 +545,11 @@ class JobApplication(db.Model):
     
     # Application details
     cover_letter = db.Column(db.Text)
-    cv_filename = db.Column(db.String(255))  # Uploaded CV
+    cv_filename = db.Column(db.String(255))
     cv_filepath = db.Column(db.String(500))
     
     # Status
-    status = db.Column(db.String(50), default='pending')  # pending, reviewed, shortlisted, rejected, hired
+    status = db.Column(db.String(50), default='pending')
     notes = db.Column(db.Text)
     
     # Metadata
@@ -532,8 +558,8 @@ class JobApplication(db.Model):
     reviewed_at = db.Column(db.DateTime, nullable=True)
     
     # Relationships
-    job = db.relationship('Job', backref='applications', lazy=True)
-    user = db.relationship('User', backref='applications', lazy=True)
+    job = db.relationship('Job', backref='job_applications', lazy=True)
+    applicant = db.relationship('User', backref='user_applications', lazy=True)
     
     def __repr__(self):
         return f'<JobApplication {self.applicant_name} -> {self.job.title if self.job else "Unknown"}>'
@@ -548,9 +574,6 @@ class JobApplication(db.Model):
             'status': self.status,
             'applied_at': self.applied_at.isoformat() if self.applied_at else None
         }
-    
-    def __repr__(self):
-        return f'<Shortlist {self.recruiter.company_name if self.recruiter else "Unknown"} - {self.candidate.name if self.candidate else "Unknown"}>'
 
 
 # ============================================

@@ -19,7 +19,7 @@ from app.utils.skill_analyzer import SkillAnalyzer
 from app.utils.course_api import CourseAPI
 from app.utils.hybrid_parser import HybridParser
 from app.utils.openai_assistant import OpenAIAssistant
-from models import User, Profile, RecruiterProfile, Candidate, Job, Placement  # Renamed models
+from models import User, Profile, RecruiterProfile, Candidate, Job, Placement
 from app.recruiter import recruiter_bp 
 from app.admin.routes import admin_bp 
 from app.jobs.routes import jobs_bp 
@@ -59,7 +59,6 @@ def decompress_parsed_data(compressed):
         return pickle.loads(decoded)
     except Exception as e:
         print(f"Decompression error: {e}")
-        # If decompression fails, try to return as-is (might be old format)
         return compressed
 
 
@@ -319,16 +318,15 @@ def get_curriculum_recommendations_default():
     ]
 
 
-# ========== RECRUITER HUB HELPER FUNCTIONS (Renamed from Partner) ==========
-def get_recruiter_stats(recruiter_id):  # Renamed from get_partner_stats
+# ========== RECRUITER HUB HELPER FUNCTIONS ==========
+def get_recruiter_stats(recruiter_id):
     """Get recruiter hub statistics"""
-    from models import Job, Placement  # Renamed from Vacancy
+    from models import Job, Placement
     
-    total_jobs = Job.query.filter_by(recruiter_id=recruiter_id).count()  # Renamed from total_vacancies
-    active_jobs = Job.query.filter_by(recruiter_id=recruiter_id, status='published').count()  # Renamed from active_vacancies
+    total_jobs = Job.query.filter_by(recruiter_id=recruiter_id).count()
+    active_jobs = Job.query.filter_by(recruiter_id=recruiter_id, status='published').count()
     total_placements = Placement.query.filter_by(recruiter_id=recruiter_id).count()
     
-    # Earnings
     from sqlalchemy import func
     total_earnings = db.session.query(func.sum(Placement.commission_amount))\
         .filter_by(recruiter_id=recruiter_id, commission_paid=True).scalar() or 0
@@ -338,8 +336,8 @@ def get_recruiter_stats(recruiter_id):  # Renamed from get_partner_stats
         .filter(Placement.status == 'hired').scalar() or 0
     
     return {
-        'total_jobs': total_jobs,  # Renamed from total_vacancies
-        'active_jobs': active_jobs,  # Renamed from active_vacancies
+        'total_jobs': total_jobs,
+        'active_jobs': active_jobs,
         'total_placements': total_placements,
         'total_earnings': total_earnings,
         'pending_earnings': pending_earnings
@@ -361,11 +359,22 @@ def register_routes(app):
         """Privacy policy page"""
         return render_template('privacy_policy.html')
     
-    # ========== CV UPLOAD ROUTE ==========
+    # ========== STUDENT-ONLY ROUTES ==========
+    # These routes should only be accessible to students/professionals
+    
     @app.route('/upload-cv', methods=['GET', 'POST'])
     @login_required
     def upload_cv():
-        """CV upload and parsing page"""
+        """CV upload and parsing page - STUDENT ONLY"""
+        # Redirect recruiters and admins
+        if current_user.is_recruiter():
+            flash('Recruiters cannot upload CVs. This feature is for job seekers.', 'warning')
+            return redirect(url_for('recruiter.dashboard'))
+        if current_user.is_admin():
+            flash('Admins cannot upload CVs.', 'warning')
+            return redirect(url_for('admin.index'))
+        
+        # ... rest of upload_cv code ...
         if request.method == 'POST':
             if 'cv_file' not in request.files:
                 flash('No file selected', 'error')
@@ -388,14 +397,11 @@ def register_routes(app):
             flash('Processing CV... Please wait.', 'info')
             
             try:
-                # Use hybrid parser - quick parse first
                 parsed_data = hybrid_parser.parse_hybrid(filepath, current_user.id)
                 
                 if parsed_data:
-                    # Save to database
                     user = User.query.get(current_user.id)
                     if user:
-                        # Add additional data to parsed_data
                         all_skills = []
                         for category, skills in parsed_data.get('skills', {}).items():
                             all_skills.extend(skills)
@@ -416,16 +422,12 @@ def register_routes(app):
                         
                         parsed_data['employability_score'] = employability['score']
                         
-                        # Save to database
                         user.save_cv_analysis(parsed_data)
                         user.detected_sector = detected_sector
                         user.employability_score = employability['score']
                         
-                        # ALSO save to Candidate table for recruiter matching
-                        # Check if candidate already exists for this user
                         existing_candidate = Candidate.query.filter_by(user_id=current_user.id).first()
                         if existing_candidate:
-                            # Update existing candidate
                             existing_candidate.name = user.fullname
                             existing_candidate.email = user.email
                             existing_candidate.skills = all_skills
@@ -437,7 +439,6 @@ def register_routes(app):
                             existing_candidate.is_processed = True
                             existing_candidate.last_updated = datetime.utcnow()
                         else:
-                            # Create new candidate
                             candidate = Candidate(
                                 user_id=current_user.id,
                                 name=user.fullname,
@@ -456,16 +457,14 @@ def register_routes(app):
                         
                         db.session.commit()
                         print(f"✅ CV data saved to database for user {user.email}")
-                        print(f"✅ Candidate record created/updated for recruiter matching")
                     
-                    # Store in session for display
                     compressed_data = compress_parsed_data(parsed_data)
                     if compressed_data:
                         session['parsed_cv'] = compressed_data
                         session['cv_filename'] = file.filename
                         session['parsing_status'] = parsed_data.get('status', 'processing')
                         
-                        flash(f'✅ CV uploaded! Quick analysis complete. Found {parsed_data["total_skills"]} skills. Deep analysis running in background...', 'success')
+                        flash(f'✅ CV uploaded! Quick analysis complete. Found {parsed_data["total_skills"]} skills.', 'success')
                         return redirect(url_for('skill_analysis'))
                     else:
                         flash('Error processing CV data. Please try again.', 'error')
@@ -480,30 +479,29 @@ def register_routes(app):
         
         return render_template('upload_cv.html', user=current_user)
     
-    # ========== SKILL ANALYSIS ROUTE ==========
     @app.route('/skill-analysis')
     @login_required
     def skill_analysis():
-        """Skill gap analysis page with sector detection"""
+        """Skill gap analysis page - STUDENT ONLY"""
+        if current_user.is_recruiter():
+            flash('This feature is for job seekers only.', 'warning')
+            return redirect(url_for('recruiter.dashboard'))
+        if current_user.is_admin():
+            flash('This feature is for job seekers only.', 'warning')
+            return redirect(url_for('admin.index'))
         
-        # First try to get from session (new upload)
         parsed_data = get_parsed_data_from_session()
         
-        # If not in session, get from database
         if not parsed_data:
             user = User.query.get(current_user.id)
             if user and user.cv_analysis:
                 parsed_data = user.get_cv_analysis()
-                print(f"📄 Loaded CV data from database for {user.email}")
-                
-                # Store in session for this request
                 if parsed_data:
                     compressed_data = compress_parsed_data(parsed_data)
                     if compressed_data:
                         session['parsed_cv'] = compressed_data
                         session['cv_filename'] = user.cv_filename
         
-        # If still no data, show empty state
         if not parsed_data:
             return render_template('skill_analysis.html', 
                                  user=current_user, 
@@ -526,7 +524,6 @@ def register_routes(app):
             detected_sector = SkillAnalyzer.detect_sector(all_skills)
             session['detected_sector'] = detected_sector
             
-            # Get sector-specific market demands
             market_demands = SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get(
                 detected_sector, 
                 SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get('technology', {})
@@ -556,14 +553,19 @@ def register_routes(app):
         
         return render_template('skill_analysis.html', user=current_user, parsed_data=None, is_processing=False, no_cv=True)
     
-    # ========== LEARNING ROADMAP ROUTE ==========
     @app.route('/learning-roadmap')
     @login_required
     def learning_roadmap():
-        """Personalized learning roadmap page"""
+        """Personalized learning roadmap page - STUDENT ONLY"""
+        if current_user.is_recruiter():
+            flash('This feature is for job seekers only.', 'warning')
+            return redirect(url_for('recruiter.dashboard'))
+        if current_user.is_admin():
+            flash('This feature is for job seekers only.', 'warning')
+            return redirect(url_for('admin.index'))
+        
         parsed_data = get_parsed_data_from_session()
         
-        # If no data, show empty state
         if not parsed_data:
             user = User.query.get(current_user.id)
             if user and user.cv_analysis:
@@ -582,11 +584,17 @@ def register_routes(app):
                              course_api=course_api,
                              no_cv=not parsed_data)
     
-    # ========== JOB MATCHES ROUTE ==========
     @app.route('/job-matches')
     @login_required
     def job_matches():
-        """Job recommendations page"""
+        """Job recommendations page - STUDENT ONLY"""
+        if current_user.is_recruiter():
+            flash('This feature is for job seekers only.', 'warning')
+            return redirect(url_for('recruiter.dashboard'))
+        if current_user.is_admin():
+            flash('This feature is for job seekers only.', 'warning')
+            return redirect(url_for('admin.index'))
+        
         parsed_data = get_parsed_data_from_session()
         
         if not parsed_data:
@@ -613,11 +621,17 @@ def register_routes(app):
         
         return render_template('job_matches.html', user=current_user, job_matches=None, skill_analyzer=SkillAnalyzer, no_cv=True)
     
-    # ========== CAREER ASSISTANT ROUTES ==========
     @app.route('/career-assistant')
     @login_required
     def career_assistant():
-        """AI career assistant chat page - Powered by OpenAI"""
+        """AI career assistant chat page - STUDENT ONLY"""
+        if current_user.is_recruiter():
+            flash('This feature is for job seekers only.', 'warning')
+            return redirect(url_for('recruiter.dashboard'))
+        if current_user.is_admin():
+            flash('This feature is for job seekers only.', 'warning')
+            return redirect(url_for('admin.index'))
+        
         parsed_data = get_parsed_data_from_session()
         
         if not parsed_data:
@@ -634,11 +648,13 @@ def register_routes(app):
     @app.route('/api/ask', methods=['POST'])
     @login_required
     def api_ask():
-        """API endpoint for career assistant questions - NOW WITH OPENAI"""
+        """API endpoint for career assistant questions"""
+        if current_user.is_recruiter() or current_user.is_admin():
+            return jsonify({'error': 'This feature is for job seekers only.'}), 403
+        
         data = request.get_json()
         question = data.get('question', '')
         
-        # Get user skills from session
         parsed_data = get_parsed_data_from_session()
         
         if not parsed_data:
@@ -656,7 +672,6 @@ def register_routes(app):
             experience = parsed_data.get('experience_years', 0)
             sector = SkillAnalyzer.detect_sector(user_skills)
         
-        # Get AI response from OpenAI
         assistant = OpenAIAssistant()
         response = assistant.get_response(question, user_skills, experience, sector)
         
@@ -666,7 +681,7 @@ def register_routes(app):
     @app.route('/dashboard')
     @login_required
     def dashboard():
-        """Main user dashboard"""
+        """Main user dashboard - Role-based"""
         parsed_data = get_parsed_data_from_session()
         
         if not parsed_data:
@@ -678,22 +693,21 @@ def register_routes(app):
                     if compressed_data:
                         session['parsed_cv'] = compressed_data
         
-        # If user is a recruiter, show recruiter stats
-        recruiter_stats = None
+        # Redirect based on user type to appropriate dashboard
         if current_user.is_recruiter():
-            recruiter_profile = RecruiterProfile.query.filter_by(user_id=current_user.id).first()
-            if recruiter_profile:
-                recruiter_stats = get_recruiter_stats(recruiter_profile.id)
+            return redirect(url_for('recruiter.dashboard'))
+        if current_user.is_admin():
+            return redirect(url_for('admin.index'))
         
-        return render_template('dashboard.html', user=current_user, parsed_data=parsed_data, recruiter_stats=recruiter_stats)
+        # Student dashboard
+        return render_template('dashboard.html', user=current_user, parsed_data=parsed_data)
     
     # ========== PROFILE ROUTE ==========
     @app.route('/profile', methods=['GET', 'POST'])
     @login_required
     def profile():
-        """User profile page"""
+        """User profile page - All users can access"""
         if request.method == 'POST':
-            # Get form data
             fullname = request.form.get('fullname')
             email = request.form.get('email')
             bio = request.form.get('bio')
@@ -703,7 +717,6 @@ def register_routes(app):
             company = request.form.get('company')
             skills = request.form.get('skills')
             
-            # Update user
             user = User.query.get(current_user.id)
             if user:
                 user.fullname = fullname or user.fullname
@@ -712,7 +725,6 @@ def register_routes(app):
                 user.location = location or user.location
                 user.phone = phone or user.phone
                 
-                # Update or create profile
                 if user.profile:
                     user.profile.current_job = current_job or user.profile.current_job
                     user.profile.company = company or user.profile.company
@@ -749,19 +761,15 @@ def register_routes(app):
         if file.filename == '':
             return jsonify({'success': False, 'message': 'No file selected'})
         
-        # Check file type
         allowed_extensions = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
         if not file.filename.lower().endswith(tuple(allowed_extensions)):
             return jsonify({'success': False, 'message': 'Invalid file type. Please upload PNG, JPG, JPEG, GIF, or WEBP.'})
         
-        # Save file
         filename = secure_filename(f"{current_user.id}_{file.filename}")
         filepath = os.path.join('static/profile_pics', filename)
         
-        # Create directory if it doesn't exist
         os.makedirs('static/profile_pics', exist_ok=True)
         
-        # Delete old profile picture if exists
         if current_user.profile_image:
             old_path = os.path.join('static/profile_pics', current_user.profile_image)
             if os.path.exists(old_path):
@@ -769,7 +777,6 @@ def register_routes(app):
         
         file.save(filepath)
         
-        # Update user
         current_user.profile_image = filename
         db.session.commit()
         
@@ -790,22 +797,18 @@ def register_routes(app):
             flash('All fields are required.', 'error')
             return redirect(url_for('profile'))
         
-        # Check current password
         if not check_password_hash(current_user.password, current_password):
             flash('Current password is incorrect.', 'error')
             return redirect(url_for('profile'))
         
-        # Check new password length
         if len(new_password) < 8:
             flash('New password must be at least 8 characters long.', 'error')
             return redirect(url_for('profile'))
         
-        # Check if passwords match
         if new_password != confirm_password:
             flash('New passwords do not match.', 'error')
             return redirect(url_for('profile'))
         
-        # Update password
         current_user.password = generate_password_hash(new_password)
         db.session.commit()
         
@@ -817,13 +820,16 @@ def register_routes(app):
     @login_required
     def university_dashboard():
         """University intelligence dashboard"""
-        parsed_data = get_parsed_data_from_session()
+        if not current_user.is_university():
+            flash('This feature is for university administrators only.', 'warning')
+            if current_user.is_recruiter():
+                return redirect(url_for('recruiter.dashboard'))
+            elif current_user.is_admin():
+                return redirect(url_for('admin.index'))
+            else:
+                return redirect(url_for('dashboard'))
         
-        print(f"=== UNIVERSITY DASHBOARD ===")
-        print(f"parsed_data exists: {parsed_data is not None}")
-        if parsed_data:
-            print(f"skills keys: {parsed_data.get('skills', {}).keys()}")
-            print(f"total_skills: {parsed_data.get('total_skills', 0)}")
+        parsed_data = get_parsed_data_from_session()
         
         analytics = {
             'total_students': 1247,
@@ -906,7 +912,7 @@ def create_app():
     # Register routes
     register_routes(app)
 
-    # Register Recruiter Blueprint (Renamed from Partner)
+    # Register Recruiter Blueprint
     app.register_blueprint(recruiter_bp)
 
     app.register_blueprint(admin_bp) 

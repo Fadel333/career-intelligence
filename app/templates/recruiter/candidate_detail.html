@@ -158,6 +158,14 @@
                 </div>
             </div>
 
+            <!-- Add this button in the actions section -->
+<form method="POST" action="{{ url_for('recruiter.add_to_shortlist', candidate_id=candidate.id) }}" class="inline">
+    <input type="hidden" name="job_id" value="{{ job.id if job else '' }}">
+    <button type="submit" class="w-full bg-yellow-500/20 hover:bg-yellow-500/30 rounded-xl px-4 py-2.5 text-yellow-400 transition text-sm">
+        <i class="fas fa-star mr-2"></i> Add to Shortlist
+    </button>
+</form>
+
             <!-- Similar Candidates -->
             <div class="glass-card p-6" data-aos="fade-left" data-aos-delay="100">
                 <h2 class="text-xl font-bold text-white mb-4">👥 Similar Candidates</h2>

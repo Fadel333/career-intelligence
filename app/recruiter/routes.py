@@ -1029,3 +1029,113 @@ def api_search_candidates():
         'candidates': results,
         'total': len(results)
     })
+
+# app/recruiter/routes.py - Add these routes
+
+@recruiter_bp.route('/shortlist')
+@login_required
+@recruiter_required
+def shortlist():
+    """View shortlisted candidates"""
+    recruiter = RecruiterProfile.query.filter_by(user_id=current_user.id).first()
+    
+    if not recruiter:
+        flash('Please complete your recruiter profile first.', 'warning')
+        return redirect(url_for('recruiter.setup_profile'))
+    
+    shortlisted = Shortlist.query.filter_by(recruiter_id=recruiter.id)\
+        .order_by(desc(Shortlist.created_at)).all()
+    
+    return render_template('recruiter/shortlist.html',
+        shortlisted=shortlisted,
+        recruiter=recruiter
+    )
+
+
+@recruiter_bp.route('/shortlist/add/<int:candidate_id>', methods=['POST'])
+@login_required
+@recruiter_required
+def add_to_shortlist(candidate_id):
+    """Add candidate to shortlist"""
+    recruiter = RecruiterProfile.query.filter_by(user_id=current_user.id).first()
+    
+    if not recruiter:
+        flash('Please complete your recruiter profile first.', 'warning')
+        return redirect(url_for('recruiter.setup_profile'))
+    
+    candidate = Candidate.query.get_or_404(candidate_id)
+    job_id = request.form.get('job_id', type=int)
+    notes = request.form.get('notes', '')
+    
+    # Check if already in shortlist
+    existing = Shortlist.query.filter_by(
+        recruiter_id=recruiter.id,
+        candidate_id=candidate_id
+    ).first()
+    
+    if existing:
+        flash(f'{candidate.name} is already in your shortlist.', 'warning')
+        return redirect(url_for('recruiter.candidate_detail', candidate_id=candidate_id))
+    
+    # Add to shortlist
+    shortlist = Shortlist(
+        recruiter_id=recruiter.id,
+        candidate_id=candidate_id,
+        job_id=job_id if job_id else None,
+        notes=notes
+    )
+    
+    db.session.add(shortlist)
+    db.session.commit()
+    
+    flash(f'✅ {candidate.name} added to shortlist!', 'success')
+    return redirect(url_for('recruiter.candidate_detail', candidate_id=candidate_id))
+
+
+@recruiter_bp.route('/shortlist/remove/<int:shortlist_id>', methods=['POST'])
+@login_required
+@recruiter_required
+def remove_from_shortlist(shortlist_id):
+    """Remove candidate from shortlist"""
+    recruiter = RecruiterProfile.query.filter_by(user_id=current_user.id).first()
+    
+    if not recruiter:
+        flash('Please complete your recruiter profile first.', 'warning')
+        return redirect(url_for('recruiter.setup_profile'))
+    
+    shortlist = Shortlist.query.filter_by(
+        id=shortlist_id,
+        recruiter_id=recruiter.id
+    ).first_or_404()
+    
+    candidate_name = shortlist.candidate.name if shortlist.candidate else 'Unknown'
+    
+    db.session.delete(shortlist)
+    db.session.commit()
+    
+    flash(f'Removed {candidate_name} from shortlist.', 'info')
+    return redirect(url_for('recruiter.shortlist'))
+
+
+@recruiter_bp.route('/shortlist/update/<int:shortlist_id>', methods=['POST'])
+@login_required
+@recruiter_required
+def update_shortlist_note(shortlist_id):
+    """Update note on shortlisted candidate"""
+    recruiter = RecruiterProfile.query.filter_by(user_id=current_user.id).first()
+    
+    if not recruiter:
+        flash('Please complete your recruiter profile first.', 'warning')
+        return redirect(url_for('recruiter.setup_profile'))
+    
+    shortlist = Shortlist.query.filter_by(
+        id=shortlist_id,
+        recruiter_id=recruiter.id
+    ).first_or_404()
+    
+    notes = request.form.get('notes', '')
+    shortlist.notes = notes
+    db.session.commit()
+    
+    flash('✅ Note updated successfully!', 'success')
+    return redirect(url_for('recruiter.shortlist'))
