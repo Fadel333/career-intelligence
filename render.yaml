@@ -9,5 +9,3 @@ services:
         value: postgresql://postgres.twpqpeeqebsobgaawgug:fadiliddrisu@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?sslmode=require
       - key: SECRET_KEY
         value: your-super-secret-key-change-this
-      - key: OPENAI_API_KEY
-        value: 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
