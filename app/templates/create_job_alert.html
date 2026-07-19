@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="bi bi-bell"></i> Create Job Alert</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <!-- Keywords -->
+                        <div class="mb-3">
+                            <label class="form-label">Keywords</label>
+                            <input type="text" class="form-control" name="keywords" 
+                                   placeholder="e.g. Python, Django, Machine Learning">
+                            <small class="text-muted">Comma-separated keywords to match in job descriptions</small>
+                        </div>
+                        
+                        <!-- Job Type -->
+                        <div class="mb-3">
+                            <label class="form-label">Job Type</label>
+                            <select class="form-select" name="job_type">
+                                <option value="">Any</option>
+                                <option value="full_time">Full-Time</option>
+                                <option value="part_time">Part-Time</option>
+                                <option value="contract">Contract</option>
+                                <option value="internship">Internship</option>
+                                <option value="remote">Remote</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Location -->
+                        <div class="mb-3">
+                            <label class="form-label">Location</label>
+                            <input type="text" class="form-control" name="location" 
+                                   placeholder="e.g. New York, Remote, San Francisco">
+                        </div>
+                        
+                        <!-- Salary Range -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Min Salary ($)</label>
+                                <input type="number" class="form-control" name="salary_min" 
+                                       placeholder="e.g. 50000">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Max Salary ($)</label>
+                                <input type="number" class="form-control" name="salary_max" 
+                                       placeholder="e.g. 100000">
+                            </div>
+                        </div>
+                        
+                        <!-- Category -->
+                        <div class="mb-3">
+                            <label class="form-label">Category</label>
+                            <select class="form-select" name="category">
+                                <option value="">Any</option>
+                                {% for category in categories %}
+                                    <option value="{{ category }}">{{ category }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Experience Level -->
+                        <div class="mb-3">
+                            <label class="form-label">Experience Level</label>
+                            <select class="form-select" name="experience_level">
+                                <option value="">Any</option>
+                                <option value="entry">Entry Level</option>
+                                <option value="mid">Mid Level</option>
+                                <option value="senior">Senior Level</option>
+                                <option value="executive">Executive</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Frequency -->
+                        <div class="mb-3">
+                            <label class="form-label">Frequency</label>
+                            <select class="form-select" name="frequency">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="instant">Instant</option>
+                            </select>
+                            <small class="text-muted">How often you want to receive notifications</small>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-bell"></i> Create Alert
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

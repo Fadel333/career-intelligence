@@ -1,13 +1,16 @@
-from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify
+from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify, make_response
 from flask_login import login_required, current_user
 from extensions import db, login_manager
 from flask_migrate import Migrate
+from flask_mail import Mail
 from werkzeug.utils import secure_filename
 import os
 import sys
 import pickle
 import base64
-from datetime import datetime
+import json
+import ast
+from datetime import datetime, timedelta
 
 # Add the current directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -19,10 +22,13 @@ from app.utils.skill_analyzer import SkillAnalyzer
 from app.utils.course_api import CourseAPI
 from app.utils.hybrid_parser import HybridParser
 from app.utils.openai_assistant import OpenAIAssistant
-from models import User, Profile, RecruiterProfile, Candidate, Job, Placement
+from models import User, Profile, RecruiterProfile, Candidate, Job, Placement, JobAlert, JobAlertLog
 from app.recruiter import recruiter_bp 
 from app.admin.routes import admin_bp 
 from app.jobs.routes import jobs_bp 
+
+# Initialize Flask-Mail ONCE
+mail = Mail()
 
 # Configure upload settings
 UPLOAD_FOLDER = 'uploads'
@@ -50,16 +56,44 @@ def decompress_parsed_data(compressed):
     if not compressed:
         return None
     
-    # If it's already a dict, return it directly (handles old session data)
+    # If it's already a dict, return it directly
     if isinstance(compressed, dict):
         return compressed
     
-    try:
-        decoded = base64.b64decode(compressed.encode('utf-8'))
-        return pickle.loads(decoded)
-    except Exception as e:
-        print(f"Decompression error: {e}")
-        return compressed
+    # If it's a string, try to decompress
+    if isinstance(compressed, str):
+        # Try base64 decode first
+        try:
+            decoded = base64.b64decode(compressed.encode('utf-8'))
+            data = pickle.loads(decoded)
+            if isinstance(data, dict):
+                return data
+        except:
+            pass
+        
+        # Try JSON
+        try:
+            data = json.loads(compressed)
+            if isinstance(data, dict):
+                return data
+        except:
+            pass
+        
+        # Try ast.literal_eval for Python dict strings
+        if compressed.startswith('{') and compressed.endswith('}'):
+            try:
+                data = ast.literal_eval(compressed)
+                if isinstance(data, dict):
+                    return data
+            except:
+                pass
+        
+        # If all else fails, return empty dict
+        print(f"⚠️ Could not decompress data, returning empty dict")
+        return {}
+    
+    # Fallback
+    return {}
 
 
 def allowed_file(filename):
@@ -101,9 +135,8 @@ def clear_parsed_data_from_session():
         session.pop('cv_filename', None)
 
 
-# ========== HELPER FUNCTIONS FOR UNIVERSITY DASHBOARD ==========
+# ========== HELPER FUNCTIONS ==========
 def get_department_performance():
-    """Get department performance data"""
     return [
         {'name': 'Computer Science', 'employability': 92, 'students': 340},
         {'name': 'Business Administration', 'employability': 78, 'students': 280},
@@ -115,7 +148,6 @@ def get_department_performance():
 
 
 def get_top_skill_gaps(parsed_data):
-    """Get top skill gaps from parsed CV data"""
     print(f"DEBUG: parsed_data received: {parsed_data is not None}")
     
     if parsed_data and parsed_data.get('skills'):
@@ -125,7 +157,6 @@ def get_top_skill_gaps(parsed_data):
         
         print(f"DEBUG: all_skills extracted: {all_skills}")
         
-        # Detect sector for better analysis
         detected_sector = SkillAnalyzer.detect_sector(all_skills)
         market_demands = SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get(
             detected_sector, 
@@ -157,7 +188,6 @@ def get_top_skill_gaps(parsed_data):
 
 
 def get_industry_trends():
-    """Get industry trends data"""
     return [
         {'sector': 'Fintech', 'growth': 45, 'demand': 92},
         {'sector': 'HealthTech', 'growth': 38, 'demand': 85},
@@ -168,7 +198,6 @@ def get_industry_trends():
 
 
 def get_curriculum_recommendations(parsed_data):
-    """Get curriculum recommendations based on actual skill gaps"""
     if parsed_data and parsed_data.get('skills'):
         all_skills = []
         for category, skills in parsed_data['skills'].items():
@@ -242,7 +271,6 @@ def get_curriculum_recommendations(parsed_data):
 
 
 def get_curriculum_recommendations_default():
-    """Default curriculum recommendations when no CV data available"""
     return [
         {
             'department': 'Computer Science',
@@ -320,7 +348,6 @@ def get_curriculum_recommendations_default():
 
 # ========== RECRUITER HUB HELPER FUNCTIONS ==========
 def get_recruiter_stats(recruiter_id):
-    """Get recruiter hub statistics"""
     from models import Job, Placement
     
     total_jobs = Job.query.filter_by(recruiter_id=recruiter_id).count()
@@ -350,23 +377,16 @@ def register_routes(app):
     # ========== PUBLIC ROUTES ==========
     @app.route('/')
     def index():
-        """Landing page"""
         return render_template('base.html')
     
-    # ========== PRIVACY POLICY ROUTE ==========
     @app.route('/privacy-policy')
     def privacy_policy():
-        """Privacy policy page"""
         return render_template('privacy_policy.html')
     
     # ========== STUDENT-ONLY ROUTES ==========
-    # These routes should only be accessible to students/professionals
-    
     @app.route('/upload-cv', methods=['GET', 'POST'])
     @login_required
     def upload_cv():
-        """CV upload and parsing page - STUDENT ONLY"""
-        # Redirect recruiters and admins
         if current_user.is_recruiter():
             flash('Recruiters cannot upload CVs. This feature is for job seekers.', 'warning')
             return redirect(url_for('recruiter.dashboard'))
@@ -374,7 +394,6 @@ def register_routes(app):
             flash('Admins cannot upload CVs.', 'warning')
             return redirect(url_for('admin.index'))
         
-        # ... rest of upload_cv code ...
         if request.method == 'POST':
             if 'cv_file' not in request.files:
                 flash('No file selected', 'error')
@@ -458,17 +477,19 @@ def register_routes(app):
                         db.session.commit()
                         print(f"✅ CV data saved to database for user {user.email}")
                     
-                    compressed_data = compress_parsed_data(parsed_data)
-                    if compressed_data:
-                        session['parsed_cv'] = compressed_data
+                    # Store in session as JSON instead of compressed pickle
+                    try:
+                        session['parsed_cv'] = json.dumps(parsed_data)
                         session['cv_filename'] = file.filename
                         session['parsing_status'] = parsed_data.get('status', 'processing')
-                        
-                        flash(f'✅ CV uploaded! Quick analysis complete. Found {parsed_data["total_skills"]} skills.', 'success')
-                        return redirect(url_for('skill_analysis'))
-                    else:
-                        flash('Error processing CV data. Please try again.', 'error')
+                        print(f"✅ Stored CV data as JSON in session")
+                    except Exception as e:
+                        print(f"❌ Error storing session data: {e}")
+                        flash('Error storing CV data. Please try again.', 'error')
                         return redirect(url_for('upload_cv'))
+                    
+                    flash(f'✅ CV uploaded! Quick analysis complete. Found {parsed_data["total_skills"]} skills.', 'success')
+                    return redirect(url_for('skill_analysis'))
                 else:
                     flash('Could not parse CV. Please ensure it\'s readable.', 'error')
                     return redirect(url_for('upload_cv'))
@@ -482,7 +503,6 @@ def register_routes(app):
     @app.route('/skill-analysis')
     @login_required
     def skill_analysis():
-        """Skill gap analysis page - STUDENT ONLY"""
         if current_user.is_recruiter():
             flash('This feature is for job seekers only.', 'warning')
             return redirect(url_for('recruiter.dashboard'))
@@ -492,20 +512,30 @@ def register_routes(app):
         
         parsed_data = get_parsed_data_from_session()
         
-        if not parsed_data:
+        # Ensure parsed_data is a dictionary
+        if not parsed_data or not isinstance(parsed_data, dict):
             user = User.query.get(current_user.id)
             if user and user.cv_analysis:
                 parsed_data = user.get_cv_analysis()
-                if parsed_data:
-                    compressed_data = compress_parsed_data(parsed_data)
-                    if compressed_data:
-                        session['parsed_cv'] = compressed_data
+                if parsed_data and isinstance(parsed_data, dict):
+                    try:
+                        session['parsed_cv'] = json.dumps(parsed_data)
                         session['cv_filename'] = user.cv_filename
+                    except:
+                        pass
+                else:
+                    parsed_data = {}
+        
+        if not isinstance(parsed_data, dict):
+            parsed_data = {}
+        
+        if not parsed_data.get('skills'):
+            parsed_data['skills'] = {}
         
         if not parsed_data:
             return render_template('skill_analysis.html', 
                                  user=current_user, 
-                                 parsed_data=None, 
+                                 parsed_data={'skills': {}},
                                  is_processing=False,
                                  detected_sector=None,
                                  employability={'score': 0, 'level': 'Beginner', 'color': 'red',
@@ -551,12 +581,15 @@ def register_routes(app):
                                  detected_sector=detected_sector.capitalize(),
                                  no_cv=False)
         
-        return render_template('skill_analysis.html', user=current_user, parsed_data=None, is_processing=False, no_cv=True)
+        return render_template('skill_analysis.html', 
+                             user=current_user, 
+                             parsed_data={'skills': {}},
+                             is_processing=False, 
+                             no_cv=True)
     
     @app.route('/learning-roadmap')
     @login_required
     def learning_roadmap():
-        """Personalized learning roadmap page - STUDENT ONLY"""
         if current_user.is_recruiter():
             flash('This feature is for job seekers only.', 'warning')
             return redirect(url_for('recruiter.dashboard'))
@@ -566,14 +599,23 @@ def register_routes(app):
         
         parsed_data = get_parsed_data_from_session()
         
-        if not parsed_data:
+        if not parsed_data or not isinstance(parsed_data, dict):
             user = User.query.get(current_user.id)
             if user and user.cv_analysis:
                 parsed_data = user.get_cv_analysis()
-                if parsed_data:
-                    compressed_data = compress_parsed_data(parsed_data)
-                    if compressed_data:
-                        session['parsed_cv'] = compressed_data
+                if parsed_data and isinstance(parsed_data, dict):
+                    try:
+                        session['parsed_cv'] = json.dumps(parsed_data)
+                    except:
+                        pass
+                else:
+                    parsed_data = {}
+        
+        if not isinstance(parsed_data, dict):
+            parsed_data = {}
+        
+        if not parsed_data.get('skills'):
+            parsed_data['skills'] = {}
         
         course_api = CourseAPI()
         
@@ -582,12 +624,11 @@ def register_routes(app):
                              parsed_data=parsed_data,
                              skill_analyzer=SkillAnalyzer,
                              course_api=course_api,
-                             no_cv=not parsed_data)
-    
+                             no_cv=not parsed_data or not parsed_data.get('skills'))
+
     @app.route('/job-matches')
     @login_required
     def job_matches():
-        """Job recommendations page - STUDENT ONLY"""
         if current_user.is_recruiter():
             flash('This feature is for job seekers only.', 'warning')
             return redirect(url_for('recruiter.dashboard'))
@@ -595,21 +636,82 @@ def register_routes(app):
             flash('This feature is for job seekers only.', 'warning')
             return redirect(url_for('admin.index'))
         
-        parsed_data = get_parsed_data_from_session()
+        # DIRECT FIX: Get raw data from session and force it to be a dict
+        raw_data = session.get('parsed_cv', None)
         
-        if not parsed_data:
+        parsed_data = {}
+        
+        if raw_data:
+            # If it's already a dict, use it
+            if isinstance(raw_data, dict):
+                parsed_data = raw_data
+                print(f"✅ parsed_data is already a dict")
+            # If it's a string, try to parse it
+            elif isinstance(raw_data, str):
+                print(f"🔍 Raw data is a string, attempting to parse...")
+                # Try base64 decode first (our compression format)
+                try:
+                    decoded = base64.b64decode(raw_data.encode('utf-8'))
+                    parsed_data = pickle.loads(decoded)
+                    if isinstance(parsed_data, dict):
+                        print(f"✅ Successfully decompressed from base64")
+                    else:
+                        parsed_data = {}
+                except:
+                    # Try JSON
+                    try:
+                        parsed_data = json.loads(raw_data)
+                        if isinstance(parsed_data, dict):
+                            print(f"✅ Successfully parsed from JSON")
+                        else:
+                            parsed_data = {}
+                    except:
+                        # Try ast.literal_eval
+                        try:
+                            parsed_data = ast.literal_eval(raw_data)
+                            if isinstance(parsed_data, dict):
+                                print(f"✅ Successfully parsed from literal_eval")
+                            else:
+                                parsed_data = {}
+                        except:
+                            print(f"❌ Could not parse string data")
+                            parsed_data = {}
+        
+        # If still no data, try database
+        if not parsed_data or not isinstance(parsed_data, dict):
+            print("🔍 Trying to get from database...")
             user = User.query.get(current_user.id)
             if user and user.cv_analysis:
                 parsed_data = user.get_cv_analysis()
-                if parsed_data:
-                    compressed_data = compress_parsed_data(parsed_data)
-                    if compressed_data:
-                        session['parsed_cv'] = compressed_data
+                if parsed_data and isinstance(parsed_data, dict):
+                    # Re-compress and store in session as JSON string (clean format)
+                    try:
+                        session['parsed_cv'] = json.dumps(parsed_data)
+                        print(f"✅ Stored JSON in session")
+                    except:
+                        pass
+                else:
+                    parsed_data = {}
         
-        if parsed_data and parsed_data.get('skills'):
+        # FINAL SAFETY: Ensure it's a dict with 'skills'
+        if not isinstance(parsed_data, dict):
+            print(f"⚠️ WARNING: parsed_data is {type(parsed_data)}, using empty dict")
+            parsed_data = {}
+        
+        if 'skills' not in parsed_data:
+            parsed_data['skills'] = {}
+        
+        print(f"✅ Final parsed_data type: {type(parsed_data)}")
+        print(f"✅ Skills count: {len(parsed_data.get('skills', {}))}")
+        
+        # Now safely use it
+        if parsed_data.get('skills'):
             all_skills = []
             for category, skills in parsed_data['skills'].items():
-                all_skills.extend(skills)
+                if isinstance(skills, list):
+                    all_skills.extend(skills)
+                elif isinstance(skills, str):
+                    all_skills.append(skills)
             
             job_matches = SkillAnalyzer.get_job_recommendations(all_skills)
             return render_template('job_matches.html', 
@@ -619,12 +721,17 @@ def register_routes(app):
                                  skill_analyzer=SkillAnalyzer,
                                  no_cv=False)
         
-        return render_template('job_matches.html', user=current_user, job_matches=None, skill_analyzer=SkillAnalyzer, no_cv=True)
+        # No data or empty skills
+        return render_template('job_matches.html', 
+                             user=current_user, 
+                             job_matches=None, 
+                             parsed_data={'skills': {}},
+                             skill_analyzer=SkillAnalyzer, 
+                             no_cv=True)
     
     @app.route('/career-assistant')
     @login_required
     def career_assistant():
-        """AI career assistant chat page - STUDENT ONLY"""
         if current_user.is_recruiter():
             flash('This feature is for job seekers only.', 'warning')
             return redirect(url_for('recruiter.dashboard'))
@@ -634,21 +741,29 @@ def register_routes(app):
         
         parsed_data = get_parsed_data_from_session()
         
-        if not parsed_data:
+        if not parsed_data or not isinstance(parsed_data, dict):
             user = User.query.get(current_user.id)
             if user and user.cv_analysis:
                 parsed_data = user.get_cv_analysis()
-                if parsed_data:
-                    compressed_data = compress_parsed_data(parsed_data)
-                    if compressed_data:
-                        session['parsed_cv'] = compressed_data
+                if parsed_data and isinstance(parsed_data, dict):
+                    try:
+                        session['parsed_cv'] = json.dumps(parsed_data)
+                    except:
+                        pass
+                else:
+                    parsed_data = {}
+        
+        if not isinstance(parsed_data, dict):
+            parsed_data = {}
+        
+        if not parsed_data.get('skills'):
+            parsed_data['skills'] = {}
         
         return render_template('career_assistant.html', user=current_user, parsed_data=parsed_data)
     
     @app.route('/api/ask', methods=['POST'])
     @login_required
     def api_ask():
-        """API endpoint for career assistant questions"""
         if current_user.is_recruiter() or current_user.is_admin():
             return jsonify({'error': 'This feature is for job seekers only.'}), 403
         
@@ -657,10 +772,12 @@ def register_routes(app):
         
         parsed_data = get_parsed_data_from_session()
         
-        if not parsed_data:
+        if not parsed_data or not isinstance(parsed_data, dict):
             user = User.query.get(current_user.id)
             if user and user.cv_analysis:
                 parsed_data = user.get_cv_analysis()
+                if not isinstance(parsed_data, dict):
+                    parsed_data = {}
         
         user_skills = []
         experience = 0
@@ -681,32 +798,37 @@ def register_routes(app):
     @app.route('/dashboard')
     @login_required
     def dashboard():
-        """Main user dashboard - Role-based"""
         parsed_data = get_parsed_data_from_session()
         
-        if not parsed_data:
+        if not parsed_data or not isinstance(parsed_data, dict):
             user = User.query.get(current_user.id)
             if user and user.cv_analysis:
                 parsed_data = user.get_cv_analysis()
-                if parsed_data:
-                    compressed_data = compress_parsed_data(parsed_data)
-                    if compressed_data:
-                        session['parsed_cv'] = compressed_data
+                if parsed_data and isinstance(parsed_data, dict):
+                    try:
+                        session['parsed_cv'] = json.dumps(parsed_data)
+                    except:
+                        pass
+                else:
+                    parsed_data = {}
         
-        # Redirect based on user type to appropriate dashboard
+        if not isinstance(parsed_data, dict):
+            parsed_data = {}
+        
+        if not parsed_data.get('skills'):
+            parsed_data['skills'] = {}
+        
         if current_user.is_recruiter():
             return redirect(url_for('recruiter.dashboard'))
         if current_user.is_admin():
             return redirect(url_for('admin.index'))
         
-        # Student dashboard
         return render_template('dashboard.html', user=current_user, parsed_data=parsed_data)
     
     # ========== PROFILE ROUTE ==========
     @app.route('/profile', methods=['GET', 'POST'])
     @login_required
     def profile():
-        """User profile page - All users can access"""
         if request.method == 'POST':
             fullname = request.form.get('fullname')
             email = request.form.get('email')
@@ -745,14 +867,10 @@ def register_routes(app):
         
         return render_template('profile.html', user=current_user)
     
-    # ========== PROFILE PICTURE UPLOAD ROUTE ==========
+    # ========== PROFILE PICTURE UPLOAD ==========
     @app.route('/upload-profile-pic', methods=['POST'])
     @login_required
     def upload_profile_pic():
-        """Upload profile picture"""
-        import os
-        from werkzeug.utils import secure_filename
-        
         if 'profile_pic' not in request.files:
             return jsonify({'success': False, 'message': 'No file uploaded'})
         
@@ -782,11 +900,10 @@ def register_routes(app):
         
         return jsonify({'success': True, 'message': 'Profile picture updated successfully!'})
     
-    # ========== CHANGE PASSWORD ROUTE ==========
+    # ========== CHANGE PASSWORD ==========
     @app.route('/change-password', methods=['POST'])
     @login_required
     def change_password():
-        """Change user password"""
         from werkzeug.security import generate_password_hash, check_password_hash
         
         current_password = request.form.get('current_password')
@@ -815,11 +932,10 @@ def register_routes(app):
         flash('Password changed successfully!', 'success')
         return redirect(url_for('profile'))
     
-    # ========== UNIVERSITY DASHBOARD ROUTE ==========
+    # ========== UNIVERSITY DASHBOARD ==========
     @app.route('/university-dashboard')
     @login_required
     def university_dashboard():
-        """University intelligence dashboard"""
         if not current_user.is_university():
             flash('This feature is for university administrators only.', 'warning')
             if current_user.is_recruiter():
@@ -830,6 +946,9 @@ def register_routes(app):
                 return redirect(url_for('dashboard'))
         
         parsed_data = get_parsed_data_from_session()
+        
+        if not isinstance(parsed_data, dict):
+            parsed_data = {}
         
         analytics = {
             'total_students': 1247,
@@ -854,11 +973,10 @@ def register_routes(app):
     @app.route('/api/parsing-status')
     @login_required
     def parsing_status():
-        """Check if deep parsing is complete"""
         parsed_data = get_parsed_data_from_session()
         parsing_status = session.get('parsing_status', 'complete')
         
-        if parsed_data:
+        if parsed_data and isinstance(parsed_data, dict):
             status = parsed_data.get('status', parsing_status)
             return jsonify({
                 'status': status,
@@ -866,12 +984,170 @@ def register_routes(app):
             })
         
         return jsonify({'status': 'unknown'})
+
+    # ========== JOB ALERTS ROUTES ==========
+    @app.route('/job-alerts')
+    @login_required
+    def job_alerts():
+        """Manage job alerts page"""
+        alerts = JobAlert.query.filter_by(user_id=current_user.id).all()
+        return render_template('job_alerts.html', user=current_user, alerts=alerts)
+
+    @app.route('/job-alerts/create', methods=['GET', 'POST'])
+    @login_required
+    def create_job_alert():
+        """Create a new job alert"""
+        if request.method == 'POST':
+            keywords = request.form.get('keywords')
+            job_type = request.form.get('job_type')
+            location = request.form.get('location')
+            salary_min = request.form.get('salary_min', type=float)
+            salary_max = request.form.get('salary_max', type=float)
+            category = request.form.get('category')
+            experience_level = request.form.get('experience_level')
+            frequency = request.form.get('frequency', 'daily')
+            
+            try:
+                alert = JobAlert(
+                    user_id=current_user.id,
+                    keywords=keywords,
+                    job_type=job_type,
+                    location=location,
+                    salary_min=salary_min,
+                    salary_max=salary_max,
+                    category=category,
+                    experience_level=experience_level,
+                    frequency=frequency
+                )
+                db.session.add(alert)
+                db.session.commit()
+                
+                flash('✅ Job alert created successfully!', 'success')
+                return redirect(url_for('job_alerts'))
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Error creating alert: {str(e)}', 'error')
+        
+        # Get unique categories from jobs
+        categories = db.session.query(Job.category).distinct().all()
+        categories = [c[0] for c in categories if c[0]]
+        
+        return render_template('create_job_alert.html', 
+                             user=current_user, 
+                             categories=categories)
+
+    @app.route('/job-alerts/<int:alert_id>/edit', methods=['GET', 'POST'])
+    @login_required
+    def edit_job_alert(alert_id):
+        """Edit an existing job alert"""
+        alert = JobAlert.query.get_or_404(alert_id)
+        
+        if alert.user_id != current_user.id:
+            flash('Access denied', 'error')
+            return redirect(url_for('job_alerts'))
+        
+        if request.method == 'POST':
+            try:
+                alert.keywords = request.form.get('keywords')
+                alert.job_type = request.form.get('job_type')
+                alert.location = request.form.get('location')
+                alert.salary_min = request.form.get('salary_min', type=float)
+                alert.salary_max = request.form.get('salary_max', type=float)
+                alert.category = request.form.get('category')
+                alert.experience_level = request.form.get('experience_level')
+                alert.frequency = request.form.get('frequency', 'daily')
+                alert.is_active = 'is_active' in request.form
+                
+                db.session.commit()
+                flash('✅ Alert updated successfully!', 'success')
+                return redirect(url_for('job_alerts'))
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Error updating alert: {str(e)}', 'error')
+        
+        categories = db.session.query(Job.category).distinct().all()
+        categories = [c[0] for c in categories if c[0]]
+        
+        return render_template('edit_job_alert.html', 
+                             user=current_user, 
+                             alert=alert,
+                             categories=categories)
+
+    @app.route('/job-alerts/<int:alert_id>/delete', methods=['POST'])
+    @login_required
+    def delete_job_alert(alert_id):
+        """Delete a job alert"""
+        alert = JobAlert.query.get_or_404(alert_id)
+        
+        if alert.user_id != current_user.id:
+            flash('Access denied', 'error')
+            return redirect(url_for('job_alerts'))
+        
+        try:
+            db.session.delete(alert)
+            db.session.commit()
+            flash('Alert deleted successfully', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error deleting alert: {str(e)}', 'error')
+        
+        return redirect(url_for('job_alerts'))
+
+    @app.route('/job-alerts/<int:alert_id>/toggle', methods=['POST'])
+    @login_required
+    def toggle_job_alert(alert_id):
+        """Toggle alert active status"""
+        alert = JobAlert.query.get_or_404(alert_id)
+        
+        if alert.user_id != current_user.id:
+            return jsonify({'success': False, 'message': 'Access denied'}), 403
+        
+        try:
+            alert.is_active = not alert.is_active
+            db.session.commit()
+            return jsonify({
+                'success': True,
+                'is_active': alert.is_active,
+                'message': 'Alert ' + ('activated' if alert.is_active else 'deactivated')
+            })
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'success': False, 'message': str(e)}), 500
+
+    @app.route('/api/job-alerts/check-new')
+    @login_required
+    def check_new_jobs_for_alerts():
+        """Check if there are new jobs for user's alerts"""
+        alerts = JobAlert.query.filter_by(user_id=current_user.id, is_active=True).all()
+        
+        results = []
+        for alert in alerts:
+            last_sent = alert.last_sent_at or datetime.utcnow() - timedelta(days=7)
+            # Find matching jobs posted after last_sent
+            jobs = Job.query.filter(
+                Job.status == 'published',
+                Job.posted_at > last_sent
+            ).all()
+            
+            matching_jobs = [job for job in jobs if alert.matches_job(job)]
+            
+            if matching_jobs:
+                results.append({
+                    'alert_id': alert.id,
+                    'count': len(matching_jobs),
+                    'jobs': [{'id': j.id, 'title': j.title} for j in matching_jobs[:5]]
+                })
+        
+        return jsonify({
+            'total_alerts': len(alerts),
+            'alerts_with_new_jobs': len(results),
+            'results': results
+        })
     
-    # ========== TEMPORARY: Clear Session Route ==========
+    # ========== CLEAR SESSION ==========
     @app.route('/clear-session')
     @login_required
     def clear_session():
-        """Temporary route to clear session data"""
         clear_parsed_data_from_session()
         session.pop('parsing_status', None)
         flash('Session cleared successfully!', 'success')
@@ -884,6 +1160,10 @@ def create_app():
                 static_folder='../static',
                 static_url_path='/static')
     app.config.from_object('config.Config')
+    
+    # Initialize Flask-Mail
+    mail.init_app(app)
+    app.mail = mail
     
     # Configure upload
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -911,12 +1191,10 @@ def create_app():
     
     # Register routes
     register_routes(app)
-
-    # Register Recruiter Blueprint
+    
+    # Register blueprints
     app.register_blueprint(recruiter_bp)
-
     app.register_blueprint(admin_bp) 
-
     app.register_blueprint(jobs_bp) 
     
     return app

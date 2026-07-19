@@ -1,6 +1,6 @@
 from extensions import db, login_manager
 from flask_login import UserMixin
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import enum
 
@@ -81,6 +81,9 @@ class User(UserMixin, db.Model):
     recruiter_commission_rate = db.Column(db.Integer, default=10)
     total_earnings = db.Column(db.Float, default=0.0)
     total_placements = db.Column(db.Integer, default=0)
+    
+    # Application retention settings
+    retention_days = db.Column(db.Integer, default=30)  # Days to keep applications
     
     # Relationships - ALL BACKREF NAMES ARE UNIQUE
     profile = db.relationship('Profile', backref='user_profile', uselist=False, cascade='all, delete-orphan')
@@ -179,7 +182,8 @@ class User(UserMixin, db.Model):
             'is_recruiter': self.is_recruiter(),
             'company_name': self.company_name,
             'total_earnings': self.total_earnings,
-            'total_placements': self.total_placements
+            'total_placements': self.total_placements,
+            'retention_days': self.retention_days
         }
 
 
@@ -240,6 +244,7 @@ class RecruiterProfile(db.Model):
     # Settings
     auto_approve_candidates = db.Column(db.Boolean, default=False)
     min_match_percentage = db.Column(db.Float, default=70.0)
+    retention_days = db.Column(db.Integer, default=30)  # Application retention period
     
     # Stats (cached)
     total_candidates_reviewed = db.Column(db.Integer, default=0)
@@ -295,7 +300,8 @@ class RecruiterProfile(db.Model):
             'verification_status': self.verification_status,
             'is_verified': self.is_verified(),
             'verified_at': self.verified_at.isoformat() if self.verified_at else None,
-            'rating': self.rating
+            'rating': self.rating,
+            'retention_days': self.retention_days
         }
 
 
@@ -527,7 +533,7 @@ class Shortlist(db.Model):
 
 
 # ============================================
-# JOB APPLICATION MODEL
+# JOB APPLICATION MODEL - UPDATED
 # ============================================
 
 class JobApplication(db.Model):
@@ -557,6 +563,10 @@ class JobApplication(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     reviewed_at = db.Column(db.DateTime, nullable=True)
     
+    # NEW: Auto-delete expiry and soft delete
+    expires_at = db.Column(db.DateTime, nullable=True)  # When this application should be auto-deleted
+    is_deleted = db.Column(db.Boolean, default=False)   # Soft delete flag
+    
     # Relationships
     job = db.relationship('Job', backref='job_applications', lazy=True)
     applicant = db.relationship('User', backref='user_applications', lazy=True)
@@ -572,8 +582,174 @@ class JobApplication(db.Model):
             'applicant_name': self.applicant_name,
             'applicant_email': self.applicant_email,
             'status': self.status,
-            'applied_at': self.applied_at.isoformat() if self.applied_at else None
+            'applied_at': self.applied_at.isoformat() if self.applied_at else None,
+            'is_deleted': self.is_deleted,
+            'expires_at': self.expires_at.isoformat() if self.expires_at else None
         }
+    
+    def soft_delete(self):
+        """Soft delete the application (can be restored)"""
+        self.is_deleted = True
+        self.updated_at = datetime.utcnow()
+        db.session.commit()
+    
+    def restore(self):
+        """Restore a soft-deleted application"""
+        self.is_deleted = False
+        self.updated_at = datetime.utcnow()
+        db.session.commit()
+    
+    def is_expired(self):
+        """Check if the application has expired"""
+        if not self.expires_at:
+            return False
+        return datetime.utcnow() > self.expires_at
+    
+    def get_days_until_expiry(self):
+        """Get days until expiry (negative if expired)"""
+        if not self.expires_at:
+            return None
+        delta = self.expires_at - datetime.utcnow()
+        return delta.days
+    
+    @staticmethod
+    def create_with_expiry(job_id, user_id, applicant_name, applicant_email, 
+                          applicant_phone=None, cover_letter=None, cv_filename=None, 
+                          cv_filepath=None, retention_days=30):
+        """Create a new application with auto-expiry date"""
+        application = JobApplication(
+            job_id=job_id,
+            user_id=user_id,
+            applicant_name=applicant_name,
+            applicant_email=applicant_email,
+            applicant_phone=applicant_phone,
+            cover_letter=cover_letter,
+            cv_filename=cv_filename,
+            cv_filepath=cv_filepath,
+            expires_at=datetime.utcnow() + timedelta(days=retention_days)
+        )
+        return application
+
+
+# ============================================
+# JOB ALERT MODEL
+# ============================================
+
+class JobAlert(db.Model):
+    """Job alert subscriptions for candidates"""
+    __tablename__ = 'job_alerts'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # Alert criteria
+    keywords = db.Column(db.String(500), nullable=True)  # Comma-separated
+    job_type = db.Column(db.String(50), nullable=True)  # full_time, part_time, etc.
+    location = db.Column(db.String(200), nullable=True)
+    salary_min = db.Column(db.Float, nullable=True)
+    salary_max = db.Column(db.Float, nullable=True)
+    category = db.Column(db.String(100), nullable=True)
+    experience_level = db.Column(db.String(50), nullable=True)  # entry, mid, senior
+    
+    # Notification settings
+    frequency = db.Column(db.String(20), default='daily')  # daily, weekly, instant
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # Tracking
+    last_sent_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='job_alerts')
+    
+    def __repr__(self):
+        return f'<JobAlert {self.id} - User {self.user_id}>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'keywords': self.keywords.split(',') if self.keywords else [],
+            'job_type': self.job_type,
+            'location': self.location,
+            'salary_min': self.salary_min,
+            'salary_max': self.salary_max,
+            'category': self.category,
+            'experience_level': self.experience_level,
+            'frequency': self.frequency,
+            'is_active': self.is_active,
+            'last_sent_at': self.last_sent_at.strftime('%Y-%m-%d %H:%M') if self.last_sent_at else None,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M') if self.created_at else None
+        }
+    
+    def matches_job(self, job):
+        """Check if a job matches this alert criteria"""
+        matches = 0
+        total = 0
+        
+        # Keyword matching
+        if self.keywords:
+            total += 1
+            keywords = [k.strip().lower() for k in self.keywords.split(',')]
+            job_text = f"{job.title} {job.description or ''} {' '.join(job.required_skills or [])}".lower()
+            if any(k in job_text for k in keywords):
+                matches += 1
+        
+        # Job type
+        if self.job_type:
+            total += 1
+            if job.employment_type and self.job_type == job.employment_type.value:
+                matches += 1
+        
+        # Location
+        if self.location:
+            total += 1
+            if job.location and self.location.lower() in job.location.lower():
+                matches += 1
+        
+        # Category
+        # Note: You might need to add a 'category' field to Job model
+        # For now, we'll skip if not available
+        
+        # Experience level
+        if self.experience_level:
+            total += 1
+            if job.experience_level and self.experience_level.lower() in job.experience_level.lower():
+                matches += 1
+        
+        # Salary
+        if self.salary_min or self.salary_max:
+            total += 1
+            if job.salary_min or job.salary_max:
+                salary_ok = True
+                if self.salary_min and job.salary_max and job.salary_max < self.salary_min:
+                    salary_ok = False
+                if self.salary_max and job.salary_min and job.salary_min > self.salary_max:
+                    salary_ok = False
+                if salary_ok:
+                    matches += 1
+        
+        # Return True if at least 50% of criteria match
+        if total == 0:
+            return True
+        return (matches / total) >= 0.5
+
+
+class JobAlertLog(db.Model):
+    """Log of job alerts sent"""
+    __tablename__ = 'job_alert_logs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    alert_id = db.Column(db.Integer, db.ForeignKey('job_alerts.id'), nullable=False)
+    job_id = db.Column(db.Integer, db.ForeignKey('jobs.id'), nullable=False)
+    sent_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    alert = db.relationship('JobAlert', backref='logs')
+    job = db.relationship('Job', backref='alert_logs')
+    
+    def __repr__(self):
+        return f'<JobAlertLog Alert {self.alert_id} -> Job {self.job_id}>'
 
 
 # ============================================

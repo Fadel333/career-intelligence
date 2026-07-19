@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}My Applications - Career Intelligence{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+    <div class="flex items-center gap-4 mb-8">
+        <a href="{{ url_for('dashboard') }}" class="text-[#0f172a] hover:text-[#ef4444] transition">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div class="flex-1">
+            <h1 class="text-3xl font-bold text-[#0f172a]">📋 My Applications</h1>
+            <p class="text-[#475569]">Track your job applications and their status</p>
+        </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
+        <div class="card p-3 text-center">
+            <p class="text-[#475569] text-xs">Total</p>
+            <p class="text-[#0f172a] font-bold text-lg">{{ applications|length if applications else 0 }}</p>
+        </div>
+        <div class="card p-3 text-center border-yellow-400/30">
+            <p class="text-[#475569] text-xs">Pending</p>
+            <p class="text-yellow-500 font-bold text-lg">
+                {{ applications|selectattr('status', 'equalto', 'pending')|list|length if applications else 0 }}
+            </p>
+        </div>
+        <div class="card p-3 text-center border-blue-400/30">
+            <p class="text-[#475569] text-xs">Reviewed</p>
+            <p class="text-blue-500 font-bold text-lg">
+                {{ applications|selectattr('status', 'equalto', 'reviewed')|list|length if applications else 0 }}
+            </p>
+        </div>
+        <div class="card p-3 text-center border-purple-400/30">
+            <p class="text-[#475569] text-xs">Shortlisted</p>
+            <p class="text-purple-500 font-bold text-lg">
+                {{ applications|selectattr('status', 'equalto', 'shortlisted')|list|length if applications else 0 }}
+            </p>
+        </div>
+        <div class="card p-3 text-center border-green-400/30">
+            <p class="text-[#475569] text-xs">Hired</p>
+            <p class="text-green-500 font-bold text-lg">
+                {{ applications|selectattr('status', 'equalto', 'hired')|list|length if applications else 0 }}
+            </p>
+        </div>
+        <div class="card p-3 text-center border-red-400/30">
+            <p class="text-[#475569] text-xs">Rejected</p>
+            <p class="text-red-500 font-bold text-lg">
+                {{ applications|selectattr('status', 'equalto', 'rejected')|list|length if applications else 0 }}
+            </p>
+        </div>
+    </div>
+
+    <!-- Applications List -->
+    {% if applications and applications|length > 0 %}
+        <div class="space-y-4">
+            {% for application in applications %}
+            <div class="card p-6 hover:border-[#0f172a] transition {% if application.is_expired() %}border-red-300 bg-red-50/50{% endif %}">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-full bg-[#f1f5f9] flex items-center justify-center text-[#0f172a] font-bold text-lg">
+                                {{ application.job.title[0]|upper if application.job else '?' }}
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-[#0f172a]">
+                                    {{ application.job.title if application.job else 'Position Unknown' }}
+                                </h3>
+                                <div class="flex flex-wrap items-center gap-2 mt-1">
+                                    <span class="text-[#475569]">
+                                        <i class="fas fa-building mr-1"></i>
+                                        {{ application.job.poster.company_name if application.job and application.job.poster else 'Unknown Company' }}
+                                    </span>
+                                    {% if application.job and application.job.location %}
+                                        <span class="text-[#94a3b8]">•</span>
+                                        <span class="text-[#475569]">
+                                            <i class="fas fa-map-marker-alt mr-1"></i>
+                                            {{ application.job.location }}
+                                        </span>
+                                    {% endif %}
+                                    {% if application.job and application.job.employment_type %}
+                                        <span class="text-[#94a3b8]">•</span>
+                                        <span class="text-[#475569]">
+                                            <i class="fas fa-briefcase mr-1"></i>
+                                            {{ application.job.employment_type.value.replace('_', ' ').title() if application.job.employment_type else 'N/A' }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <div class="flex flex-wrap gap-3 mt-1 text-sm text-[#94a3b8]">
+                                    <span>
+                                        <i class="fas fa-calendar mr-1"></i> 
+                                        Applied: {{ application.applied_at.strftime('%b %d, %Y at %I:%M %p') }}
+                                    </span>
+                                    {% if application.reviewed_at %}
+                                        <span>
+                                            <i class="fas fa-check-circle mr-1"></i>
+                                            Reviewed: {{ application.reviewed_at.strftime('%b %d, %Y') }}
+                                        </span>
+                                    {% endif %}
+                                    {% if application.expires_at %}
+                                        <span class="{% if application.is_expired() %}text-red-500{% else %}text-[#94a3b8]{% endif %}">
+                                            <i class="fas fa-hourglass-half mr-1"></i>
+                                            {% if application.is_expired() %}
+                                                Expired
+                                            {% else %}
+                                                Expires: {{ application.expires_at.strftime('%b %d, %Y') }}
+                                                ({{ ((application.expires_at - now).days) }} days left)
+                                            {% endif %}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold
+                            {% if application.status == 'pending' %}bg-yellow-100 text-yellow-600
+                            {% elif application.status == 'reviewed' %}bg-blue-100 text-blue-600
+                            {% elif application.status == 'shortlisted' %}bg-purple-100 text-purple-600
+                            {% elif application.status == 'hired' %}bg-green-100 text-green-600
+                            {% elif application.status == 'rejected' %}bg-red-100 text-red-600
+                            {% else %}bg-[#f1f5f9] text-[#475569]{% endif %}">
+                            {{ application.status|title }}
+                        </span>
+                        <div class="flex gap-2">
+                            <a href="{{ url_for('jobs.my_application_detail', application_id=application.id) }}" 
+                               class="bg-[#f1f5f9] hover:bg-[#e2e8f0] px-3 py-2 rounded-xl text-[#0f172a] text-sm font-semibold transition">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            {% if application.status in ['pending', 'reviewed'] %}
+                                <form method="POST" action="{{ url_for('jobs.withdraw_application', application_id=application.id) }}" 
+                                      class="d-inline" 
+                                      onsubmit="return confirm('Are you sure you want to withdraw this application?')">
+                                    <button type="submit" class="bg-red-100 hover:bg-red-200 px-3 py-2 rounded-xl text-red-600 text-sm font-semibold transition">
+                                        <i class="fas fa-times"></i> Withdraw
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                {% if application.cover_letter %}
+                <div class="mt-3 pt-3 border-t border-[#e2e8f0]">
+                    <p class="text-[#475569] text-sm"><i class="fas fa-file-alt mr-1"></i> {{ application.cover_letter[:150] }}{% if application.cover_letter|length > 150 %}...{% endif %}</p>
+                </div>
+                {% endif %}
+                
+                {% if application.notes %}
+                <div class="mt-2">
+                    <p class="text-[#94a3b8] text-xs"><i class="fas fa-sticky-note mr-1"></i> Recruiter Note: {{ application.notes }}</p>
+                </div>
+                {% endif %}
+                
+                {% if application.is_expired() %}
+                <div class="mt-2">
+                    <span class="text-red-500 text-xs">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        This application has expired and may no longer be active.
+                    </span>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="card p-12 text-center">
+            <i class="fas fa-inbox text-5xl text-[#94a3b8] mb-4"></i>
+            <p class="text-xl text-[#475569]">No applications submitted yet</p>
+            <p class="text-[#94a3b8]">Start browsing jobs and apply to find your next opportunity!</p>
+            <a href="{{ url_for('jobs.job_board') }}" 
+               class="bg-[#0f172a] hover:bg-[#1e293b] text-white px-6 py-2.5 rounded-xl font-semibold inline-block mt-4 text-sm transition">
+                <i class="fas fa-search mr-2"></i> Browse Jobs
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.card {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s;
+}
+.card:hover {
+    border-color: #0f172a;
+}
+</style>
+{% endblock %}

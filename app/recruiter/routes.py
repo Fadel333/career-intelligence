@@ -6,13 +6,14 @@ from datetime import datetime, timedelta
 import json
 import os
 from werkzeug.utils import secure_filename
+from app.utils.email import send_job_published_email
 
 from . import recruiter_bp
 from .forms import JobForm
 from .services import CandidateMatcher
 
 # Fix imports - remove UserRole since it's not in models.py
-from models import db, User, RecruiterProfile, Job, Placement, Candidate
+from models import db, User, RecruiterProfile, Job, Placement, Candidate, Shortlist,  JobApplication
 
 # Import enums - define fallbacks if they don't exist
 try:
@@ -373,47 +374,85 @@ def create_job():
     
     form = JobForm()
     
+    # Pre-populate expiry date on GET
+    if request.method == 'GET':
+        from datetime import date, timedelta
+        form.expires_at.data = date.today() + timedelta(days=30)
+
+    # DEBUG: Print form validation status
+    print(f"DEBUG: Form submitted: {request.method}")
+    print(f"DEBUG: Form validate: {form.validate_on_submit()}")
+    print(f"DEBUG: Form errors: {form.errors if form.errors else 'None'}")
+    
     if form.validate_on_submit():
-        # Parse skills from textarea
-        required_skills = [s.strip() for s in form.required_skills.data.split(',') if s.strip()] if form.required_skills.data else []
-        preferred_skills = [s.strip() for s in form.preferred_skills.data.split(',') if s.strip()] if form.preferred_skills.data else []
-        
-        # Check if save as draft
-        is_draft = request.form.get('save_draft') == 'true'
-        
-        job = Job(
-            recruiter_id=recruiter.id,
-            poster_id=current_user.id,
-            title=form.title.data,
-            description=form.description.data,
-            requirements=[r.strip() for r in form.requirements.data.split('\n') if r.strip()] if form.requirements.data else [],
-            responsibilities=[r.strip() for r in form.responsibilities.data.split('\n') if r.strip()] if form.responsibilities.data else [],
-            employment_type=form.employment_type.data,
-            experience_level=form.experience_level.data,
-            salary_min=form.salary_min.data,
-            salary_max=form.salary_max.data,
-            currency=form.currency.data,
-            location=form.location.data,
-            remote_available=form.remote_available.data,
-            required_skills=required_skills,
-            preferred_skills=preferred_skills,
-            status=JobStatus.DRAFT if is_draft else JobStatus.PUBLISHED,
-            expires_at=form.expires_at.data,
-            posted_at=datetime.utcnow()
-        )
-        
-        db.session.add(job)
-        db.session.commit()
-        
-        if is_draft:
-            flash(f'✅ Job "{job.title}" saved as draft!', 'success')
-        else:
-            flash(f'✅ Job "{job.title}" published successfully!', 'success')
-        
-        return redirect(url_for('recruiter.jobs'))
+        try:
+            # Parse skills from textarea
+            required_skills = [s.strip() for s in form.required_skills.data.split(',') if s.strip()] if form.required_skills.data else []
+            preferred_skills = [s.strip() for s in form.preferred_skills.data.split(',') if s.strip()] if form.preferred_skills.data else []
+            
+            # Check if save as draft
+            is_draft = request.form.get('save_draft') == 'true'
+            print(f"DEBUG: is_draft: {is_draft}")
+            
+            # Parse requirements and responsibilities
+            requirements = []
+            if form.requirements.data:
+                requirements = [r.strip() for r in form.requirements.data.split('\n') if r.strip()]
+            
+            responsibilities = []
+            if form.responsibilities.data:
+                responsibilities = [r.strip() for r in form.responsibilities.data.split('\n') if r.strip()]
+            
+            job = Job(
+                recruiter_id=recruiter.id,
+                poster_id=current_user.id,
+                title=form.title.data,
+                description=form.description.data,
+                requirements=requirements,
+                responsibilities=responsibilities,
+                employment_type=form.employment_type.data,
+                experience_level=form.experience_level.data,
+                salary_min=form.salary_min.data,
+                salary_max=form.salary_max.data,
+                currency=form.currency.data,
+                location=form.location.data,
+                remote_available=form.remote_available.data,
+                required_skills=required_skills,
+                preferred_skills=preferred_skills,
+                status=JobStatus.DRAFT if is_draft else JobStatus.PUBLISHED,
+                expires_at=form.expires_at.data,
+                posted_at=datetime.utcnow()
+            )
+            
+            db.session.add(job)
+            db.session.commit()
+
+            if not is_draft:
+                try:
+                    send_job_published_email(job)
+                except Exception as e:
+                    print(f"Email error: {e}")
+            
+            if is_draft:
+                flash(f'✅ Job "{job.title}" saved as draft!', 'success')
+            else:
+                flash(f'✅ Job "{job.title}" published successfully!', 'success')
+            
+            return redirect(url_for('recruiter.jobs'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error creating job: {str(e)}', 'error')
+            print(f"Error: {e}")
+    
+    # If form validation failed, show errors
+    if form.errors:
+        for field, errors in form.errors.items():
+            field_label = field.replace('_', ' ').title()
+            for error in errors:
+                flash(f'{field_label}: {error}', 'error')
     
     return render_template('recruiter/create_job.html', form=form)
-
 
 @recruiter_bp.route('/jobs/<int:job_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -430,29 +469,38 @@ def edit_job(job_id):
     
     form = JobForm(obj=job)
     
-    if form.validate_on_submit():
-        job.title = form.title.data
-        job.description = form.description.data
-        job.requirements = [r.strip() for r in form.requirements.data.split('\n') if r.strip()] if form.requirements.data else []
-        job.responsibilities = [r.strip() for r in form.responsibilities.data.split('\n') if r.strip()] if form.responsibilities.data else []
-        job.employment_type = form.employment_type.data
-        job.experience_level = form.experience_level.data
-        job.salary_min = form.salary_min.data
-        job.salary_max = form.salary_max.data
-        job.currency = form.currency.data
-        job.location = form.location.data
-        job.remote_available = form.remote_available.data
-        job.required_skills = [s.strip() for s in form.required_skills.data.split(',') if s.strip()] if form.required_skills.data else []
-        job.preferred_skills = [s.strip() for s in form.preferred_skills.data.split(',') if s.strip()] if form.preferred_skills.data else []
-        
-        if not form.save_as_draft.data and job.status == JobStatus.DRAFT:
-            job.status = JobStatus.PUBLISHED
-        
-        db.session.commit()
-        flash('✅ Job updated successfully!', 'success')
-        return redirect(url_for('recruiter.jobs'))
+    # Pre-populate expiry date
+    if request.method == 'GET' and job.expires_at:
+        form.expires_at.data = job.expires_at
     
-    # Pre-populate form fields
+    if form.validate_on_submit():
+        try:
+            job.title = form.title.data
+            job.description = form.description.data
+            job.requirements = [r.strip() for r in form.requirements.data.split('\n') if r.strip()] if form.requirements.data else []
+            job.responsibilities = [r.strip() for r in form.responsibilities.data.split('\n') if r.strip()] if form.responsibilities.data else []
+            job.employment_type = form.employment_type.data
+            job.experience_level = form.experience_level.data
+            job.salary_min = form.salary_min.data
+            job.salary_max = form.salary_max.data
+            job.currency = form.currency.data
+            job.location = form.location.data
+            job.remote_available = form.remote_available.data
+            job.required_skills = [s.strip() for s in form.required_skills.data.split(',') if s.strip()] if form.required_skills.data else []
+            job.preferred_skills = [s.strip() for s in form.preferred_skills.data.split(',') if s.strip()] if form.preferred_skills.data else []
+            job.expires_at = form.expires_at.data
+            
+            if not form.save_as_draft.data and job.status == JobStatus.DRAFT:
+                job.status = JobStatus.PUBLISHED
+            
+            db.session.commit()
+            flash('✅ Job updated successfully!', 'success')
+            return redirect(url_for('recruiter.jobs'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating job: {str(e)}', 'error')
+    
+    # Pre-populate form fields for display
     if job.requirements:
         form.requirements.data = '\n'.join(job.requirements)
     if job.responsibilities:
@@ -463,7 +511,6 @@ def edit_job(job_id):
         form.preferred_skills.data = ', '.join(job.preferred_skills)
     
     return render_template('recruiter/edit_job.html', form=form, job=job)
-
 
 @recruiter_bp.route('/jobs/<int:job_id>/status', methods=['POST'])
 @login_required
@@ -487,6 +534,223 @@ def update_job_status(job_id):
         flash('Invalid status.', 'error')
     
     return redirect(url_for('recruiter.jobs'))
+
+# ========== APPLICATION MANAGEMENT ROUTES ==========
+@recruiter_bp.route('/applications')
+@login_required
+@recruiter_required
+def applications():
+    """View all applications for recruiter's jobs"""
+    recruiter = RecruiterProfile.query.filter_by(user_id=current_user.id).first()
+    
+    if not recruiter:
+        flash('Please complete your recruiter profile first.', 'warning')
+        return redirect(url_for('recruiter.setup_profile'))
+    
+    # Get recruiter's job IDs
+    job_ids = [job.id for job in Job.query.filter_by(recruiter_id=recruiter.id).all()]
+    
+    # Base query - only non-deleted applications
+    query = JobApplication.query.filter(
+        JobApplication.job_id.in_(job_ids),
+        JobApplication.is_deleted == False
+    )
+    
+    # Filters
+    status_filter = request.args.get('status', '')
+    search_query = request.args.get('search', '')
+    sort_by = request.args.get('sort', 'applied_at')
+    sort_order = request.args.get('order', 'desc')
+    
+    if status_filter:
+        query = query.filter_by(status=status_filter)
+    
+    if search_query:
+        query = query.filter(
+            db.or_(
+                JobApplication.applicant_name.ilike(f'%{search_query}%'),
+                JobApplication.applicant_email.ilike(f'%{search_query}%')
+            )
+        )
+    
+    # Sorting
+    if sort_order == 'desc':
+        query = query.order_by(desc(getattr(JobApplication, sort_by)))
+    else:
+        query = query.order_by(getattr(JobApplication, sort_by))
+    
+    # Pagination
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+    paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+    
+    # Get status counts
+    status_counts = db.session.query(
+        JobApplication.status,
+        db.func.count(JobApplication.id)
+    ).filter(
+        JobApplication.job_id.in_(job_ids),
+        JobApplication.is_deleted == False
+    ).group_by(JobApplication.status).all()
+    
+    # Check for expired applications (to be deleted)
+    expired_count = JobApplication.query.filter(
+        JobApplication.job_id.in_(job_ids),
+        JobApplication.is_deleted == False,
+        JobApplication.expires_at <= datetime.utcnow()
+    ).count()
+    
+    return render_template('recruiter/applications.html',
+        applications=paginated.items,  # CHANGE THIS: use .items to get the list
+        pagination=paginated,           # Keep pagination object for pagination links
+        status_counts=status_counts,
+        status_filter=status_filter,
+        search_query=search_query,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        expired_count=expired_count,
+        now=datetime.utcnow()
+    )
+
+@recruiter_bp.route('/applications/<int:app_id>/delete', methods=['POST'])
+@login_required
+@recruiter_required
+def delete_application(app_id):
+    """Soft delete an application"""
+    recruiter = RecruiterProfile.query.filter_by(user_id=current_user.id).first()
+    
+    if not recruiter:
+        flash('Please complete your recruiter profile first.', 'warning')
+        return redirect(url_for('recruiter.setup_profile'))
+    
+    application = JobApplication.query.get_or_404(app_id)
+    
+    # Verify ownership
+    job = Job.query.filter_by(id=application.job_id, recruiter_id=recruiter.id).first()
+    if not job:
+        flash('You do not have permission to delete this application.', 'error')
+        return redirect(url_for('recruiter.applications'))
+    
+    # Soft delete
+    application.soft_delete()
+    flash(f'✅ Application from {application.applicant_name} has been deleted.', 'success')
+    
+    return redirect(url_for('recruiter.applications'))
+
+
+@recruiter_bp.route('/applications/<int:app_id>/restore', methods=['POST'])
+@login_required
+@recruiter_required
+def restore_application(app_id):
+    """Restore a soft-deleted application"""
+    recruiter = RecruiterProfile.query.filter_by(user_id=current_user.id).first()
+    
+    if not recruiter:
+        flash('Please complete your recruiter profile first.', 'warning')
+        return redirect(url_for('recruiter.setup_profile'))
+    
+    application = JobApplication.query.get_or_404(app_id)
+    
+    # Verify ownership
+    job = Job.query.filter_by(id=application.job_id, recruiter_id=recruiter.id).first()
+    if not job:
+        flash('You do not have permission to restore this application.', 'error')
+        return redirect(url_for('recruiter.applications'))
+    
+    # Restore
+    application.restore()
+    flash(f'✅ Application from {application.applicant_name} has been restored.', 'success')
+    
+    return redirect(url_for('recruiter.applications'))
+
+
+@recruiter_bp.route('/applications/bulk-delete', methods=['POST'])
+@login_required
+@recruiter_required
+def bulk_delete_applications():
+    """Delete multiple applications at once"""
+    recruiter = RecruiterProfile.query.filter_by(user_id=current_user.id).first()
+    
+    if not recruiter:
+        flash('Please complete your recruiter profile first.', 'warning')
+        return redirect(url_for('recruiter.setup_profile'))
+    
+    app_ids = request.form.getlist('app_ids[]')
+    
+    if not app_ids:
+        flash('No applications selected.', 'warning')
+        return redirect(url_for('recruiter.applications'))
+    
+    deleted_count = 0
+    for app_id in app_ids:
+        application = JobApplication.query.get(int(app_id))
+        if application:
+            # Verify ownership
+            job = Job.query.filter_by(id=application.job_id, recruiter_id=recruiter.id).first()
+            if job:
+                application.soft_delete()
+                deleted_count += 1
+    
+    flash(f'✅ {deleted_count} applications deleted successfully.', 'success')
+    return redirect(url_for('recruiter.applications'))
+
+
+@recruiter_bp.route('/applications/cleanup-expired', methods=['POST'])
+@login_required
+@recruiter_required
+def cleanup_expired_applications():
+    """Delete all expired applications for the recruiter"""
+    recruiter = RecruiterProfile.query.filter_by(user_id=current_user.id).first()
+    
+    if not recruiter:
+        flash('Please complete your recruiter profile first.', 'warning')
+        return redirect(url_for('recruiter.setup_profile'))
+    
+    # Get recruiter's job IDs
+    job_ids = [job.id for job in Job.query.filter_by(recruiter_id=recruiter.id).all()]
+    
+    # Find expired applications
+    expired_apps = JobApplication.query.filter(
+        JobApplication.job_id.in_(job_ids),
+        JobApplication.is_deleted == False,
+        JobApplication.expires_at <= datetime.utcnow()
+    ).all()
+    
+    count = len(expired_apps)
+    for app in expired_apps:
+        app.soft_delete()
+    
+    flash(f'✅ {count} expired applications have been cleaned up.', 'success')
+    return redirect(url_for('recruiter.applications'))
+
+
+@recruiter_bp.route('/applications/settings', methods=['GET', 'POST'])
+@login_required
+@recruiter_required
+def application_settings():
+    """Configure application retention settings"""
+    recruiter = RecruiterProfile.query.filter_by(user_id=current_user.id).first()
+    
+    if not recruiter:
+        flash('Please complete your recruiter profile first.', 'warning')
+        return redirect(url_for('recruiter.setup_profile'))
+    
+    if request.method == 'POST':
+        retention_days = request.form.get('retention_days', 30, type=int)
+        
+        if retention_days < 7:
+            flash('Retention period must be at least 7 days.', 'error')
+        elif retention_days > 365:
+            flash('Retention period cannot exceed 365 days.', 'error')
+        else:
+            # Store in recruiter profile (you'll need to add this field)
+            recruiter.retention_days = retention_days
+            db.session.commit()
+            flash(f'✅ Application retention period set to {retention_days} days.', 'success')
+        
+        return redirect(url_for('recruiter.application_settings'))
+    
+    return render_template('recruiter/application_settings.html', recruiter=recruiter)
 
 
 # ========== PLACEMENT ROUTES ==========
@@ -1139,3 +1403,5 @@ def update_shortlist_note(shortlist_id):
     
     flash('✅ Note updated successfully!', 'success')
     return redirect(url_for('recruiter.shortlist'))
+
+ 

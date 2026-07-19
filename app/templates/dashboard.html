@@ -82,6 +82,26 @@
                         </div>
                     </a>
 
+                    <!-- My Applications Card - NEW -->
+                    <a href="{{ url_for('jobs.my_applications') }}" class="glass-card p-6 hover:transform hover:scale-105 transition-all cursor-pointer block" data-aos="fade-right" data-aos-delay="50">
+                        <div class="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mb-4">
+                            <i class="fas fa-list-check text-2xl text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">My Applications</h3>
+                        <p class="text-white/60 text-sm">Track your job applications and their status</p>
+                        <div class="mt-4 flex items-center gap-2">
+                            <span class="text-blue-400 text-sm flex items-center gap-1">
+                                View All <i class="fas fa-arrow-right"></i>
+                            </span>
+                            {% set total_apps = current_user.applications|selectattr('is_deleted', 'equalto', False)|list|length %}
+                            {% if total_apps > 0 %}
+                                <span class="bg-blue-500/20 text-blue-300 text-xs px-2 py-1 rounded-full">
+                                    {{ total_apps }} active
+                                </span>
+                            {% endif %}
+                        </div>
+                    </a>
+
                     <!-- Profile Card -->
                     <a href="{{ url_for('profile') }}" class="glass-card p-6 hover:transform hover:scale-105 transition-all cursor-pointer block" data-aos="fade-right" data-aos-delay="100">
                         <div class="w-14 h-14 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center mb-4">
@@ -91,6 +111,18 @@
                         <p class="text-white/60 text-sm">Update your information and career preferences</p>
                         <div class="mt-4 text-purple-400 text-sm flex items-center gap-1">
                             Update Now <i class="fas fa-arrow-right"></i>
+                        </div>
+                    </a>
+
+                    <!-- Job Matches Card -->
+                    <a href="{{ url_for('job_matches') }}" class="glass-card p-6 hover:transform hover:scale-105 transition-all cursor-pointer block" data-aos="fade-right" data-aos-delay="150">
+                        <div class="w-14 h-14 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl flex items-center justify-center mb-4">
+                            <i class="fas fa-briefcase text-2xl text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">Job Matches</h3>
+                        <p class="text-white/60 text-sm">Find your perfect job based on your skills</p>
+                        <div class="mt-4 text-orange-400 text-sm flex items-center gap-1">
+                            Browse Jobs <i class="fas fa-arrow-right"></i>
                         </div>
                     </a>
                 </div>

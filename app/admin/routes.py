@@ -7,6 +7,9 @@ from datetime import datetime
 from models import db, User, RecruiterProfile, Job, Placement
 from app.utils.decorators import admin_required
 
+from app.utils.email import send_verification_approved_email, send_verification_rejected_email
+
+
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 
@@ -87,6 +90,8 @@ def approve_verification(recruiter_id):
             doc['status'] = 'approved'
     
     db.session.commit()
+
+    send_verification_approved_email(recruiter)
     
     flash(f'✅ {recruiter.company_name} has been verified successfully!', 'success')
     return redirect(url_for('admin.verifications'))
@@ -116,6 +121,8 @@ def reject_verification(recruiter_id):
             doc['status'] = 'rejected'
     
     db.session.commit()
+
+    send_verification_rejected_email(recruiter)
     
     flash(f'❌ {recruiter.company_name} has been rejected.', 'warning')
     return redirect(url_for('admin.verifications'))

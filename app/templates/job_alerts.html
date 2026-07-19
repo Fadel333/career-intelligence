@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 mb-1">🔔 Job Alerts</h1>
+            <p class="text-muted">Get notified when new jobs match your preferences</p>
+        </div>
+        <a href="{{ url_for('create_job_alert') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Create Alert
+        </a>
+    </div>
+
+    {% if alerts %}
+        <div class="row">
+            {% for alert in alerts %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="d-flex align-items-center">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" 
+                                               {% if alert.is_active %}checked{% endif %}
+                                               onchange="toggleAlert({{ alert.id }})">
+                                    </div>
+                                    <span class="badge {% if alert.is_active %}bg-success{% else %}bg-secondary{% endif %} ms-2">
+                                        {% if alert.is_active %}Active{% else %}Inactive{% endif %}
+                                    </span>
+                                </div>
+                                <span class="badge bg-info">{{ alert.frequency }}</span>
+                            </div>
+                            
+                            <div class="mt-3">
+                                {% if alert.keywords %}
+                                    <div class="mb-2">
+                                        <small class="text-muted">Keywords:</small>
+                                        <div class="d-flex flex-wrap gap-1 mt-1">
+                                            {% for keyword in alert.keywords.split(',') %}
+                                                <span class="badge bg-primary bg-opacity-10 text-primary">{{ keyword.strip() }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="row g-1 small text-muted">
+                                    {% if alert.location %}
+                                        <div class="col-6">📍 {{ alert.location }}</div>
+                                    {% endif %}
+                                    {% if alert.job_type %}
+                                        <div class="col-6">💼 {{ alert.job_type.replace('_', ' ').title() }}</div>
+                                    {% endif %}
+                                    {% if alert.salary_min or alert.salary_max %}
+                                        <div class="col-12">💰 ${{ alert.salary_min or '0' }} - ${{ alert.salary_max or '∞' }}</div>
+                                    {% endif %}
+                                    {% if alert.experience_level %}
+                                        <div class="col-6">📊 {{ alert.experience_level.title() }}</div>
+                                    {% endif %}
+                                    {% if alert.category %}
+                                        <div class="col-6">📂 {{ alert.category }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if alert.last_sent_at %}
+                                    <div class="mt-2 small text-muted">
+                                        Last sent: {{ alert.last_sent_at.strftime('%b %d, %Y') }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="card-footer bg-transparent">
+                            <div class="btn-group w-100" role="group">
+                                <a href="{{ url_for('edit_job_alert', alert_id=alert.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </a>
+                                <button class="btn btn-sm btn-outline-info" onclick="testAlert({{ alert.id }})">
+                                    <i class="bi bi-envelope"></i> Test
+                                </button>
+                                <form action="{{ url_for('delete_job_alert', alert_id=alert.id) }}" method="POST" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this alert?')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="text-center py-5">
+            <div class="display-1 mb-3">🔔</div>
+            <h3>No Job Alerts Yet</h3>
+            <p class="text-muted">Create your first job alert to get notified about new opportunities.</p>
+            <a href="{{ url_for('create_job_alert') }}" class="btn btn-primary mt-3">
+                <i class="bi bi-plus-circle"></i> Create Your First Alert
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function toggleAlert(alertId) {
+    fetch(`/job-alerts/${alertId}/toggle`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token() if csrf_token else "" }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error toggling alert');
+    });
+}
+
+function testAlert(alertId) {
+    if (!confirm('Send a test email for this alert?')) return;
+    
+    alert('📧 Test email feature coming soon!');
+    // You can implement the actual test email endpoint here
+}
+</script>
+{% endblock %}

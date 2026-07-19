@@ -22,357 +22,436 @@
         }
         
         /* ============================================
-           OPTION 3: LUXURIOUS GOLD GRADIENT
+           BACKGROUND IMAGE - STUNNING TECH THEME
            ============================================ */
         body {
-            background: linear-gradient(180deg, 
-                #1a0a00 0%, 
-                #2d1500 20%, 
-                #0a0a0a 50%, 
-                #1a0a00 80%, 
-                #0a0a0a 100%
-            );
+            background-color: #0a0a0a;
             min-height: 100vh;
-            overflow-x: hidden;
+            color: #ffffff;
+            
+            /* ⭐ The Hero Background Image ⭐ */
+            background-image: url('{{ url_for("static", filename="images/background.jpg") }}');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            background-repeat: no-repeat;
             position: relative;
+            z-index: 0;
         }
-
-        /* Golden Glow Effect */
+        
+        /* Dark overlay for readability - warm, deep, and inviting */
         body::before {
             content: '';
             position: fixed;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: 
-                radial-gradient(ellipse at 50% 30%, rgba(255, 215, 0, 0.12) 0%, transparent 40%),
-                radial-gradient(ellipse at 20% 80%, rgba(255, 215, 0, 0.06) 0%, transparent 30%),
-                radial-gradient(ellipse at 80% 60%, rgba(255, 215, 0, 0.04) 0%, transparent 30%);
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                135deg,
+                rgba(10, 10, 10, 0.88) 0%,
+                rgba(20, 10, 10, 0.85) 30%,
+                rgba(10, 10, 20, 0.88) 60%,
+                rgba(0, 0, 0, 0.92) 100%
+            );
+            z-index: -1;
             pointer-events: none;
-            z-index: 0;
-            animation: goldenGlow 12s ease-in-out infinite alternate;
-        }
-
-        @keyframes goldenGlow {
-            0% { opacity: 0.7; transform: scale(1) rotate(0deg); }
-            100% { opacity: 1; transform: scale(1.1) rotate(5deg); }
-        }
-
-        /* Golden particles with trail effect */
-        .particle {
-            position: fixed;
-            pointer-events: none;
-            width: 4px;
-            height: 4px;
-            background: linear-gradient(180deg, #ffd700, #f0a500);
-            border-radius: 50%;
-            animation: floatGold 30s infinite linear;
-            opacity: 0.4;
-            z-index: 0;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
-        }
-
-        @keyframes floatGold {
-            0% { 
-                transform: translateY(100vh) translateX(0) scale(0); 
-                opacity: 0; 
-            }
-            10% { 
-                opacity: 0.6; 
-                transform: translateY(90vh) translateX(20px) scale(1); 
-            }
-            90% { 
-                opacity: 0.6; 
-            }
-            100% { 
-                transform: translateY(-10vh) translateX(-20px) scale(0.5); 
-                opacity: 0; 
-            }
         }
         
-        /* Glass Morphism Cards - Gold Theme */
-        .glass-card {
-            background: rgba(255, 255, 255, 0.03);
+        /* Subtle glow overlay for depth */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(
+                ellipse at 30% 20%,
+                rgba(239, 68, 68, 0.04) 0%,
+                rgba(139, 92, 246, 0.02) 40%,
+                transparent 70%
+            );
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Warm typography */
+        h1, h2, h3, h4, h5, h6 {
+            color: #ffffff;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+        
+        p {
+            color: #94a3b8;
+            line-height: 1.8;
+        }
+
+        /* Clean Cards - Glass effect for background visibility */
+        .card {
+            background: rgba(20, 20, 20, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 1.25rem;
+            border: 1px solid rgba(30, 41, 59, 0.4);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .card:hover {
+            border-color: rgba(239, 68, 68, 0.4);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(239, 68, 68, 0.05);
+            background: rgba(25, 25, 25, 0.8);
+        }
+        
+        /* Testimonial cards - same glass effect */
+        .testimonial-card {
+            background: rgba(20, 20, 20, 0.6);
             backdrop-filter: blur(12px);
-            border-radius: 2rem;
-            border: 1px solid rgba(255, 215, 0, 0.12);
-            transition: all 0.4s ease;
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 1.25rem;
+            border: 1px solid rgba(30, 41, 59, 0.3);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 1.5rem;
+        }
+        
+        .testimonial-card:hover {
+            border-color: rgba(239, 68, 68, 0.4);
+            transform: translateY(-4px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            background: rgba(25, 25, 25, 0.7);
+        }
+        
+        /* Gradient Text */
+        .gradient-text {
+            background: linear-gradient(135deg, #ef4444, #f59e0b, #8b5cf6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        /* Primary Buttons */
+        .btn-primary {
+            background: #ef4444;
+            color: #ffffff;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: none;
             position: relative;
             overflow: hidden;
         }
         
-        .glass-card::before {
+        .btn-primary::after {
             content: '';
             position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(ellipse at center, rgba(255, 215, 0, 0.03), transparent 70%);
-            opacity: 0;
-            transition: opacity 0.6s ease;
-            pointer-events: none;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
         }
         
-        .glass-card:hover::before {
-            opacity: 1;
-        }
-        
-        .glass-card:hover {
-            transform: translateY(-10px);
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(255, 215, 0, 0.4);
-            box-shadow: 0 20px 60px rgba(255, 215, 0, 0.1), inset 0 0 40px rgba(255, 215, 0, 0.02);
-        }
-        
-        /* Gradient Text - Yellow to Gold */
-        .gradient-text {
-            background: linear-gradient(135deg, #ffd700 0%, #f0a500 30%, #ffed4a 60%, #ffd700 100%);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            text-shadow: 0 0 40px rgba(255, 215, 0, 0.15);
-        }
-        
-        /* Primary Buttons - Yellow Theme */
-        .btn-primary {
-            background: linear-gradient(135deg, #ffd700 0%, #f0a500 50%, #e69500 100%);
-            transition: all 0.3s ease;
-            color: #0a0a0a;
-            font-weight: 700;
-            box-shadow: 0 4px 20px rgba(255, 215, 0, 0.3);
+        .btn-primary:hover::after {
+            width: 300px;
+            height: 300px;
         }
         
         .btn-primary:hover {
-            transform: scale(1.05);
-            box-shadow: 0 10px 40px rgba(255, 215, 0, 0.5);
-            background: linear-gradient(135deg, #ffed4a 0%, #ffd700 50%, #f0a500 100%);
+            background: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(239, 68, 68, 0.35);
         }
         
         .btn-secondary {
-            background: rgba(255, 255, 255, 0.08);
-            border: 2px solid rgba(255, 215, 0, 0.4);
-            transition: all 0.3s ease;
-            color: #fff;
+            background: rgba(255, 255, 255, 0.06);
+            color: #ffffff;
             font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(4px);
         }
         
         .btn-secondary:hover {
-            background: rgba(255, 215, 0, 0.15);
-            border-color: #ffd700;
-            transform: scale(1.05);
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.15);
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
+            border-color: #ef4444;
         }
         
         .btn-outline {
-            border: 2px solid rgba(255, 215, 0, 0.5);
-            transition: all 0.3s ease;
-            color: #fff;
+            background: transparent;
+            color: #ffffff;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid #ef4444;
         }
         
         .btn-outline:hover {
-            border-color: #ffd700;
-            background: rgba(255, 215, 0, 0.1);
-            transform: scale(1.05);
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
+            background: #ef4444;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(239, 68, 68, 0.25);
+        }
+
+        /* Navigation - Glass */
+        nav {
+            background: rgba(10, 10, 10, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(30, 41, 59, 0.3);
         }
         
-        /* Smooth scroll */
-        html {
-            scroll-behavior: smooth;
-        }
-        
-        /* Custom scrollbar - Gold theme */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: rgba(10, 10, 10, 0.8);
-            border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: linear-gradient(180deg, #ffd700, #f0a500);
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(180deg, #ffed4a, #ffd700);
-        }
-        
-        /* Animated underline - Yellow */
-        .animated-link {
+        .nav-link {
+            color: #94a3b8;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            font-size: 0.9rem;
             position: relative;
-            color: rgba(255, 255, 255, 0.7);
         }
         
-        .animated-link::after {
+        .nav-link::before {
             content: '';
             position: absolute;
-            width: 0;
-            height: 2px;
             bottom: -4px;
             left: 0;
-            background: linear-gradient(90deg, #ffd700, #f0a500);
+            width: 0;
+            height: 2px;
+            background: #ef4444;
             transition: width 0.3s ease;
         }
         
-        .animated-link:hover::after {
+        .nav-link:hover::before {
             width: 100%;
         }
         
-        .animated-link:hover {
-            color: #ffd700;
+        .nav-link:hover {
+            color: #ffffff;
+        }
+
+        /* Hero glow - warm */
+        .hero-glow {
+            position: relative;
         }
         
-        /* Flash messages */
+        .hero-glow::before {
+            content: '';
+            position: absolute;
+            top: -40%;
+            left: -20%;
+            width: 140%;
+            height: 140%;
+            background: radial-gradient(ellipse at center, rgba(239, 68, 68, 0.04), transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Section backgrounds - transparent to show background image */
+        .section-dark {
+            background: transparent;
+        }
+        
+        .section-dark-alt {
+            background: rgba(10, 10, 10, 0.3);
+            backdrop-filter: blur(4px);
+        }
+
+        /* Custom scrollbar - Warm */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(20, 20, 20, 0.8);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ef4444;
+            border-radius: 10px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #dc2626;
+        }
+        
+        /* Flash messages - Friendly */
         .flash-message {
-            animation: slideDown 0.4s ease-out;
+            animation: slideDown 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         @keyframes slideDown {
             from {
                 opacity: 0;
-                transform: translateY(-20px);
+                transform: translateY(-20px) scale(0.95);
             }
             to {
                 opacity: 1;
-                transform: translateY(0);
+                transform: translateY(0) scale(1);
             }
         }
         
-        /* Logo styles */
+        /* Logo */
         .logo-img {
             width: 44px;
             height: 44px;
-            border-radius: 12px;
-            transition: all 0.3s ease;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.15);
+            border-radius: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.1));
         }
         
         .logo-img:hover {
-            transform: scale(1.08) rotate(-2deg);
-            box-shadow: 0 0 40px rgba(255, 215, 0, 0.3);
-        }
-        
-        /* Navigation - Role Based */
-        nav {
-            background: rgba(10, 10, 10, 0.85);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 215, 0, 0.1);
-        }
-        
-        .nav-link {
-            color: rgba(255, 255, 255, 0.7);
-            transition: all 0.3s ease;
-            font-weight: 500;
-        }
-        
-        .nav-link:hover {
-            color: #ffd700;
-        }
-        
-        .nav-link-active {
-            color: #ffd700;
-        }
-        
-        /* Responsive nav */
-        @media (max-width: 768px) {
-            .nav-links {
-                display: none;
-            }
-            .mobile-menu-btn {
-                display: block;
-            }
-        }
-        
-        /* Testimonial Cards */
-        .testimonial-card {
-            background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(10px);
-            border-radius: 1.5rem;
-            border: 1px solid rgba(255, 215, 0, 0.1);
-            transition: all 0.4s ease;
-            padding: 1.5rem;
-        }
-        
-        .testimonial-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(255, 215, 0, 0.3);
-            background: rgba(255, 255, 255, 0.06);
-            box-shadow: 0 10px 40px rgba(255, 215, 0, 0.05);
-        }
-        
-        /* Badge / Tag styles */
-        .badge-gold {
-            background: rgba(255, 215, 0, 0.15);
-            color: #ffd700;
-            border: 1px solid rgba(255, 215, 0, 0.2);
-        }
-        
-        /* Input focus - Gold */
-        input:focus, textarea:focus, select:focus {
-            border-color: #ffd700 !important;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.15) !important;
-        }
-        
-        /* Gold accent border */
-        .border-gold {
-            border-color: rgba(255, 215, 0, 0.3);
-        }
-        
-        .border-gold:hover {
-            border-color: #ffd700;
-        }
-        
-        /* Text gold */
-        .text-gold {
-            color: #ffd700;
-        }
-        
-        .text-gold-light {
-            color: #ffed4a;
+            transform: scale(1.05) rotate(-2deg);
+            filter: drop-shadow(0 0 30px rgba(239, 68, 68, 0.2));
         }
 
         /* Divider */
         .nav-divider {
             width: 1px;
-            height: 30px;
-            background: rgba(255, 215, 0, 0.15);
+            height: 24px;
+            background: rgba(30, 41, 59, 0.5);
+        }
+
+        /* Stats */
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #ffffff;
+            letter-spacing: -0.02em;
+        }
+        
+        .stat-label {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Icon backgrounds */
+        .icon-bg-red {
+            background: rgba(239, 68, 68, 0.1);
+        }
+        
+        .icon-bg-blue {
+            background: rgba(59, 130, 246, 0.1);
+        }
+        
+        .icon-bg-yellow {
+            background: rgba(245, 158, 11, 0.1);
+        }
+        
+        .icon-bg-purple {
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        /* Form inputs - Warm */
+        input, textarea, select {
+            background: rgba(20, 20, 20, 0.8);
+            border: 1px solid rgba(30, 41, 59, 0.5);
+            color: #ffffff;
+            transition: all 0.3s ease;
+            border-radius: 0.75rem;
+            padding: 0.75rem 1rem;
+            backdrop-filter: blur(8px);
+        }
+        
+        input::placeholder, textarea::placeholder {
+            color: #475569;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+            background: rgba(25, 25, 25, 0.9);
+        }
+
+        /* Badges */
+        .badge-red {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+        
+        /* Footer */
+        .footer-link {
+            color: #94a3b8;
+            transition: all 0.2s ease;
+        }
+        
+        .footer-link:hover {
+            color: #ffffff;
+        }
+
+        /* Background fade-in animation */
+        @keyframes fadeInBackground {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+        }
+        
+        body {
+            animation: fadeInBackground 1.8s ease-in-out;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                background-attachment: scroll; /* Better mobile performance */
+                background-size: cover;
+                background-position: center;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .stat-number {
+                font-size: 2rem;
+            }
+            .card {
+                background: rgba(20, 20, 20, 0.85);
+                backdrop-filter: blur(12px);
+            }
+        }
+
+        /* AOS overrides - smoother */
+        [data-aos] {
+            pointer-events: none;
+        }
+        [data-aos].aos-animate {
+            pointer-events: auto;
+        }
+        
+        /* Additional glass effect for containers */
+        .glass-card {
+            background: rgba(20, 20, 20, 0.6);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(30, 41, 59, 0.3);
+            border-radius: 1.25rem;
+        }
+        
+        /* Footer - transparent to show background */
+        footer {
+            background: rgba(10, 10, 10, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(30, 41, 59, 0.3);
         }
     </style>
 </head>
 <body>
-
-    <!-- Golden Particles Background -->
-    <script>
-        for(let i = 0; i < 80; i++) {
-            let particle = document.createElement('div');
-            particle.classList.add('particle');
-            let size = Math.random() * 6 + 2;
-            particle.style.width = size + 'px';
-            particle.style.height = size + 'px';
-            particle.style.left = Math.random() * 100 + '%';
-            particle.style.animationDelay = Math.random() * 25 + 's';
-            particle.style.animationDuration = Math.random() * 20 + 15 + 's';
-            particle.style.opacity = Math.random() * 0.3 + 0.1;
-            document.body.appendChild(particle);
-        }
-    </script>
 
     <!-- Flash Messages -->
     <div class="fixed top-20 left-0 right-0 z-50 max-w-md mx-auto px-6">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-            <div class="flash-message rounded-xl p-4 mb-3 flex items-start gap-3 shadow-lg backdrop-blur-sm
-                        {% if category == 'error' %} bg-red-500/20 border-l-4 border-red-500 text-red-100
-                        {% elif category == 'success' %} bg-green-500/20 border-l-4 border-green-500 text-green-100
-                        {% else %} bg-yellow-500/20 border-l-4 border-yellow-400 text-yellow-100 {% endif %}">
+            <div class="flash-message rounded-xl p-4 mb-3 flex items-start gap-3 shadow-2xl
+                        {% if category == 'error' %} bg-red-950/90 border-l-4 border-red-500 text-red-200
+                        {% elif category == 'success' %} bg-emerald-950/90 border-l-4 border-emerald-500 text-emerald-200
+                        {% else %} bg-amber-950/90 border-l-4 border-amber-500 text-amber-200 {% endif %}">
                 <i class="fas {% if category == 'error' %} fa-exclamation-circle {% elif category == 'success' %} fa-check-circle {% else %} fa-info-circle {% endif %} mt-0.5"></i>
                 <div class="flex-1 text-sm">{{ message }}</div>
-                <button onclick="this.parentElement.remove()" class="text-white/70 hover:text-white">
+                <button onclick="this.parentElement.remove()" class="text-white/40 hover:text-white transition">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -381,102 +460,97 @@
         {% endwith %}
     </div>
 
-    <!-- Navigation - Role Based -->
-    <nav class="fixed top-0 left-0 right-0 z-40 bg-black/80 backdrop-blur-md border-b border-white/10">
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-40">
         <div class="max-w-7xl mx-auto px-6 py-4">
             <div class="flex justify-between items-center">
                 <!-- Logo -->
                 <a href="{{ url_for('index') }}" class="flex items-center space-x-3 group">
                     <img src="{{ url_for('static', filename='images/logo.svg') }}" 
                          alt="FADTECH Labs - Career Intelligence" 
-                         class="logo-img shadow-lg">
+                         class="logo-img">
                     <div>
                         <span class="text-white text-xl font-bold tracking-tight">FADTECH Labs</span>
-                        <p class="text-yellow-400 text-xs font-medium">Career Intelligence System</p>
+                        <p class="text-[#94a3b8] text-xs font-medium">Career Intelligence System</p>
                     </div>
                 </a>
                 
-                <!-- Desktop Navigation - Role Based -->
+                <!-- Desktop Navigation -->
                 <div class="hidden md:flex items-center space-x-6">
-                    <!-- PUBLIC: Job Board (Everyone) -->
-                    <a href="{{ url_for('jobs.job_board') }}" class="nav-link hover:text-yellow-400 transition animated-link">
+                    <a href="{{ url_for('jobs.job_board') }}" class="nav-link">
                         <i class="fas fa-briefcase mr-1"></i> Jobs
                     </a>
                     
-                    <!-- STUDENT LINKS -->
                     {% if current_user.is_authenticated and current_user.is_student() %}
                         <div class="nav-divider"></div>
-                        <a href="{{ url_for('dashboard') }}" class="nav-link hover:text-yellow-400 transition">
+                        <a href="{{ url_for('dashboard') }}" class="nav-link">
                             <i class="fas fa-tachometer-alt mr-1"></i> Dashboard
                         </a>
-                        <a href="{{ url_for('upload_cv') }}" class="nav-link hover:text-yellow-400 transition">
+                        <a href="{{ url_for('upload_cv') }}" class="nav-link">
                             <i class="fas fa-upload mr-1"></i> Upload CV
                         </a>
-                        <a href="{{ url_for('skill_analysis') }}" class="nav-link hover:text-yellow-400 transition">
+                        <a href="{{ url_for('skill_analysis') }}" class="nav-link">
                             <i class="fas fa-chart-line mr-1"></i> Skill Analysis
                         </a>
-                        <a href="{{ url_for('learning_roadmap') }}" class="nav-link hover:text-yellow-400 transition">
+                        <a href="{{ url_for('learning_roadmap') }}" class="nav-link">
                             <i class="fas fa-road mr-1"></i> Roadmap
                         </a>
-                        <a href="{{ url_for('career_assistant') }}" class="nav-link hover:text-yellow-400 transition">
+                        <a href="{{ url_for('career_assistant') }}" class="nav-link">
                             <i class="fas fa-robot mr-1"></i> AI Assistant
                         </a>
                     {% endif %}
                     
-                    <!-- RECRUITER LINKS -->
                     {% if current_user.is_authenticated and current_user.is_recruiter() %}
                         <div class="nav-divider"></div>
-                        <a href="{{ url_for('recruiter.hub') }}" class="nav-link hover:text-yellow-400 transition">
+                        <a href="{{ url_for('recruiter.hub') }}" class="nav-link">
                             <i class="fas fa-home mr-1"></i> Hub
                         </a>
-                        <a href="{{ url_for('recruiter.dashboard') }}" class="nav-link hover:text-yellow-400 transition">
+                        <a href="{{ url_for('recruiter.dashboard') }}" class="nav-link">
                             <i class="fas fa-chart-pie mr-1"></i> Dashboard
                         </a>
-                        <a href="{{ url_for('recruiter.jobs') }}" class="nav-link hover:text-yellow-400 transition">
+                        <a href="{{ url_for('recruiter.jobs') }}" class="nav-link">
                             <i class="fas fa-briefcase mr-1"></i> My Jobs
                         </a>
-                        <a href="{{ url_for('recruiter.candidates') }}" class="nav-link hover:text-yellow-400 transition">
+                        <a href="{{ url_for('recruiter.candidates') }}" class="nav-link">
                             <i class="fas fa-users mr-1"></i> Candidates
                         </a>
-                        <a href="{{ url_for('recruiter.shortlist') }}" class="nav-link hover:text-yellow-400 transition">
+                        <a href="{{ url_for('recruiter.shortlist') }}" class="nav-link">
                             <i class="fas fa-star mr-1"></i> Shortlist
                         </a>
-                        <a href="{{ url_for('jobs.recruiter_applications') }}" class="nav-link hover:text-yellow-400 transition">
+                        <a href="{{ url_for('jobs.recruiter_applications') }}" class="nav-link">
                             <i class="fas fa-file-alt mr-1"></i> Applications
                         </a>
+                        
                     {% endif %}
                     
-                    <!-- ADMIN LINKS -->
                     {% if current_user.is_authenticated and current_user.is_admin() %}
                         <div class="nav-divider"></div>
-                        <a href="{{ url_for('admin.index') }}" class="nav-link hover:text-yellow-400 transition">
+                        <a href="{{ url_for('admin.index') }}" class="nav-link">
                             <i class="fas fa-shield-alt mr-1"></i> Admin
                         </a>
-                        <a href="{{ url_for('admin.verifications') }}" class="nav-link hover:text-yellow-400 transition">
+                        <a href="{{ url_for('admin.verifications') }}" class="nav-link">
                             <i class="fas fa-check-double mr-1"></i> Verifications
                         </a>
                     {% endif %}
                     
-                    <!-- UNIVERSITY LINKS -->
                     {% if current_user.is_authenticated and current_user.is_university() %}
                         <div class="nav-divider"></div>
-                        <a href="{{ url_for('university_dashboard') }}" class="nav-link hover:text-yellow-400 transition">
+                        <a href="{{ url_for('university_dashboard') }}" class="nav-link">
                             <i class="fas fa-university mr-1"></i> University
                         </a>
                     {% endif %}
                     
-                    <!-- PROFILE & AUTH -->
                     <div class="nav-divider"></div>
                     {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('profile') }}" class="nav-link hover:text-yellow-400 transition">
+                        <a href="{{ url_for('profile') }}" class="nav-link">
                             <i class="fas fa-user mr-1"></i> {{ current_user.fullname[:15] }}
                         </a>
-                        <a href="{{ url_for('auth.logout') }}" class="bg-red-500/80 hover:bg-red-600 px-4 py-2 rounded-full text-white text-sm font-semibold transition">
+                        <a href="{{ url_for('auth.logout') }}" class="btn-primary px-4 py-2 rounded-full text-white text-sm font-semibold">
                             <i class="fas fa-sign-out-alt mr-1"></i> Logout
                         </a>
                     {% else %}
-                        <a href="{{ url_for('auth.login') }}" class="nav-link hover:text-yellow-400 transition">Login</a>
-                        <a href="{{ url_for('auth.register') }}" class="btn-primary px-5 py-2 rounded-full text-black font-semibold">
+                        <a href="{{ url_for('auth.login') }}" class="nav-link">Login</a>
+                        <a href="{{ url_for('auth.register') }}" class="btn-primary px-5 py-2 rounded-full text-white font-semibold">
                             <i class="fas fa-user-plus mr-2"></i> Sign Up
                         </a>
                     {% endif %}
@@ -488,109 +562,106 @@
                 </button>
             </div>
             
-            <!-- Mobile Menu - Role Based -->
-            <div id="mobileMenu" class="md:hidden hidden mt-4 pb-4 space-y-3">
-                <!-- PUBLIC: Job Board -->
-                <a href="{{ url_for('jobs.job_board') }}" class="block text-white/70 hover:text-yellow-400 transition py-2">
+            <!-- Mobile Menu -->
+            <div id="mobileMenu" class="md:hidden hidden mt-4 pb-4 space-y-3 border-t border-[#1e293b] pt-4">
+                <a href="{{ url_for('jobs.job_board') }}" class="block text-[#94a3b8] hover:text-white transition py-2">
                     <i class="fas fa-briefcase mr-2"></i> Jobs
                 </a>
                 
-                <!-- STUDENT LINKS -->
                 {% if current_user.is_authenticated and current_user.is_student() %}
-                    <a href="{{ url_for('dashboard') }}" class="block text-white/70 hover:text-yellow-400 transition py-2">
+                    <a href="{{ url_for('dashboard') }}" class="block text-[#94a3b8] hover:text-white transition py-2">
                         <i class="fas fa-tachometer-alt mr-2"></i> Dashboard
                     </a>
-                    <a href="{{ url_for('upload_cv') }}" class="block text-white/70 hover:text-yellow-400 transition py-2">
+                    <a href="{{ url_for('upload_cv') }}" class="block text-[#94a3b8] hover:text-white transition py-2">
                         <i class="fas fa-upload mr-2"></i> Upload CV
                     </a>
-                    <a href="{{ url_for('skill_analysis') }}" class="block text-white/70 hover:text-yellow-400 transition py-2">
+                    <a href="{{ url_for('skill_analysis') }}" class="block text-[#94a3b8] hover:text-white transition py-2">
                         <i class="fas fa-chart-line mr-2"></i> Skill Analysis
                     </a>
-                    <a href="{{ url_for('learning_roadmap') }}" class="block text-white/70 hover:text-yellow-400 transition py-2">
+                    <a href="{{ url_for('learning_roadmap') }}" class="block text-[#94a3b8] hover:text-white transition py-2">
                         <i class="fas fa-road mr-2"></i> Roadmap
                     </a>
-                    <a href="{{ url_for('career_assistant') }}" class="block text-white/70 hover:text-yellow-400 transition py-2">
+                    <a href="{{ url_for('job_alerts') }}" class="block text-[#94a3b8] hover:text-white transition py-2">
+                        <i class="fas fa-bell mr-2"></i> Job Alerts
+                    </a>
+                    <a href="{{ url_for('career_assistant') }}" class="block text-[#94a3b8] hover:text-white transition py-2">
                         <i class="fas fa-robot mr-2"></i> AI Assistant
                     </a>
                 {% endif %}
                 
-                <!-- RECRUITER LINKS -->
                 {% if current_user.is_authenticated and current_user.is_recruiter() %}
-                    <a href="{{ url_for('recruiter.hub') }}" class="block text-white/70 hover:text-yellow-400 transition py-2">
+                    <a href="{{ url_for('recruiter.hub') }}" class="block text-[#94a3b8] hover:text-white transition py-2">
                         <i class="fas fa-home mr-2"></i> Hub
                     </a>
-                    <a href="{{ url_for('recruiter.dashboard') }}" class="block text-white/70 hover:text-yellow-400 transition py-2">
+                    <a href="{{ url_for('recruiter.dashboard') }}" class="block text-[#94a3b8] hover:text-white transition py-2">
                         <i class="fas fa-chart-pie mr-2"></i> Dashboard
                     </a>
-                    <a href="{{ url_for('recruiter.jobs') }}" class="block text-white/70 hover:text-yellow-400 transition py-2">
+                    <a href="{{ url_for('recruiter.jobs') }}" class="block text-[#94a3b8] hover:text-white transition py-2">
                         <i class="fas fa-briefcase mr-2"></i> My Jobs
                     </a>
-                    <a href="{{ url_for('recruiter.candidates') }}" class="block text-white/70 hover:text-yellow-400 transition py-2">
+                    <a href="{{ url_for('recruiter.candidates') }}" class="block text-[#94a3b8] hover:text-white transition py-2">
                         <i class="fas fa-users mr-2"></i> Candidates
                     </a>
-                    <a href="{{ url_for('recruiter.shortlist') }}" class="block text-white/70 hover:text-yellow-400 transition py-2">
+                    <a href="{{ url_for('recruiter.shortlist') }}" class="block text-[#94a3b8] hover:text-white transition py-2">
                         <i class="fas fa-star mr-2"></i> Shortlist
                     </a>
-                    <a href="{{ url_for('jobs.recruiter_applications') }}" class="block text-white/70 hover:text-yellow-400 transition py-2">
+                    <a href="{{ url_for('jobs.recruiter_applications') }}" class="block text-[#94a3b8] hover:text-white transition py-2">
                         <i class="fas fa-file-alt mr-2"></i> Applications
                     </a>
                 {% endif %}
                 
-                <!-- ADMIN LINKS -->
                 {% if current_user.is_authenticated and current_user.is_admin() %}
-                    <a href="{{ url_for('admin.index') }}" class="block text-white/70 hover:text-yellow-400 transition py-2">
+                    <a href="{{ url_for('admin.index') }}" class="block text-[#94a3b8] hover:text-white transition py-2">
                         <i class="fas fa-shield-alt mr-2"></i> Admin
                     </a>
-                    <a href="{{ url_for('admin.verifications') }}" class="block text-white/70 hover:text-yellow-400 transition py-2">
+                    <a href="{{ url_for('admin.verifications') }}" class="block text-[#94a3b8] hover:text-white transition py-2">
                         <i class="fas fa-check-double mr-2"></i> Verifications
                     </a>
                 {% endif %}
                 
-                <!-- UNIVERSITY LINKS -->
                 {% if current_user.is_authenticated and current_user.is_university() %}
-                    <a href="{{ url_for('university_dashboard') }}" class="block text-white/70 hover:text-yellow-400 transition py-2">
+                    <a href="{{ url_for('university_dashboard') }}" class="block text-[#94a3b8] hover:text-white transition py-2">
                         <i class="fas fa-university mr-2"></i> University
                     </a>
                 {% endif %}
                 
-                <!-- PROFILE & AUTH -->
                 {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('profile') }}" class="block text-white/70 hover:text-yellow-400 transition py-2">
+                    <a href="{{ url_for('profile') }}" class="block text-[#94a3b8] hover:text-white transition py-2">
                         <i class="fas fa-user mr-2"></i> Profile
                     </a>
-                    <a href="{{ url_for('auth.logout') }}" class="block bg-red-500/80 hover:bg-red-600 px-4 py-2 rounded-full text-white text-sm font-semibold text-center">
+                    <a href="{{ url_for('auth.logout') }}" class="block btn-primary px-4 py-2 rounded-full text-white text-sm font-semibold text-center">
                         <i class="fas fa-sign-out-alt mr-2"></i> Logout
                     </a>
                 {% else %}
-                    <a href="{{ url_for('auth.login') }}" class="block text-white/70 hover:text-yellow-400 transition py-2">Login</a>
-                    <a href="{{ url_for('auth.register') }}" class="block btn-primary px-5 py-2 rounded-full text-black font-semibold text-center">Sign Up</a>
+                    <a href="{{ url_for('auth.login') }}" class="block text-[#94a3b8] hover:text-white transition py-2">Login</a>
+                    <a href="{{ url_for('auth.register') }}" class="block btn-primary px-5 py-2 rounded-full text-white font-semibold text-center">Sign Up</a>
                 {% endif %}
             </div>
         </div>
     </nav>
 
-    <main class="pt-20 relative z-10">
+    <main class="pt-20">
         {% block content %}
         <!-- Hero Section -->
-        <section class="relative overflow-hidden">
-            <div class="max-w-7xl mx-auto px-6 py-20 lg:py-32">
+        <section class="py-20 lg:py-32 section-dark hero-glow">
+            <div class="max-w-7xl mx-auto px-6 relative z-10">
                 <div class="text-center" data-aos="fade-up">
-                    <div class="inline-flex items-center gap-2 bg-yellow-500/10 backdrop-blur-sm px-4 py-2 rounded-full mb-6 border border-yellow-500/20">
-                        <i class="fas fa-brain text-yellow-400"></i>
-                        <span class="text-yellow-400 text-sm font-medium">Africa's First AI-Powered Employability Platform</span>
+                    <div class="inline-flex items-center gap-2 bg-red-950/40 px-4 py-2 rounded-full mb-6 border border-red-800/30 backdrop-blur-sm">
+                        <i class="fas fa-brain text-red-500"></i>
+                        <span class="text-red-400 text-sm font-medium">Africa's First AI-Powered Employability Platform</span>
                     </div>
                     <h1 class="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white mb-6 leading-tight">
                         Close the Skills Gap
                         <span class="gradient-text"> Between Education</span>
                         <br>and Industry
                     </h1>
-                    <p class="text-xl text-white/70 max-w-3xl mx-auto mb-10">
+                    <p class="text-xl text-[#94a3b8] max-w-3xl mx-auto mb-10">
                         Across Ghana and West Africa, thousands of graduates enter the job market every year — 
                         but what they learned and what employers actually need are two different things. 
                         We're fixing that with AI-powered intelligence.
                     </p>
                     <div class="flex flex-wrap gap-4 justify-center">
-                        <a href="{{ url_for('auth.register') }}" class="btn-primary px-8 py-4 rounded-full text-black font-bold text-lg inline-flex items-center gap-2">
+                        <a href="{{ url_for('auth.register') }}" class="btn-primary px-8 py-4 rounded-full text-white font-bold text-lg inline-flex items-center gap-2">
                             <i class="fas fa-rocket"></i> Start Your Journey
                         </a>
                         <a href="#problem" class="btn-secondary px-8 py-4 rounded-full text-white font-bold text-lg inline-flex items-center gap-2">
@@ -602,306 +673,326 @@
         </section>
 
         <!-- Stats Section -->
-        <section class="max-w-7xl mx-auto px-6 py-12">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <div class="glass-card text-center p-6" data-aos="zoom-in" data-aos-delay="0">
-                    <i class="fas fa-graduation-cap text-4xl text-yellow-400 mb-3"></i>
-                    <div class="text-3xl font-bold text-white">50K+</div>
-                    <p class="text-white/50 text-sm">Graduates Affected</p>
-                </div>
-                <div class="glass-card text-center p-6" data-aos="zoom-in" data-aos-delay="100">
-                    <i class="fas fa-database text-4xl text-yellow-400 mb-3"></i>
-                    <div class="text-3xl font-bold text-white">10+</div>
-                    <p class="text-white/50 text-sm">Job Platforms Analyzed</p>
-                </div>
-                <div class="glass-card text-center p-6" data-aos="zoom-in" data-aos-delay="200">
-                    <i class="fas fa-chart-line text-4xl text-yellow-400 mb-3"></i>
-                    <div class="text-3xl font-bold text-white">Real-Time</div>
-                    <p class="text-white/50 text-sm">Market Intelligence</p>
-                </div>
-                <div class="glass-card text-center p-6" data-aos="zoom-in" data-aos-delay="300">
-                    <i class="fas fa-robot text-4xl text-yellow-400 mb-3"></i>
-                    <div class="text-3xl font-bold text-white">AI-Powered</div>
-                    <p class="text-white/50 text-sm">Skill Analysis</p>
+        <section class="py-12 section-dark-alt">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div class="card p-6 text-center" data-aos="zoom-in" data-aos-delay="0">
+                        <i class="fas fa-graduation-cap text-3xl text-red-500 mb-3"></i>
+                        <div class="stat-number">50K+</div>
+                        <p class="stat-label">Graduates Affected</p>
+                    </div>
+                    <div class="card p-6 text-center" data-aos="zoom-in" data-aos-delay="100">
+                        <i class="fas fa-database text-3xl text-red-500 mb-3"></i>
+                        <div class="stat-number">10+</div>
+                        <p class="stat-label">Job Platforms Analyzed</p>
+                    </div>
+                    <div class="card p-6 text-center" data-aos="zoom-in" data-aos-delay="200">
+                        <i class="fas fa-chart-line text-3xl text-red-500 mb-3"></i>
+                        <div class="stat-number">Real-Time</div>
+                        <p class="stat-label">Market Intelligence</p>
+                    </div>
+                    <div class="card p-6 text-center" data-aos="zoom-in" data-aos-delay="300">
+                        <i class="fas fa-robot text-3xl text-red-500 mb-3"></i>
+                        <div class="stat-number">AI-Powered</div>
+                        <p class="stat-label">Skill Analysis</p>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- The Problem Section -->
-        <section id="problem" class="max-w-7xl mx-auto px-6 py-20">
-            <div class="text-center mb-12" data-aos="fade-up">
-                <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">The Problem We're Solving</h2>
-                <p class="text-white/60 text-lg max-w-2xl mx-auto">A quiet crisis unfolding across Ghana and West Africa</p>
-            </div>
-            <div class="grid md:grid-cols-2 gap-8">
-                <div class="glass-card p-8" data-aos="fade-right">
-                    <div class="flex items-center gap-3 mb-4">
-                        <i class="fas fa-user-graduate text-3xl text-yellow-400"></i>
-                        <h3 class="text-2xl font-bold text-white">For Students & Graduates</h3>
-                    </div>
-                    <ul class="space-y-3 text-white/60">
-                        <li class="flex items-start gap-2"><i class="fas fa-times-circle text-red-400 mt-1"></i> Graduate without knowing which skills employers actually want</li>
-                        <li class="flex items-start gap-2"><i class="fas fa-times-circle text-red-400 mt-1"></i> Spend months applying for jobs with no structured feedback</li>
-                        <li class="flex items-start gap-2"><i class="fas fa-times-circle text-red-400 mt-1"></i> No localized African platform provides real-time market intelligence</li>
-                        <li class="flex items-start gap-2"><i class="fas fa-times-circle text-red-400 mt-1"></i> Outdated curricula that lag behind industry evolution by years</li>
-                    </ul>
+        <section id="problem" class="py-20 section-dark">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="text-center mb-12" data-aos="fade-up">
+                    <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">The Problem We're Solving</h2>
+                    <p class="text-[#94a3b8] text-lg max-w-2xl mx-auto">A quiet crisis unfolding across Ghana and West Africa</p>
                 </div>
-                <div class="glass-card p-8" data-aos="fade-left">
-                    <div class="flex items-center gap-3 mb-4">
-                        <i class="fas fa-building text-3xl text-yellow-400"></i>
-                        <h3 class="text-2xl font-bold text-white">For Universities & Employers</h3>
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="card p-8" data-aos="fade-right">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i class="fas fa-user-graduate text-3xl text-red-500"></i>
+                            <h3 class="text-2xl font-bold text-white">For Students & Graduates</h3>
+                        </div>
+                        <ul class="space-y-3 text-[#94a3b8]">
+                            <li class="flex items-start gap-2"><i class="fas fa-times-circle text-red-400 mt-1"></i> Graduate without knowing which skills employers actually want</li>
+                            <li class="flex items-start gap-2"><i class="fas fa-times-circle text-red-400 mt-1"></i> Spend months applying for jobs with no structured feedback</li>
+                            <li class="flex items-start gap-2"><i class="fas fa-times-circle text-red-400 mt-1"></i> No localized African platform provides real-time market intelligence</li>
+                            <li class="flex items-start gap-2"><i class="fas fa-times-circle text-red-400 mt-1"></i> Outdated curricula that lag behind industry evolution by years</li>
+                        </ul>
                     </div>
-                    <ul class="space-y-3 text-white/60">
-                        <li class="flex items-start gap-2"><i class="fas fa-times-circle text-red-400 mt-1"></i> Companies report graduates aren't job-ready despite holding degrees</li>
-                        <li class="flex items-start gap-2"><i class="fas fa-times-circle text-red-400 mt-1"></i> Career centers lack data tools for evidence-based guidance</li>
-                        <li class="flex items-start gap-2"><i class="fas fa-times-circle text-red-400 mt-1"></i> Skills gap is widening faster than education systems can adapt</li>
-                        <li class="flex items-start gap-2"><i class="fas fa-times-circle text-red-400 mt-1"></i> Expensive recruitment processes with mismatched candidates</li>
-                    </ul>
+                    <div class="card p-8" data-aos="fade-left">
+                        <div class="flex items-center gap-3 mb-4">
+                            <i class="fas fa-building text-3xl text-red-500"></i>
+                            <h3 class="text-2xl font-bold text-white">For Universities & Employers</h3>
+                        </div>
+                        <ul class="space-y-3 text-[#94a3b8]">
+                            <li class="flex items-start gap-2"><i class="fas fa-times-circle text-red-400 mt-1"></i> Companies report graduates aren't job-ready despite holding degrees</li>
+                            <li class="flex items-start gap-2"><i class="fas fa-times-circle text-red-400 mt-1"></i> Career centers lack data tools for evidence-based guidance</li>
+                            <li class="flex items-start gap-2"><i class="fas fa-times-circle text-red-400 mt-1"></i> Skills gap is widening faster than education systems can adapt</li>
+                            <li class="flex items-start gap-2"><i class="fas fa-times-circle text-red-400 mt-1"></i> Expensive recruitment processes with mismatched candidates</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- Our Solution Section -->
-        <section id="solution" class="max-w-7xl mx-auto px-6 py-20">
-            <div class="glass-card p-12 text-center" data-aos="zoom-in">
-                <i class="fas fa-lightbulb text-5xl text-yellow-400 mb-4"></i>
-                <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Our Solution</h2>
-                <p class="text-white/70 text-lg max-w-4xl mx-auto mb-6">
-                    The Career Intelligence System is an AI-powered platform that reads the real labor market — 
-                    pulling live data from LinkedIn, Jobberman, Indeed, Glassdoor, Brighter Monday, company career pages, 
-                    and more — then helps students understand exactly what skills they need, what gaps exist, 
-                    and how to close them fast.
-                </p>
-                <p class="text-yellow-400 font-semibold">This is not a career advice chatbot. It's an intelligent, evidence-based, data-driven employability engine — localized for Africa.</p>
+        <section id="solution" class="py-20 section-dark-alt">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="card p-12 text-center" data-aos="zoom-in">
+                    <i class="fas fa-lightbulb text-5xl text-red-500 mb-4"></i>
+                    <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Our Solution</h2>
+                    <p class="text-[#94a3b8] text-lg max-w-4xl mx-auto mb-6">
+                        The Career Intelligence System is an AI-powered platform that reads the real labor market — 
+                        pulling live data from LinkedIn, Jobberman, Indeed, Glassdoor, Brighter Monday, company career pages, 
+                        and more — then helps students understand exactly what skills they need, what gaps exist, 
+                        and how to close them fast.
+                    </p>
+                    <p class="text-red-500 font-semibold">This is not a career advice chatbot. It's an intelligent, evidence-based, data-driven employability engine — localized for Africa.</p>
+                </div>
             </div>
         </section>
 
         <!-- Features Section -->
-        <section id="features" class="max-w-7xl mx-auto px-6 py-20">
-            <div class="text-center mb-12" data-aos="fade-up">
-                <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Powerful Features</h2>
-                <p class="text-white/60 text-lg max-w-2xl mx-auto">Everything you need to navigate the job market with confidence</p>
-            </div>
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="glass-card p-8" data-aos="fade-up" data-aos-delay="0">
-                    <div class="w-14 h-14 bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-2xl flex items-center justify-center mb-5">
-                        <i class="fas fa-file-alt text-2xl text-black"></i>
-                    </div>
-                    <h3 class="text-xl font-bold text-white mb-3">AI CV Parsing & Skill Extraction</h3>
-                    <p class="text-white/50">Upload your CV in any format (PDF, DOCX). Our AI extracts skills, certifications, experience levels, and qualifications instantly.</p>
+        <section id="features" class="py-20 section-dark">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="text-center mb-12" data-aos="fade-up">
+                    <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Powerful Features</h2>
+                    <p class="text-[#94a3b8] text-lg max-w-2xl mx-auto">Everything you need to navigate the job market with confidence</p>
                 </div>
-                <div class="glass-card p-8" data-aos="fade-up" data-aos-delay="100">
-                    <div class="w-14 h-14 bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-2xl flex items-center justify-center mb-5">
-                        <i class="fas fa-search text-2xl text-black"></i>
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="card p-8" data-aos="fade-up" data-aos-delay="0">
+                        <div class="w-14 h-14 bg-red-950/40 rounded-2xl flex items-center justify-center mb-5 backdrop-blur-sm">
+                            <i class="fas fa-file-alt text-2xl text-red-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">AI CV Parsing &amp; Skill Extraction</h3>
+                        <p class="text-[#94a3b8]">Upload your CV in any format (PDF, DOCX). Our AI extracts skills, certifications, experience levels, and qualifications instantly.</p>
                     </div>
-                    <h3 class="text-xl font-bold text-white mb-3">Multi-Platform Job Intelligence</h3>
-                    <p class="text-white/50">Continuous scraping from 10+ platforms: LinkedIn, Jobberman, Indeed Africa, Glassdoor, Brighter Monday, and more.</p>
-                </div>
-                <div class="glass-card p-8" data-aos="fade-up" data-aos-delay="200">
-                    <div class="w-14 h-14 bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-2xl flex items-center justify-center mb-5">
-                        <i class="fas fa-chart-line text-2xl text-black"></i>
+                    <div class="card p-8" data-aos="fade-up" data-aos-delay="100">
+                        <div class="w-14 h-14 bg-red-950/40 rounded-2xl flex items-center justify-center mb-5 backdrop-blur-sm">
+                            <i class="fas fa-search text-2xl text-red-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Multi-Platform Job Intelligence</h3>
+                        <p class="text-[#94a3b8]">Continuous scraping from 10+ platforms: LinkedIn, Jobberman, Indeed Africa, Glassdoor, Brighter Monday, and more.</p>
                     </div>
-                    <h3 class="text-xl font-bold text-white mb-3">Skill-Gap Analysis Engine</h3>
-                    <p class="text-white/50">Compares your skills against real market requirements, generating a precise, prioritized gap report.</p>
-                </div>
-                <div class="glass-card p-8" data-aos="fade-up" data-aos-delay="300">
-                    <div class="w-14 h-14 bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-2xl flex items-center justify-center mb-5">
-                        <i class="fas fa-road text-2xl text-black"></i>
+                    <div class="card p-8" data-aos="fade-up" data-aos-delay="200">
+                        <div class="w-14 h-14 bg-red-950/40 rounded-2xl flex items-center justify-center mb-5 backdrop-blur-sm">
+                            <i class="fas fa-chart-line text-2xl text-red-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Skill-Gap Analysis Engine</h3>
+                        <p class="text-[#94a3b8]">Compares your skills against real market requirements, generating a precise, prioritized gap report.</p>
                     </div>
-                    <h3 class="text-xl font-bold text-white mb-3">Personalized Learning Roadmaps</h3>
-                    <p class="text-white/50">Step-by-step learning plans with recommended courses (Coursera, Udemy, edX), projects, certifications, and timelines.</p>
-                </div>
-                <div class="glass-card p-8" data-aos="fade-up" data-aos-delay="400">
-                    <div class="w-14 h-14 bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-2xl flex items-center justify-center mb-5">
-                        <i class="fas fa-chart-simple text-2xl text-black"></i>
+                    <div class="card p-8" data-aos="fade-up" data-aos-delay="300">
+                        <div class="w-14 h-14 bg-red-950/40 rounded-2xl flex items-center justify-center mb-5 backdrop-blur-sm">
+                            <i class="fas fa-road text-2xl text-red-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Personalized Learning Roadmaps</h3>
+                        <p class="text-[#94a3b8]">Step-by-step learning plans with recommended courses (Coursera, Udemy, edX), projects, certifications, and timelines.</p>
                     </div>
-                    <h3 class="text-xl font-bold text-white mb-3">Employability Score</h3>
-                    <p class="text-white/50">AI-calculated score (0-100) for your target role, updated dynamically as you complete courses and build your portfolio.</p>
-                </div>
-                <div class="glass-card p-8" data-aos="fade-up" data-aos-delay="500">
-                    <div class="w-14 h-14 bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-2xl flex items-center justify-center mb-5">
-                        <i class="fas fa-robot text-2xl text-black"></i>
+                    <div class="card p-8" data-aos="fade-up" data-aos-delay="400">
+                        <div class="w-14 h-14 bg-red-950/40 rounded-2xl flex items-center justify-center mb-5 backdrop-blur-sm">
+                            <i class="fas fa-chart-simple text-2xl text-red-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">Employability Score</h3>
+                        <p class="text-[#94a3b8]">AI-calculated score (0-100) for your target role, updated dynamically as you complete courses and build your portfolio.</p>
                     </div>
-                    <h3 class="text-xl font-bold text-white mb-3">RAG-Powered Career Assistant</h3>
-                    <p class="text-white/50">Conversational AI trained on real African labor-market data — not generic global templates.</p>
+                    <div class="card p-8" data-aos="fade-up" data-aos-delay="500">
+                        <div class="w-14 h-14 bg-red-950/40 rounded-2xl flex items-center justify-center mb-5 backdrop-blur-sm">
+                            <i class="fas fa-robot text-2xl text-red-500"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-white mb-3">RAG-Powered Career Assistant</h3>
+                        <p class="text-[#94a3b8]">Conversational AI trained on real African labor-market data — not generic global templates.</p>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- How It Works -->
-        <section id="how-it-works" class="max-w-7xl mx-auto px-6 py-20">
-            <div class="text-center mb-12" data-aos="fade-up">
-                <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">How It Works</h2>
-                <p class="text-white/60 text-lg">Simple, intelligent, and effective — in 4 steps</p>
-            </div>
-            <div class="grid md:grid-cols-4 gap-6">
-                <div class="text-center" data-aos="flip-left" data-aos-delay="0">
-                    <div class="w-20 h-20 bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-full flex items-center justify-center text-black text-2xl font-bold mx-auto mb-4 shadow-lg shadow-yellow-500/20">1</div>
-                    <h3 class="text-white font-bold mb-2">Upload Your CV</h3>
-                    <p class="text-white/50 text-sm">Share your CV in any format or connect your LinkedIn profile</p>
+        <section id="how-it-works" class="py-20 section-dark-alt">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="text-center mb-12" data-aos="fade-up">
+                    <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">How It Works</h2>
+                    <p class="text-[#94a3b8] text-lg">Simple, intelligent, and effective — in 4 steps</p>
                 </div>
-                <div class="text-center" data-aos="flip-left" data-aos-delay="100">
-                    <div class="w-20 h-20 bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-full flex items-center justify-center text-black text-2xl font-bold mx-auto mb-4 shadow-lg shadow-yellow-500/20">2</div>
-                    <h3 class="text-white font-bold mb-2">AI Extracts Your Skills</h3>
-                    <p class="text-white/50 text-sm">Our NLP engine identifies your skills, experience, and certifications</p>
-                </div>
-                <div class="text-center" data-aos="flip-left" data-aos-delay="200">
-                    <div class="w-20 h-20 bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-full flex items-center justify-center text-black text-2xl font-bold mx-auto mb-4 shadow-lg shadow-yellow-500/20">3</div>
-                    <h3 class="text-white font-bold mb-2">Market Gap Analysis</h3>
-                    <p class="text-white/50 text-sm">System compares your profile with real-time market demands</p>
-                </div>
-                <div class="text-center" data-aos="flip-left" data-aos-delay="300">
-                    <div class="w-20 h-20 bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-full flex items-center justify-center text-black text-2xl font-bold mx-auto mb-4 shadow-lg shadow-yellow-500/20">4</div>
-                    <h3 class="text-white font-bold mb-2">Get Your Roadmap</h3>
-                    <p class="text-white/50 text-sm">Receive personalized learning plan and job matches</p>
+                <div class="grid md:grid-cols-4 gap-6">
+                    <div class="text-center" data-aos="flip-left" data-aos-delay="0">
+                        <div class="w-20 h-20 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4 shadow-lg shadow-red-500/30">1</div>
+                        <h3 class="text-white font-bold mb-2">Upload Your CV</h3>
+                        <p class="text-[#94a3b8] text-sm">Share your CV in any format or connect your LinkedIn profile</p>
+                    </div>
+                    <div class="text-center" data-aos="flip-left" data-aos-delay="100">
+                        <div class="w-20 h-20 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4 shadow-lg shadow-red-500/30">2</div>
+                        <h3 class="text-white font-bold mb-2">AI Extracts Your Skills</h3>
+                        <p class="text-[#94a3b8] text-sm">Our NLP engine identifies your skills, experience, and certifications</p>
+                    </div>
+                    <div class="text-center" data-aos="flip-left" data-aos-delay="200">
+                        <div class="w-20 h-20 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4 shadow-lg shadow-red-500/30">3</div>
+                        <h3 class="text-white font-bold mb-2">Market Gap Analysis</h3>
+                        <p class="text-[#94a3b8] text-sm">System compares your profile with real-time market demands</p>
+                    </div>
+                    <div class="text-center" data-aos="flip-left" data-aos-delay="300">
+                        <div class="w-20 h-20 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto mb-4 shadow-lg shadow-red-500/30">4</div>
+                        <h3 class="text-white font-bold mb-2">Get Your Roadmap</h3>
+                        <p class="text-[#94a3b8] text-sm">Receive personalized learning plan and job matches</p>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- Data Sources -->
-        <section class="max-w-7xl mx-auto px-6 py-12">
-            <div class="glass-card p-8 text-center" data-aos="zoom-in">
-                <i class="fas fa-globe-africa text-5xl text-yellow-400 mb-4"></i>
-                <h2 class="text-2xl md:text-3xl font-bold text-white mb-4">Multi-Platform Intelligence</h2>
-                <p class="text-white/60 mb-6 max-w-3xl mx-auto">
-                    Unlike tools that rely on a single platform, we aggregate data from 10+ sources 
-                    to give you the complete picture of what African and global employers are actually hiring for.
-                </p>
-                <div class="flex flex-wrap justify-center gap-3">
-                    <span class="bg-white/5 border border-yellow-500/20 px-4 py-2 rounded-full text-white/80 text-sm"><i class="fab fa-linkedin mr-2 text-yellow-400"></i>LinkedIn Jobs</span>
-                    <span class="bg-white/5 border border-yellow-500/20 px-4 py-2 rounded-full text-white/80 text-sm"><i class="fas fa-briefcase mr-2 text-yellow-400"></i>Jobberman</span>
-                    <span class="bg-white/5 border border-yellow-500/20 px-4 py-2 rounded-full text-white/80 text-sm"><i class="fas fa-search mr-2 text-yellow-400"></i>Indeed Africa</span>
-                    <span class="bg-white/5 border border-yellow-500/20 px-4 py-2 rounded-full text-white/80 text-sm"><i class="fas fa-chart-line mr-2 text-yellow-400"></i>Glassdoor</span>
-                    <span class="bg-white/5 border border-yellow-500/20 px-4 py-2 rounded-full text-white/80 text-sm"><i class="fas fa-sun mr-2 text-yellow-400"></i>Brighter Monday</span>
-                    <span class="bg-white/5 border border-yellow-500/20 px-4 py-2 rounded-full text-white/80 text-sm"><i class="fas fa-building mr-2 text-yellow-400"></i>Company Pages</span>
-                    <span class="bg-white/5 border border-yellow-500/20 px-4 py-2 rounded-full text-white/80 text-sm"><i class="fas fa-rocket mr-2 text-yellow-400"></i>AngelList</span>
-                    <span class="bg-white/5 border border-yellow-500/20 px-4 py-2 rounded-full text-white/80 text-sm"><i class="fas fa-graduation-cap mr-2 text-yellow-400"></i>Internship Boards</span>
+        <section class="py-12 section-dark">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="card p-8 text-center" data-aos="zoom-in">
+                    <i class="fas fa-globe-africa text-5xl text-red-500 mb-4"></i>
+                    <h2 class="text-2xl md:text-3xl font-bold text-white mb-4">Multi-Platform Intelligence</h2>
+                    <p class="text-[#94a3b8] mb-6 max-w-3xl mx-auto">
+                        Unlike tools that rely on a single platform, we aggregate data from 10+ sources 
+                        to give you the complete picture of what African and global employers are actually hiring for.
+                    </p>
+                    <div class="flex flex-wrap justify-center gap-3">
+                        <span class="bg-[#141414]/80 border border-[#1e293b]/50 px-4 py-2 rounded-full text-[#94a3b8] text-sm backdrop-blur-sm"><i class="fab fa-linkedin text-red-500 mr-2"></i>LinkedIn Jobs</span>
+                        <span class="bg-[#141414]/80 border border-[#1e293b]/50 px-4 py-2 rounded-full text-[#94a3b8] text-sm backdrop-blur-sm"><i class="fas fa-briefcase text-red-500 mr-2"></i>Jobberman</span>
+                        <span class="bg-[#141414]/80 border border-[#1e293b]/50 px-4 py-2 rounded-full text-[#94a3b8] text-sm backdrop-blur-sm"><i class="fas fa-search text-red-500 mr-2"></i>Indeed Africa</span>
+                        <span class="bg-[#141414]/80 border border-[#1e293b]/50 px-4 py-2 rounded-full text-[#94a3b8] text-sm backdrop-blur-sm"><i class="fas fa-chart-line text-red-500 mr-2"></i>Glassdoor</span>
+                        <span class="bg-[#141414]/80 border border-[#1e293b]/50 px-4 py-2 rounded-full text-[#94a3b8] text-sm backdrop-blur-sm"><i class="fas fa-sun text-red-500 mr-2"></i>Brighter Monday</span>
+                        <span class="bg-[#141414]/80 border border-[#1e293b]/50 px-4 py-2 rounded-full text-[#94a3b8] text-sm backdrop-blur-sm"><i class="fas fa-building text-red-500 mr-2"></i>Company Pages</span>
+                        <span class="bg-[#141414]/80 border border-[#1e293b]/50 px-4 py-2 rounded-full text-[#94a3b8] text-sm backdrop-blur-sm"><i class="fas fa-rocket text-red-500 mr-2"></i>AngelList</span>
+                        <span class="bg-[#141414]/80 border border-[#1e293b]/50 px-4 py-2 rounded-full text-[#94a3b8] text-sm backdrop-blur-sm"><i class="fas fa-graduation-cap text-red-500 mr-2"></i>Internship Boards</span>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- Impact / Vision Section -->
-        <section id="impact" class="max-w-7xl mx-auto px-6 py-20">
-            <div class="grid md:grid-cols-2 gap-8 items-center">
-                <div data-aos="fade-right">
-                    <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Our Vision</h2>
-                    <p class="text-white/70 text-lg mb-6">
-                        Building Africa's employability intelligence infrastructure — a system that understands 
-                        labor-market demand at a continental scale and guides students, universities, and governments 
-                        toward smarter workforce decisions.
-                    </p>
-                    <div class="space-y-4">
-                        <div class="flex items-start gap-3">
-                            <i class="fas fa-check-circle text-yellow-400 mt-1"></i>
-                            <span class="text-white/60">A student in Accra knows exactly what skills they need to get hired</span>
-                        </div>
-                        <div class="flex items-start gap-3">
-                            <i class="fas fa-check-circle text-yellow-400 mt-1"></i>
-                            <span class="text-white/60">A university in Lagos sees real-time data on graduate skill gaps</span>
-                        </div>
-                        <div class="flex items-start gap-3">
-                            <i class="fas fa-check-circle text-yellow-400 mt-1"></i>
-                            <span class="text-white/60">A company in Nairobi finds pre-screened, skills-verified candidates</span>
-                        </div>
-                        <div class="flex items-start gap-3">
-                            <i class="fas fa-check-circle text-yellow-400 mt-1"></i>
-                            <span class="text-white/60">A government ministry tracks workforce readiness with live analytics</span>
+        <section id="impact" class="py-20 section-dark-alt">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="grid md:grid-cols-2 gap-8 items-center">
+                    <div data-aos="fade-right">
+                        <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Our Vision</h2>
+                        <p class="text-[#94a3b8] text-lg mb-6">
+                            Building Africa's employability intelligence infrastructure — a system that understands 
+                            labor-market demand at a continental scale and guides students, universities, and governments 
+                            toward smarter workforce decisions.
+                        </p>
+                        <div class="space-y-4">
+                            <div class="flex items-start gap-3">
+                                <i class="fas fa-check-circle text-red-500 mt-1"></i>
+                                <span class="text-[#94a3b8]">A student in Accra knows exactly what skills they need to get hired</span>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <i class="fas fa-check-circle text-red-500 mt-1"></i>
+                                <span class="text-[#94a3b8]">A university in Lagos sees real-time data on graduate skill gaps</span>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <i class="fas fa-check-circle text-red-500 mt-1"></i>
+                                <span class="text-[#94a3b8]">A company in Nairobi finds pre-screened, skills-verified candidates</span>
+                            </div>
+                            <div class="flex items-start gap-3">
+                                <i class="fas fa-check-circle text-red-500 mt-1"></i>
+                                <span class="text-[#94a3b8]">A government ministry tracks workforce readiness with live analytics</span>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="glass-card p-8" data-aos="fade-left">
-                    <i class="fas fa-quote-left text-4xl text-yellow-400 mb-4"></i>
-                    <p class="text-white text-lg italic mb-4">
-                        "Africa does not have a talent problem. It has an intelligence gap — a missing layer of infrastructure that connects what students know, what the market needs, and how to close the distance between them."
-                    </p>
-                    <p class="text-yellow-400 font-semibold">— FADTECH Labs</p>
+                    <div class="card p-8" data-aos="fade-left">
+                        <i class="fas fa-quote-left text-4xl text-red-500 mb-4"></i>
+                        <p class="text-white text-lg italic mb-4">
+                            "Africa does not have a talent problem. It has an intelligence gap — a missing layer of infrastructure that connects what students know, what the market needs, and how to close the distance between them."
+                        </p>
+                        <p class="text-red-500 font-semibold">— FADTECH Labs</p>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <!-- Testimonials 
-        <section class="max-w-7xl mx-auto px-6 py-12">
-            <div class="text-center mb-12" data-aos="fade-up">
-                <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Trusted By</h2>
-                <p class="text-white/60 text-lg">Join thousands of students and professionals improving their careers</p>
+        <!-- Testimonials -->
+        <section class="py-12 section-dark">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="text-center mb-12" data-aos="fade-up">
+                    <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Trusted By</h2>
+                    <p class="text-[#94a3b8] text-lg">Join thousands of students and professionals improving their careers</p>
+                </div>
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="testimonial-card" data-aos="fade-up" data-aos-delay="0">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-12 h-12 rounded-full bg-red-950/40 flex items-center justify-center">
+                                <i class="fas fa-user text-red-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-white font-semibold">Nana Peprah</p>
+                                <p class="text-[#94a3b8] text-sm">Accra Technical University</p>
+                            </div>
+                        </div>
+                        <p class="text-[#94a3b8] text-sm">"The skill-gap analysis showed me exactly what I was missing. Within 3 months of following the roadmap, I landed my dream job."</p>
+                    </div>
+                    <div class="testimonial-card" data-aos="fade-up" data-aos-delay="100">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-12 h-12 rounded-full bg-red-950/40 flex items-center justify-center">
+                                <i class="fas fa-user-tie text-red-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-white font-semibold">Mr. Paa Solomon Donkor</p>
+                                <p class="text-[#94a3b8] text-sm">Accra Technical University</p>
+                            </div>
+                        </div>
+                        <p class="text-[#94a3b8] text-sm">"The curriculum intelligence dashboard has transformed how we advise our students. Finally, data-driven career guidance."</p>
+                    </div>
+                    <div class="testimonial-card" data-aos="fade-up" data-aos-delay="200">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-12 h-12 rounded-full bg-red-950/40 flex items-center justify-center">
+                                <i class="fas fa-building text-red-500"></i>
+                            </div>
+                            <div>
+                                <p class="text-white font-semibold">Tech Company HR</p>
+                                <p class="text-[#94a3b8] text-sm">Accra, Ghana</p>
+                            </div>
+                        </div>
+                        <p class="text-[#94a3b8] text-sm">"The talent pipeline delivered pre-screened candidates that actually matched our requirements. Reduced our hiring time by 60%."</p>
+                    </div>
+                </div>
             </div>
-            <div class="grid md:grid-cols-3 gap-6">
-                <div class="testimonial-card" data-aos="fade-up" data-aos-delay="0">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center">
-                            <i class="fas fa-user text-black"></i>
-                        </div>
-                        <div>
-                            <p class="text-white font-semibold">Nana Peprah</p>
-                            <p class="text-white/50 text-sm">Accra Technical University</p>
-                        </div>
-                    </div>
-                    <p class="text-white/60 text-sm">"The skill-gap analysis showed me exactly what I was missing. Within 3 months of following the roadmap, I landed my dream job."</p>
-                </div>
-                <div class="testimonial-card" data-aos="fade-up" data-aos-delay="100">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center">
-                            <i class="fas fa-user-tie text-black"></i>
-                        </div>
-                        <div>
-                            <p class="text-white font-semibold">Mr. Paa Solomon Donkor</p>
-                            <p class="text-white/50 text-sm">Accra Technical University</p>
-                        </div>
-                    </div>
-                    <p class="text-white/60 text-sm">"The curriculum intelligence dashboard has transformed how we advise our students. Finally, data-driven career guidance."</p>
-                </div>
-                <div class="testimonial-card" data-aos="fade-up" data-aos-delay="200">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center">
-                            <i class="fas fa-building text-black"></i>
-                        </div>
-                        <div>
-                            <p class="text-white font-semibold">Tech Company HR</p>
-                            <p class="text-white/50 text-sm">Accra, Ghana</p>
-                        </div>
-                    </div>
-                    <p class="text-white/60 text-sm">"The talent pipeline delivered pre-screened candidates that actually matched our requirements. Reduced our hiring time by 60%."</p>
-                </div>
-            </div>
-        </section> -->
+        </section>
 
         <!-- Technology Stack -->
-        <section id="tech-stack" class="max-w-7xl mx-auto px-6 py-12">
-            <div class="glass-card p-8" data-aos="zoom-in">
-                <h2 class="text-2xl font-bold text-white text-center mb-6">Our Technology Stack</h2>
-                <div class="flex flex-wrap justify-center gap-4">
-                    <span class="bg-yellow-500/10 border border-yellow-500/20 px-4 py-2 rounded-full text-yellow-400"><i class="fab fa-python mr-2"></i>FastAPI</span>
-                    <span class="bg-yellow-500/10 border border-yellow-500/20 px-4 py-2 rounded-full text-yellow-400"><i class="fab fa-react mr-2"></i>Next.js/React</span>
-                    <span class="bg-yellow-500/10 border border-yellow-500/20 px-4 py-2 rounded-full text-yellow-400"><i class="fas fa-database mr-2"></i>PostgreSQL</span>
-                    <span class="bg-yellow-500/10 border border-yellow-500/20 px-4 py-2 rounded-full text-yellow-400"><i class="fas fa-brain mr-2"></i>Sentence Transformers</span>
-                    <span class="bg-yellow-500/10 border border-yellow-500/20 px-4 py-2 rounded-full text-yellow-400"><i class="fas fa-robot mr-2"></i>Hugging Face</span>
-                    <span class="bg-yellow-500/10 border border-yellow-500/20 px-4 py-2 rounded-full text-yellow-400"><i class="fas fa-chart-line mr-2"></i>ChromaDB</span>
+        <section class="py-12 section-dark-alt">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="card p-8" data-aos="zoom-in">
+                    <h2 class="text-2xl font-bold text-white text-center mb-6">Our Technology Stack</h2>
+                    <div class="flex flex-wrap justify-center gap-4">
+                        <span class="bg-[#141414]/80 border border-[#1e293b]/50 px-4 py-2 rounded-full text-[#94a3b8] backdrop-blur-sm"><i class="fab fa-python text-red-500 mr-2"></i>FastAPI</span>
+                        <span class="bg-[#141414]/80 border border-[#1e293b]/50 px-4 py-2 rounded-full text-[#94a3b8] backdrop-blur-sm"><i class="fab fa-react text-red-500 mr-2"></i>Next.js/React</span>
+                        <span class="bg-[#141414]/80 border border-[#1e293b]/50 px-4 py-2 rounded-full text-[#94a3b8] backdrop-blur-sm"><i class="fas fa-database text-red-500 mr-2"></i>PostgreSQL</span>
+                        <span class="bg-[#141414]/80 border border-[#1e293b]/50 px-4 py-2 rounded-full text-[#94a3b8] backdrop-blur-sm"><i class="fas fa-brain text-red-500 mr-2"></i>Sentence Transformers</span>
+                        <span class="bg-[#141414]/80 border border-[#1e293b]/50 px-4 py-2 rounded-full text-[#94a3b8] backdrop-blur-sm"><i class="fas fa-robot text-red-500 mr-2"></i>Hugging Face</span>
+                        <span class="bg-[#141414]/80 border border-[#1e293b]/50 px-4 py-2 rounded-full text-[#94a3b8] backdrop-blur-sm"><i class="fas fa-chart-line text-red-500 mr-2"></i>ChromaDB</span>
+                    </div>
                 </div>
             </div>
         </section>
 
         <!-- Partnership CTA -->
-        <section id="partnership" class="max-w-7xl mx-auto px-6 py-20">
-            <div class="bg-gradient-to-r from-yellow-600/20 via-yellow-500/10 to-yellow-600/20 backdrop-blur-sm rounded-3xl p-12 text-center border border-yellow-500/20" data-aos="flip-up">
-                <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Ready to Partner With Us?</h2>
-                <p class="text-white/70 text-lg mb-6 max-w-2xl mx-auto">
-                    Universities, Employers, Investors, and Development Organizations — 
-                    let's build Africa's employability intelligence infrastructure together.
-                </p>
-                <div class="flex flex-wrap gap-4 justify-center mb-6">
-                    <a href="mailto:fadiliddrisu24@gmail.com" class="btn-primary px-8 py-3 rounded-full text-black font-bold inline-flex items-center gap-2">
-                        <i class="fas fa-handshake"></i> Become a Partner
-                    </a>
-                    <a href="{{ url_for('auth.register') }}" class="btn-secondary px-8 py-3 rounded-full text-white font-bold inline-flex items-center gap-2">
-                        <i class="fas fa-user-plus"></i> Join as Student
-                    </a>
-                </div>
-                <div class="flex justify-center items-center gap-2 text-white/50">
-                    <i class="fas fa-envelope text-yellow-400"></i>
-                    <span>fadiliddrisu24@gmail.com</span>
-                    <span class="mx-2">•</span>
-                    <i class="fab fa-github text-yellow-400"></i>
-                    <span>FADTECH-Labs</span>
+        <section id="partnership" class="py-20 section-dark">
+            <div class="max-w-7xl mx-auto px-6">
+                <div class="card p-12 text-center border-2 border-red-800/30" data-aos="flip-up">
+                    <h2 class="text-3xl md:text-4xl font-bold text-white mb-4">Ready to Partner With Us?</h2>
+                    <p class="text-[#94a3b8] text-lg mb-6 max-w-2xl mx-auto">
+                        Universities, Employers, Investors, and Development Organizations — 
+                        let's build Africa's employability intelligence infrastructure together.
+                    </p>
+                    <div class="flex flex-wrap gap-4 justify-center mb-6">
+                        <a href="mailto:fadiliddrisu24@gmail.com" class="btn-primary px-8 py-3 rounded-full text-white font-bold inline-flex items-center gap-2">
+                            <i class="fas fa-handshake"></i> Become a Partner
+                        </a>
+                        <a href="{{ url_for('auth.register') }}" class="btn-secondary px-8 py-3 rounded-full text-white font-bold inline-flex items-center gap-2">
+                            <i class="fas fa-user-plus"></i> Join as Student
+                        </a>
+                    </div>
+                    <div class="flex justify-center items-center gap-2 text-[#94a3b8]">
+                        <i class="fas fa-envelope text-red-500"></i>
+                        <span>fadiliddrisu24@gmail.com</span>
+                        <span class="mx-2">•</span>
+                        <i class="fab fa-github text-red-500"></i>
+                        <span>FADTECH-Labs</span>
+                    </div>
                 </div>
             </div>
         </section>
@@ -909,8 +1000,8 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-black/80 backdrop-blur-md border-t border-yellow-500/10 mt-10">
-        <div class="max-w-7xl mx-auto px-6 py-8">
+    <footer class="bg-[#0a0a0a] border-t border-[#1e293b]">
+        <div class="max-w-7xl mx-auto px-6 py-12">
             <div class="grid md:grid-cols-4 gap-8 mb-8">
                 <div>
                     <div class="flex items-center gap-2 mb-4">
@@ -919,34 +1010,34 @@
                              class="w-8 h-8 rounded-lg">
                         <span class="text-white font-bold">FADTECH Labs</span>
                     </div>
-                    <p class="text-white/50 text-sm">Building Africa's employability intelligence infrastructure.</p>
+                    <p class="text-[#94a3b8] text-sm">Building Africa's employability intelligence infrastructure.</p>
                 </div>
                 <div>
                     <h4 class="text-white font-semibold mb-3">Platform</h4>
-                    <ul class="space-y-2 text-sm text-white/50">
-                        <li><a href="#features" class="hover:text-yellow-400 transition">Features</a></li>
-                        <li><a href="#how-it-works" class="hover:text-yellow-400 transition">How It Works</a></li>
-                        <li><a href="#impact" class="hover:text-yellow-400 transition">Impact</a></li>
+                    <ul class="space-y-2 text-sm text-[#94a3b8]">
+                        <li><a href="#features" class="footer-link">Features</a></li>
+                        <li><a href="#how-it-works" class="footer-link">How It Works</a></li>
+                        <li><a href="#impact" class="footer-link">Impact</a></li>
                     </ul>
                 </div>
                 <div>
                     <h4 class="text-white font-semibold mb-3">Partners</h4>
-                    <ul class="space-y-2 text-sm text-white/50">
-                        <li><a href="#partnership" class="hover:text-yellow-400 transition">Universities</a></li>
-                        <li><a href="#partnership" class="hover:text-yellow-400 transition">Employers</a></li>
-                        <li><a href="#partnership" class="hover:text-yellow-400 transition">Investors</a></li>
+                    <ul class="space-y-2 text-sm text-[#94a3b8]">
+                        <li><a href="#partnership" class="footer-link">Universities</a></li>
+                        <li><a href="#partnership" class="footer-link">Employers</a></li>
+                        <li><a href="#partnership" class="footer-link">Investors</a></li>
                     </ul>
                 </div>
                 <div>
                     <h4 class="text-white font-semibold mb-3">Connect</h4>
-                    <ul class="space-y-2 text-sm text-white/50">
-                        <li><i class="fas fa-envelope text-yellow-400 mr-2"></i> fadiliddrisu24@gmail.com</li>
-                        <li><i class="fas fa-map-marker-alt text-yellow-400 mr-2"></i> Ghana · West Africa</li>
-                        <li><i class="fab fa-linkedin text-yellow-400 mr-2"></i> FADTECH Labs</li>
+                    <ul class="space-y-2 text-sm text-[#94a3b8]">
+                        <li><i class="fas fa-envelope text-red-400 mr-2"></i> fadiliddrisu24@gmail.com</li>
+                        <li><i class="fas fa-map-marker-alt text-red-400 mr-2"></i> Ghana · West Africa</li>
+                        <li><i class="fab fa-linkedin text-red-400 mr-2"></i> FADTECH Labs</li>
                     </ul>
                 </div>
             </div>
-            <div class="border-t border-yellow-500/10 pt-6 text-center text-white/40 text-sm">
+            <div class="border-t border-[#1e293b] pt-6 text-center text-[#64748b] text-sm">
                 <p>© 2026 FADTECH Labs — Career Intelligence System. All rights reserved.</p>
                 <p class="mt-2">AI-Powered Employability Intelligence · Labor-Market Analysis · Skill-Gap Engine · Personalized Career Roadmaps</p>
             </div>
@@ -957,12 +1048,12 @@
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
         AOS.init({
-            duration: 800,
+            duration: 600,
             once: true,
-            offset: 100
+            offset: 80,
+            easing: 'ease-out-cubic'
         });
         
-        // Mobile menu toggle
         const menuBtn = document.getElementById('mobileMenuBtn');
         const mobileMenu = document.getElementById('mobileMenu');
         if (menuBtn && mobileMenu) {
@@ -971,13 +1062,12 @@
             });
         }
         
-        // Smooth scroll for anchor links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
                 const target = document.querySelector(this.getAttribute('href'));
                 if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
                     if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
                         mobileMenu.classList.add('hidden');
                     }
@@ -985,15 +1075,14 @@
             });
         });
         
-        // Auto-hide flash messages after 4 seconds
         setTimeout(() => {
             document.querySelectorAll('.flash-message').forEach(flash => {
                 flash.style.opacity = '0';
                 flash.style.transform = 'translateY(-10px)';
-                flash.style.transition = 'all 0.3s ease';
-                setTimeout(() => flash.remove(), 300);
+                flash.style.transition = 'all 0.4s ease';
+                setTimeout(() => flash.remove(), 400);
             });
-        }, 4000);
+        }, 4500);
     </script>
 </body>
 </html>

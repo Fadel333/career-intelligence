@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Application Settings - Recruiter Hub{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h4 class="mb-0"><i class="bi bi-gear"></i> Application Retention Settings</h4>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">Configure how long applications are kept before being automatically deleted.</p>
+                    
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label class="form-label">Retention Period (Days)</label>
+                            <input type="number" class="form-control" name="retention_days" 
+                                   value="{{ recruiter.retention_days or 30 }}" min="7" max="365">
+                            <small class="text-muted">Applications will be automatically deleted after this many days. Minimum: 7 days, Maximum: 365 days.</small>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>How it works:</strong>
+                            <ul class="mb-0 mt-1">
+                                <li>Applications are soft-deleted (can be restored within 30 days)</li>
+                                <li>Expired applications are marked with a warning</li>
+                                <li>You can manually clean up expired applications</li>
+                                <li>Deleted applications can be restored from the trash</li>
+                            </ul>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-save"></i> Save Settings
+                        </button>
+                    </form>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('recruiter.applications') }}" class="btn btn-secondary flex-grow-1">
+                            <i class="bi bi-arrow-left"></i> Back to Applications
+                        </a>
+                        <form action="{{ url_for('recruiter.cleanup_expired_applications') }}" method="POST">
+                            <button type="submit" class="btn btn-warning" onclick="return confirm('Delete all expired applications?')">
+                                <i class="bi bi-trash"></i> Cleanup Now
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

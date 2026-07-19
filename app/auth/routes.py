@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from models import User, Profile, RecruiterProfile
 from extensions import db
 from app.utils.oauth import oauth
+from app.utils.email import send_welcome_email
 import secrets
 
 auth_bp = Blueprint("auth", __name__)
@@ -73,6 +74,8 @@ def register():
                 db.session.add(recruiter_profile)
             
             db.session.commit()
+
+            send_welcome_email(user)
             
             flash("Account created successfully! Welcome!", "success")
             
