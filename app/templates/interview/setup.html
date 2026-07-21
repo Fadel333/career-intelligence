@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Setup Interview - FADTECH Labs{% endblock %}
+
+{% block content %}
+<section class="max-w-2xl mx-auto px-6 py-8">
+    <div class="mb-8" data-aos="fade-up">
+        <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">🎯 Setup Interview Practice</h1>
+        <p class="text-white/60">Customize your interview practice session</p>
+    </div>
+
+    <div class="glass-card p-8" data-aos="fade-up">
+        <form method="POST" class="space-y-6">
+            <!-- Job Title -->
+            <div>
+                <label class="text-white font-medium block mb-1">Job Title *</label>
+                <input type="text" name="job_title" required
+                       placeholder="e.g. Software Engineer, Data Analyst"
+                       class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none transition">
+                <p class="text-white/40 text-xs mt-1">Enter the job title you're preparing for</p>
+            </div>
+
+            <!-- Industry -->
+            <div>
+                <label class="text-white font-medium block mb-1">Industry</label>
+                <select name="industry" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-teal-400 focus:outline-none transition">
+                    <option value="">Select industry</option>
+                    <option value="Technology">Technology</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Healthcare">Healthcare</option>
+                    <option value="Education">Education</option>
+                    <option value="Retail">Retail</option>
+                    <option value="Manufacturing">Manufacturing</option>
+                    <option value="Consulting">Consulting</option>
+                    <option value="Non-Profit">Non-Profit</option>
+                    <option value="Government">Government</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+
+            <!-- Experience Level -->
+            <div>
+                <label class="text-white font-medium block mb-1">Experience Level</label>
+                <select name="experience_level" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-teal-400 focus:outline-none transition">
+                    <option value="entry">Entry Level</option>
+                    <option value="mid" selected>Mid Level</option>
+                    <option value="senior">Senior Level</option>
+                    <option value="executive">Executive</option>
+                </select>
+            </div>
+
+            <!-- Question Type -->
+            <div>
+                <label class="text-white font-medium block mb-1">Question Type</label>
+                <select name="question_type" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-teal-400 focus:outline-none transition">
+                    <option value="technical">Technical</option>
+                    <option value="behavioral">Behavioral</option>
+                    <option value="general">General</option>
+                    <option value="mixed">Mixed (Recommended)</option>
+                </select>
+                <p class="text-white/40 text-xs mt-1">Choose the type of questions you want to practice</p>
+            </div>
+
+            <!-- Number of Questions -->
+            <div>
+                <label class="text-white font-medium block mb-1">Number of Questions</label>
+                <select name="num_questions" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-teal-400 focus:outline-none transition">
+                    <option value="3">3 Questions (Quick Practice)</option>
+                    <option value="5" selected>5 Questions (Standard)</option>
+                    <option value="8">8 Questions (Extended)</option>
+                    <option value="10">10 Questions (Full Interview)</option>
+                </select>
+            </div>
+
+            <!-- Your Skills -->
+            {% if skills %}
+            <div>
+                <label class="text-white font-medium block mb-1">Your Skills</label>
+                <div class="flex flex-wrap gap-2">
+                    {% for skill in skills %}
+                        <span class="bg-teal-500/20 text-teal-300 px-3 py-1 rounded-full text-sm">
+                            {{ skill }}
+                        </span>
+                    {% endfor %}
+                </div>
+                <p class="text-white/40 text-xs mt-1">Questions will be tailored to your skills</p>
+            </div>
+            {% endif %}
+
+            <!-- Submit -->
+            <button type="submit" class="w-full btn-primary py-3 rounded-full text-white font-bold text-lg">
+                <i class="fas fa-play mr-2"></i> Start Practice
+            </button>
+        </form>
+    </div>
+
+    <!-- Tips -->
+    <div class="glass-card p-6 mt-6" data-aos="fade-up" data-aos-delay="100">
+        <h3 class="text-white font-bold mb-3"><i class="fas fa-lightbulb text-teal-400 mr-2"></i> Tips for Success</h3>
+        <ul class="space-y-2 text-white/70 text-sm">
+            <li><i class="fas fa-check-circle text-teal-400 mr-2"></i> Be specific and use real examples</li>
+            <li><i class="fas fa-check-circle text-teal-400 mr-2"></i> Use the STAR method for behavioral questions</li>
+            <li><i class="fas fa-check-circle text-teal-400 mr-2"></i> Practice speaking clearly and confidently</li>
+            <li><i class="fas fa-check-circle text-teal-400 mr-2"></i> Review feedback to identify areas for improvement</li>
+        </ul>
+    </div>
+</section>
+{% endblock %}

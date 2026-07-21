@@ -82,7 +82,7 @@
                         </div>
                     </a>
 
-                    <!-- My Applications Card - NEW -->
+                    <!-- My Applications Card -->
                     <a href="{{ url_for('jobs.my_applications') }}" class="glass-card p-6 hover:transform hover:scale-105 transition-all cursor-pointer block" data-aos="fade-right" data-aos-delay="50">
                         <div class="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mb-4">
                             <i class="fas fa-list-check text-2xl text-white"></i>
@@ -97,6 +97,26 @@
                             {% if total_apps > 0 %}
                                 <span class="bg-blue-500/20 text-blue-300 text-xs px-2 py-1 rounded-full">
                                     {{ total_apps }} active
+                                </span>
+                            {% endif %}
+                        </div>
+                    </a>
+
+                    <!-- Interview Practice Card - NEW -->
+                    <a href="{{ url_for('interview_practice_hub') }}" class="glass-card p-6 hover:transform hover:scale-105 transition-all cursor-pointer block" data-aos="fade-right" data-aos-delay="75">
+                        <div class="w-14 h-14 bg-gradient-to-br from-red-400 to-red-600 rounded-2xl flex items-center justify-center mb-4">
+                            <i class="fas fa-microphone text-2xl text-white"></i>
+                        </div>
+                        <h3 class="text-lg font-bold text-white mb-2">Interview Practice</h3>
+                        <p class="text-white/60 text-sm">Practice interviews with AI-powered feedback and tips</p>
+                        <div class="mt-4 flex items-center gap-2">
+                            <span class="text-red-400 text-sm flex items-center gap-1">
+                                Start Practice <i class="fas fa-arrow-right"></i>
+                            </span>
+                            {% set sessions = current_user.interview_practices|default([]) %}
+                            {% if sessions|length > 0 %}
+                                <span class="bg-red-500/20 text-red-300 text-xs px-2 py-1 rounded-full">
+                                    {{ sessions|selectattr('status', 'equalto', 'in_progress')|list|length }} in progress
                                 </span>
                             {% endif %}
                         </div>

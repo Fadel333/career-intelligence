@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Interview Summary - FADTECH Labs{% endblock %}
+
+{% block content %}
+<section class="max-w-4xl mx-auto px-6 py-8">
+    <div class="flex items-center gap-4 mb-8" data-aos="fade-up">
+        <a href="{{ url_for('interview_practice_hub') }}" class="text-white/60 hover:text-white transition">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-white mb-1">📊 Interview Summary</h1>
+            <p class="text-white/60">{{ practice.job_title }} • {{ practice.created_at.strftime('%B %d, %Y') }}</p>
+        </div>
+    </div>
+
+    <!-- Overall Score -->
+    <div class="glass-card p-8 text-center mb-8" data-aos="fade-up">
+        <div class="inline-flex items-center justify-center w-32 h-32 rounded-full 
+            {% if practice.score >= 80 %}bg-green-500/20 border-4 border-green-400
+            {% elif practice.score >= 60 %}bg-yellow-500/20 border-4 border-yellow-400
+            {% else %}bg-red-500/20 border-4 border-red-400{% endif %}">
+            <span class="text-4xl font-bold text-white">{{ practice.score|round(0) }}%</span>
+        </div>
+        <h2 class="text-xl font-bold text-white mt-4">
+            {% if practice.score >= 80 %}🌟 Excellent Performance!{% elif practice.score >= 60 %}💪 Good Job!{% else %}📚 Keep Practicing!{% endif %}
+        </h2>
+        <p class="text-white/60">
+            {{ responses|selectattr('score', 'gt', 0)|list|length }} questions answered 
+            • {{ (responses|selectattr('score', 'gt', 0)|list|length / responses|length * 100)|round(0) }}% completion
+        </p>
+    </div>
+
+    <!-- Detailed Responses -->
+    <div class="space-y-6" data-aos="fade-up">
+        <h2 class="text-xl font-bold text-white mb-4">Question Review</h2>
+        {% for response in responses %}
+            <div class="glass-card p-6">
+                <div class="flex justify-between items-start mb-3">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-white/40 text-sm">Q{{ loop.index }}</span>
+                            <span class="px-2 py-0.5 rounded-full text-xs 
+                                {% if response.score >= 80 %}bg-green-500/20 text-green-400
+                                {% elif response.score >= 60 %}bg-yellow-500/20 text-yellow-400
+                                {% else %}bg-red-500/20 text-red-400{% endif %}">
+                                Score: {{ response.score|round(0) }}%
+                            </span>
+                        </div>
+                        <p class="text-white font-medium mt-1">{{ response.question.question_text if response.question else 'N/A' }}</p>
+                    </div>
+                </div>
+                
+                <div class="bg-white/5 rounded-xl p-4 mb-3">
+                    <p class="text-white/50 text-sm">Your Answer:</p>
+                    <p class="text-white mt-1">{{ response.answer }}</p>
+                </div>
+                
+                {% if response.feedback %}
+                    <div class="bg-teal-500/5 rounded-xl p-4 border border-teal-500/20">
+                        <p class="text-teal-400 text-sm font-medium">AI Feedback</p>
+                        <p class="text-white/70 text-sm mt-1">{{ response.feedback }}</p>
+                        {% if response.strengths %}
+                            <div class="mt-2">
+                                <p class="text-green-400 text-sm">✅ Strengths:</p>
+                                <ul class="text-white/60 text-sm list-disc pl-4">
+                                    {% for s in response.strengths %}
+                                        <li>{{ s }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                        {% if response.improvements %}
+                            <div class="mt-2">
+                                <p class="text-orange-400 text-sm">📈 Areas for Improvement:</p>
+                                <ul class="text-white/60 text-sm list-disc pl-4">
+                                    {% for i in response.improvements %}
+                                        <li>{{ i }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Actions -->
+    <div class="flex gap-4 mt-8" data-aos="fade-up">
+        <a href="{{ url_for('interview_practice_setup') }}" class="flex-1 btn-primary text-center py-3 rounded-full text-white font-semibold">
+            <i class="fas fa-redo mr-2"></i> Practice Again
+        </a>
+        <a href="{{ url_for('interview_practice_hub') }}" class="flex-1 btn-secondary text-center py-3 rounded-full text-white font-semibold">
+            <i class="fas fa-arrow-left mr-2"></i> Back to Sessions
+        </a>
+    </div>
+</section>
+{% endblock %}

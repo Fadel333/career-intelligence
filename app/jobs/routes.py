@@ -488,3 +488,15 @@ def api_application_status_counts():
         'hired': result.get('hired', 0),
         'rejected': result.get('rejected', 0)
     })
+
+# In your job creation/update route
+def create_job():
+    # ... save job to database ...
+    
+    # After saving, check for matching alerts
+    if job.status == 'published':
+        from app.utils.job_alert_checker import check_job_alerts
+        # Check alerts (this will send notifications to users)
+        # You can run this in a background thread or Celery task
+        import threading
+        threading.Thread(target=check_job_alerts).start()

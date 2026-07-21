@@ -68,22 +68,22 @@
                        class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-400/30 transition">
             </div>
 
-            <!-- User Type Selection - UPDATED with Partner option -->
+            <!-- User Type Selection -->
             <div>
                 <label class="block text-white/80 text-sm font-semibold mb-2">
                     <i class="fas fa-user-tag mr-2 text-teal-400"></i> I am a
                 </label>
                 <div class="grid grid-cols-2 gap-3">
                     <label class="flex items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition has-[:checked]:border-teal-400 has-[:checked]:bg-teal-400/10">
-                        <input type="radio" name="user_type" value="student" checked class="text-teal-400">
+                        <input type="radio" name="user_type" value="student" checked class="text-teal-400" id="studentRadio">
                         <span class="text-white/80 text-sm">
                             <i class="fas fa-graduation-cap mr-1"></i> Student
                         </span>
                     </label>
                     <label class="flex items-center gap-2 p-3 rounded-xl bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition has-[:checked]:border-teal-400 has-[:checked]:bg-teal-400/10">
-                        <input type="radio" name="user_type" value="recruiter" class="text-teal-400">
+                        <input type="radio" name="user_type" value="recruiter" class="text-teal-400" id="recruiterRadio">
                         <span class="text-white/80 text-sm">
-                            <i class="fas fa-briefcase mr-1"></i>  Recruiter
+                            <i class="fas fa-briefcase mr-1"></i> Recruiter
                         </span>
                     </label>
                 </div>
@@ -93,13 +93,27 @@
                 </p>
             </div>
 
+            <!-- ========== COMPANY NAME (Visible only for Recruiters) ========== -->
+            <div id="companyField" class="hidden">
+                <label class="block text-white/80 text-sm font-semibold mb-2">
+                    <i class="fas fa-building mr-2 text-teal-400"></i> Company Name
+                </label>
+                <input type="text" 
+                       name="company_name" 
+                       id="companyNameInput"
+                       placeholder="Your Company Name"
+                       class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-400/30 transition">
+                <p class="text-white/40 text-xs mt-1">Required for recruiters</p>
+            </div>
+
             <!-- Terms & Conditions -->
             <div class="flex items-start gap-3">
                 <input type="checkbox" 
                        name="terms" 
                        required
+                       id="termsCheckbox"
                        class="w-4 h-4 mt-1 rounded border-white/20 bg-white/10 text-teal-400 focus:ring-teal-400">
-                <label class="text-white/60 text-sm">
+                <label for="termsCheckbox" class="text-white/60 text-sm">
                     I agree to the 
                     <a href="{{ url_for('privacy_policy') }}" class="text-teal-400 hover:text-teal-300 transition">Terms of Service</a> 
                     and 
@@ -158,26 +172,44 @@
     </div>
 </section>
 
-<!-- ========== JAVASCRIPT FOR USER TYPE DESCRIPTION ========== -->
+<!-- ========== JAVASCRIPT FOR USER TYPE DESCRIPTION & COMPANY FIELD ========== -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const descriptions = {
         'student': 'Students get personalized career guidance, skill analysis, and job recommendations',
-        'professional': 'Professionals get advanced skill gap analysis, career roadmaps, and job matching',
-        'partner': 'Partners can post vacancies, find candidates, and track placements',
-        'university': 'Universities get curriculum intelligence and student employability analytics'
+        'recruiter': 'Recruiters can post jobs, find candidates, and manage placements'
     };
     
     const radioButtons = document.querySelectorAll('input[name="user_type"]');
     const descriptionEl = document.getElementById('userTypeDescription');
+    const companyField = document.getElementById('companyField');
+    const companyNameInput = document.getElementById('companyNameInput');
+    
+    function updateForm(userType) {
+        // Update description
+        descriptionEl.textContent = descriptions[userType] || '';
+        
+        // Show/hide company field for recruiters
+        if (userType === 'recruiter') {
+            companyField.classList.remove('hidden');
+            companyNameInput.setAttribute('required', 'required');
+        } else {
+            companyField.classList.add('hidden');
+            companyNameInput.removeAttribute('required');
+            companyNameInput.value = ''; // Clear the field
+        }
+    }
     
     radioButtons.forEach(function(radio) {
         radio.addEventListener('change', function() {
             if (this.checked) {
-                descriptionEl.textContent = descriptions[this.value] || '';
+                updateForm(this.value);
             }
         });
     });
+    
+    // Initial state (default is student)
+    updateForm('student');
 });
 </script>
 {% endblock %}

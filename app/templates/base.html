@@ -918,7 +918,7 @@
                                 <i class="fas fa-user text-red-500"></i>
                             </div>
                             <div>
-                                <p class="text-white font-semibold">Nana Peprah</p>
+                                <p class="text-white font-semibold">Abele Large</p>
                                 <p class="text-[#94a3b8] text-sm">Accra Technical University</p>
                             </div>
                         </div>
@@ -930,7 +930,7 @@
                                 <i class="fas fa-user-tie text-red-500"></i>
                             </div>
                             <div>
-                                <p class="text-white font-semibold">Mr. Paa Solomon Donkor</p>
+                                <p class="text-white font-semibold">Romeo Arthur</p>
                                 <p class="text-[#94a3b8] text-sm">Accra Technical University</p>
                             </div>
                         </div>
@@ -1015,16 +1015,16 @@
                 <div>
                     <h4 class="text-white font-semibold mb-3">Platform</h4>
                     <ul class="space-y-2 text-sm text-[#94a3b8]">
-                        <li><a href="#features" class="footer-link">Features</a></li>
-                        <li><a href="#how-it-works" class="footer-link">How It Works</a></li>
-                        <li><a href="#impact" class="footer-link">Impact</a></li>
+                        <li><a href="{{ url_for('privacy_policy') }}" class="footer-link">Privacy Policy</a></li>
+                        <li><a href="{{ url_for('terms_of_use') }}" class="footer-link">Terms of Use</a></li>
+                        <!-- <li><a href="#impact" class="footer-link">Impact</a></li> -->
                     </ul>
                 </div>
                 <div>
                     <h4 class="text-white font-semibold mb-3">Partners</h4>
                     <ul class="space-y-2 text-sm text-[#94a3b8]">
-                        <li><a href="#partnership" class="footer-link">Universities</a></li>
-                        <li><a href="#partnership" class="footer-link">Employers</a></li>
+                        <li><a href="{{ url_for('university_dashboard') }}" class="footer-link">Universities</a></li>
+                        <li><a href="recruiter/dashboard" class="footer-link">Employers</a></li>
                         <li><a href="#partnership" class="footer-link">Investors</a></li>
                     </ul>
                 </div>

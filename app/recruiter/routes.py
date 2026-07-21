@@ -7,6 +7,8 @@ import json
 import os
 from werkzeug.utils import secure_filename
 from app.utils.email import send_job_published_email
+# app/recruiter/routes.py
+from app.utils.job_notifier import notify_candidates_about_job
 
 from . import recruiter_bp
 from .forms import JobForm
@@ -427,16 +429,29 @@ def create_job():
             db.session.add(job)
             db.session.commit()
 
+            # ========== SEND NOTIFICATIONS ==========
             if not is_draft:
+                # Send email to recruiter (confirmation)
                 try:
                     send_job_published_email(job)
                 except Exception as e:
                     print(f"Email error: {e}")
-            
-            if is_draft:
-                flash(f'✅ Job "{job.title}" saved as draft!', 'success')
+                
+                # ========== NOTIFY CANDIDATES ==========
+                try:
+                    from app.utils.job_notifier import notify_candidates_about_job
+                    notifications_sent = notify_candidates_about_job(job)
+                    print(f"📢 Notified {notifications_sent} candidates about job {job.id}")
+                    
+                    if notifications_sent > 0:
+                        flash(f'✅ Job published! {notifications_sent} candidates were notified.', 'success')
+                    else:
+                        flash(f'✅ Job published successfully!', 'success')
+                except Exception as e:
+                    print(f"Notification error: {e}")
+                    flash(f'✅ Job published successfully! (Notifications will be sent shortly)', 'success')
             else:
-                flash(f'✅ Job "{job.title}" published successfully!', 'success')
+                flash(f'✅ Job "{job.title}" saved as draft!', 'success')
             
             return redirect(url_for('recruiter.jobs'))
             
@@ -453,7 +468,6 @@ def create_job():
                 flash(f'{field_label}: {error}', 'error')
     
     return render_template('recruiter/create_job.html', form=form)
-
 @recruiter_bp.route('/jobs/<int:job_id>/edit', methods=['GET', 'POST'])
 @login_required
 @recruiter_required

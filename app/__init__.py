@@ -11,6 +11,8 @@ import base64
 import json
 import ast
 from datetime import datetime, timedelta
+from collections import Counter
+from sqlalchemy import func
 
 # Add the current directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -22,7 +24,7 @@ from app.utils.skill_analyzer import SkillAnalyzer
 from app.utils.course_api import CourseAPI
 from app.utils.hybrid_parser import HybridParser
 from app.utils.openai_assistant import OpenAIAssistant
-from models import User, Profile, RecruiterProfile, Candidate, Job, Placement, JobAlert, JobAlertLog
+from models import User, Profile, RecruiterProfile, Candidate, Job, Placement, JobAlert, JobAlertLog, InterviewPractice, InterviewQuestion, InterviewResponse
 from app.recruiter import recruiter_bp 
 from app.admin.routes import admin_bp 
 from app.jobs.routes import jobs_bp 
@@ -56,13 +58,17 @@ def decompress_parsed_data(compressed):
     if not compressed:
         return None
     
-    # If it's already a dict, return it directly
     if isinstance(compressed, dict):
         return compressed
     
-    # If it's a string, try to decompress
     if isinstance(compressed, str):
-        # Try base64 decode first
+        try:
+            data = json.loads(compressed)
+            if isinstance(data, dict):
+                return data
+        except:
+            pass
+        
         try:
             decoded = base64.b64decode(compressed.encode('utf-8'))
             data = pickle.loads(decoded)
@@ -71,29 +77,17 @@ def decompress_parsed_data(compressed):
         except:
             pass
         
-        # Try JSON
         try:
-            data = json.loads(compressed)
-            if isinstance(data, dict):
-                return data
-        except:
-            pass
-        
-        # Try ast.literal_eval for Python dict strings
-        if compressed.startswith('{') and compressed.endswith('}'):
-            try:
+            if compressed.startswith('{') and compressed.endswith('}'):
                 data = ast.literal_eval(compressed)
                 if isinstance(data, dict):
                     return data
-            except:
-                pass
+        except:
+            pass
         
-        # If all else fails, return empty dict
-        print(f"⚠️ Could not decompress data, returning empty dict")
-        return {}
+        return None
     
-    # Fallback
-    return {}
+    return None
 
 
 def allowed_file(filename):
@@ -122,8 +116,38 @@ def register_blueprints(app):
 def get_parsed_data_from_session():
     """Helper to get parsed data from session with decompression"""
     data = session.get('parsed_cv', None)
-    if data:
-        return decompress_parsed_data(data)
+    if not data:
+        return None
+    
+    if isinstance(data, dict):
+        return data
+    
+    if isinstance(data, str):
+        try:
+            result = json.loads(data)
+            if isinstance(result, dict):
+                return result
+        except:
+            pass
+        
+        try:
+            decoded = base64.b64decode(data.encode('utf-8'))
+            result = pickle.loads(decoded)
+            if isinstance(result, dict):
+                return result
+        except:
+            pass
+        
+        try:
+            if data.startswith('{') and data.endswith('}'):
+                result = ast.literal_eval(data)
+                if isinstance(result, dict):
+                    return result
+        except:
+            pass
+        
+        return None
+    
     return None
 
 
@@ -135,8 +159,106 @@ def clear_parsed_data_from_session():
         session.pop('cv_filename', None)
 
 
-# ========== HELPER FUNCTIONS ==========
+# ========== REAL ANALYTICS FUNCTIONS ==========
+
+def get_real_student_count():
+    """Get real number of students"""
+    return User.query.filter_by(user_type='student').count()
+
+
+def get_real_recruiter_count():
+    """Get real number of recruiters/employers"""
+    return User.query.filter_by(user_type='recruiter').count()
+
+
+def get_real_university_count():
+    """Get real number of university users"""
+    return User.query.filter_by(user_type='university').count()
+
+
+def get_real_employability_rate():
+    """Calculate real average employability score from actual CVs"""
+    candidates = Candidate.query.filter(Candidate.employability_score > 0).all()
+    if not candidates:
+        return 0
+    total = sum(c.employability_score or 0 for c in candidates)
+    return round(total / len(candidates), 1)
+
+
+def get_real_skill_gaps_count():
+    """Count unique skill gaps from real job data"""
+    from app.utils.hybrid_parser import HybridParser
+    parser = HybridParser()
+    
+    jobs = Job.query.filter_by(status='published').all()
+    if not jobs:
+        return 0
+    
+    all_skills = set()
+    for job in jobs[:100]:
+        if job.description:
+            result = parser._quick_parse(job.description)
+            if result and isinstance(result, dict):
+                skills_data = result.get('skills', {})
+                if isinstance(skills_data, dict):
+                    for category, skills in skills_data.items():
+                        if isinstance(skills, list):
+                            all_skills.update(skills)
+                        elif isinstance(skills, str):
+                            all_skills.add(skills)
+                elif isinstance(skills_data, list):
+                    all_skills.update(skills_data)
+    
+    return len(all_skills)
+
+
+def get_real_job_count():
+    """Get real number of published jobs"""
+    return Job.query.filter_by(status='published').count()
+
+
+def get_real_placement_count():
+    """Get real number of placements"""
+    return Placement.query.count()
+
+
+def get_real_candidate_count():
+    """Get real number of candidates with CVs"""
+    return Candidate.query.count()
+
+
 def get_department_performance():
+    """Get real department performance from actual CV analysis data"""
+    candidates = Candidate.query.filter(Candidate.employability_score > 0).all()
+    
+    if not candidates:
+        return get_mock_department_performance()
+    
+    dept_stats = {}
+    for candidate in candidates:
+        user = User.query.get(candidate.user_id)
+        if user and user.university_department:
+            dept = user.university_department
+            if dept not in dept_stats:
+                dept_stats[dept] = {'total': 0, 'sum_scores': 0}
+            dept_stats[dept]['total'] += 1
+            dept_stats[dept]['sum_scores'] += candidate.employability_score or 0
+    
+    result = []
+    for dept, stats in dept_stats.items():
+        avg_score = stats['sum_scores'] / stats['total'] if stats['total'] > 0 else 0
+        result.append({
+            'name': dept,
+            'employability': round(avg_score, 1),
+            'students': stats['total']
+        })
+    
+    result.sort(key=lambda x: x['employability'], reverse=True)
+    return result if result else get_mock_department_performance()
+
+
+def get_mock_department_performance():
+    """Fallback mock data when no real data exists"""
     return [
         {'name': 'Computer Science', 'employability': 92, 'students': 340},
         {'name': 'Business Administration', 'employability': 78, 'students': 280},
@@ -147,37 +269,60 @@ def get_department_performance():
     ]
 
 
-def get_top_skill_gaps(parsed_data):
-    print(f"DEBUG: parsed_data received: {parsed_data is not None}")
+def get_top_skill_gaps(parsed_data=None, limit=5):
+    """Get real skill gaps from actual job market data"""
+    from app.utils.hybrid_parser import HybridParser
+    parser = HybridParser()
     
+    jobs = Job.query.filter_by(status='published').all()
+    
+    if not jobs:
+        return get_mock_skill_gaps()
+    
+    all_job_skills = []
+    for job in jobs[:50]:
+        if job.description:
+            result = parser._quick_parse(job.description)
+            if result and isinstance(result, dict):
+                skills_data = result.get('skills', {})
+                if isinstance(skills_data, dict):
+                    for category, skills in skills_data.items():
+                        if isinstance(skills, list):
+                            all_job_skills.extend(skills)
+                        elif isinstance(skills, str):
+                            all_job_skills.append(skills)
+                elif isinstance(skills_data, list):
+                    all_job_skills.extend(skills_data)
+    
+    skill_counts = Counter(all_job_skills)
+    top_demands = skill_counts.most_common(20)
+    
+    candidate_skills = []
     if parsed_data and parsed_data.get('skills'):
-        all_skills = []
         for category, skills in parsed_data['skills'].items():
-            all_skills.extend(skills)
-        
-        print(f"DEBUG: all_skills extracted: {all_skills}")
-        
-        detected_sector = SkillAnalyzer.detect_sector(all_skills)
-        market_demands = SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get(
-            detected_sector, 
-            SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get('technology', {})
-        )
-        
-        gaps = SkillAnalyzer.analyze_gaps(all_skills, market_demands)
-        print(f"DEBUG: gaps found: {len(gaps)}")
-        
-        formatted_gaps = []
-        for gap in gaps[:5]:
-            formatted_gaps.append({
-                'skill': gap.get('skill', 'Unknown'),
-                'demand': gap.get('demand', 0),
-                'priority': gap.get('priority', 'Medium'),
-                'growth': gap.get('growth', '+0%')
-            })
-        
-        return formatted_gaps
+            if isinstance(skills, list):
+                candidate_skills.extend(skills)
+            elif isinstance(skills, str):
+                candidate_skills.append(skills)
     
-    print("DEBUG: No parsed_data, using mock data")
+    gaps = []
+    total_jobs = len(jobs)
+    for skill, count in top_demands[:10]:
+        demand_pct = (count / total_jobs) * 100
+        if skill not in candidate_skills:
+            priority = 'Critical' if demand_pct > 60 else 'High' if demand_pct > 35 else 'Medium'
+            gaps.append({
+                'skill': skill,
+                'demand': round(demand_pct),
+                'priority': priority,
+                'growth': f'+{round(demand_pct * 0.4)}%'
+            })
+    
+    return gaps[:limit] if gaps else get_mock_skill_gaps()
+
+
+def get_mock_skill_gaps():
+    """Fallback mock data"""
     return [
         {'skill': 'Machine Learning', 'demand': 88, 'priority': 'Critical', 'growth': '+45%'},
         {'skill': 'Cloud Computing', 'demand': 85, 'priority': 'High', 'growth': '+35%'},
@@ -188,6 +333,37 @@ def get_top_skill_gaps(parsed_data):
 
 
 def get_industry_trends():
+    """Get real industry trends from actual job data"""
+    jobs = Job.query.filter_by(status='published').all()
+    
+    if not jobs:
+        return get_mock_industry_trends()
+    
+    # Count jobs by category/sector
+    sector_counts = Counter()
+    for job in jobs:
+        if job.category:
+            sector_counts[job.category] += 1
+    
+    # Get top sectors
+    top_sectors = sector_counts.most_common(5)
+    total = sum(sector_counts.values())
+    
+    trends = []
+    for sector, count in top_sectors:
+        pct = (count / total) * 100
+        growth = max(5, min(50, pct * 0.5))
+        trends.append({
+            'sector': sector,
+            'growth': round(growth),
+            'demand': round(pct)
+        })
+    
+    return trends if trends else get_mock_industry_trends()
+
+
+def get_mock_industry_trends():
+    """Fallback mock data"""
     return [
         {'sector': 'Fintech', 'growth': 45, 'demand': 92},
         {'sector': 'HealthTech', 'growth': 38, 'demand': 85},
@@ -197,80 +373,101 @@ def get_industry_trends():
     ]
 
 
-def get_curriculum_recommendations(parsed_data):
+def get_curriculum_recommendations(parsed_data=None):
+    """Get real curriculum recommendations from actual skill gaps"""
+    from app.utils.hybrid_parser import HybridParser
+    parser = HybridParser()
+    
     if parsed_data and parsed_data.get('skills'):
         all_skills = []
         for category, skills in parsed_data['skills'].items():
-            all_skills.extend(skills)
+            if isinstance(skills, list):
+                all_skills.extend(skills)
+            elif isinstance(skills, str):
+                all_skills.append(skills)
         
         detected_sector = SkillAnalyzer.detect_sector(all_skills)
-        market_demands = SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get(
-            detected_sector, 
-            SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get('technology', {})
-        )
         
-        gaps = SkillAnalyzer.analyze_gaps(all_skills, market_demands)
-        
-        recommendations = []
-        
-        skill_departments = {
-            'Python': 'Computer Science',
-            'Machine Learning': 'Computer Science',
-            'Cloud Computing': 'Information Technology',
-            'Data Analysis': 'Data Science',
-            'SQL': 'Information Technology',
-            'JavaScript': 'Computer Science',
-            'React': 'Computer Science',
-            'AWS': 'Information Technology',
-            'Docker': 'Information Technology',
-            'TensorFlow': 'Data Science',
-            'Django': 'Computer Science',
-            'Flask': 'Computer Science',
-            'PostgreSQL': 'Information Technology',
-            'Git': 'Computer Science',
-            'Agile': 'Business Administration',
-            'Project Management': 'Business Administration',
-            'Cybersecurity': 'Cybersecurity',
-            'DevOps': 'Information Technology',
-            'Patient Care': 'Medicine and Surgery',
-            'Medical Diagnosis': 'Medicine and Surgery',
-            'Nursing Care': 'Nursing and Midwifery',
-            'Pharmacy': 'Pharmacy',
-            'Public Health': 'Nursing and Midwifery',
-            'Teaching': 'Education',
-            'Curriculum Development': 'Education',
-            'Financial Analysis': 'Business Administration',
-            'Accounting': 'Business Administration',
-            'Crop Production': 'Agriculture',
-            'Agribusiness': 'Agriculture',
-            'Social Work': 'Social Science',
-            'Counseling': 'Social Science',
-            'Civil Engineering': 'Engineering',
-            'Construction': 'Engineering'
-        }
-        
-        dept_gaps = {}
-        for gap in gaps[:10]:
-            dept = skill_departments.get(gap['skill'], 'General')
-            if dept not in dept_gaps:
-                dept_gaps[dept] = []
-            dept_gaps[dept].append(gap['skill'])
-        
-        for dept, skills in dept_gaps.items():
-            priority = 'High' if len(skills) >= 3 else 'Medium'
-            recommendations.append({
-                'department': dept,
-                'add_skills': skills[:3],
-                'remove_skills': [],
-                'priority': priority
-            })
-        
-        return recommendations
+        jobs = Job.query.filter_by(status='published').all()
+        if jobs:
+            job_skills = []
+            for job in jobs[:30]:
+                if job.description:
+                    result = parser._quick_parse(job.description)
+                    if result and isinstance(result, dict):
+                        skills_data = result.get('skills', {})
+                        if isinstance(skills_data, dict):
+                            for category, skills in skills_data.items():
+                                if isinstance(skills, list):
+                                    job_skills.extend(skills)
+                                elif isinstance(skills, str):
+                                    job_skills.append(skills)
+                        elif isinstance(skills_data, list):
+                            job_skills.extend(skills_data)
+            
+            job_skill_counts = Counter(job_skills)
+            
+            skill_departments = {
+                'Python': 'Computer Science',
+                'Machine Learning': 'Computer Science',
+                'Cloud Computing': 'Information Technology',
+                'Data Analysis': 'Data Science',
+                'SQL': 'Information Technology',
+                'JavaScript': 'Computer Science',
+                'React': 'Computer Science',
+                'AWS': 'Information Technology',
+                'Docker': 'Information Technology',
+                'TensorFlow': 'Data Science',
+                'Django': 'Computer Science',
+                'Flask': 'Computer Science',
+                'PostgreSQL': 'Information Technology',
+                'Git': 'Computer Science',
+                'Agile': 'Business Administration',
+                'Project Management': 'Business Administration',
+                'Cybersecurity': 'Cybersecurity',
+                'DevOps': 'Information Technology',
+                'Patient Care': 'Medicine and Surgery',
+                'Medical Diagnosis': 'Medicine and Surgery',
+                'Nursing Care': 'Nursing and Midwifery',
+                'Pharmacy': 'Pharmacy',
+                'Public Health': 'Nursing and Midwifery',
+                'Teaching': 'Education',
+                'Curriculum Development': 'Education',
+                'Financial Analysis': 'Business Administration',
+                'Accounting': 'Business Administration',
+                'Crop Production': 'Agriculture',
+                'Agribusiness': 'Agriculture',
+                'Social Work': 'Social Science',
+                'Counseling': 'Social Science',
+                'Civil Engineering': 'Engineering',
+                'Construction': 'Engineering'
+            }
+            
+            dept_gaps = {}
+            for skill, count in job_skill_counts.most_common(10):
+                if skill not in all_skills:
+                    dept = skill_departments.get(skill, 'General')
+                    if dept not in dept_gaps:
+                        dept_gaps[dept] = []
+                    dept_gaps[dept].append(skill)
+            
+            recommendations = []
+            for dept, skills in dept_gaps.items():
+                priority = 'High' if len(skills) >= 3 else 'Medium'
+                recommendations.append({
+                    'department': dept,
+                    'add_skills': skills[:3],
+                    'remove_skills': [],
+                    'priority': priority
+                })
+            
+            return recommendations if recommendations else get_curriculum_recommendations_default()
     
     return get_curriculum_recommendations_default()
 
 
 def get_curriculum_recommendations_default():
+    """Fallback curriculum recommendations"""
     return [
         {
             'department': 'Computer Science',
@@ -301,60 +498,63 @@ def get_curriculum_recommendations_default():
             'add_skills': ['TensorFlow', 'PyTorch', 'Big Data'],
             'remove_skills': ['Excel Basics'],
             'priority': 'Medium'
-        },
-        {
-            'department': 'Agriculture',
-            'add_skills': ['Crop Production', 'Livestock Management', 'Fisheries and Aquaculture', 'Forestry and Logging', 'Allied Services and Agribusiness'],
-            'remove_skills': ['Soil Erosion Management'],
-            'priority': 'High'
-        },
-        {
-            'department': 'Medicine and Surgery',
-            'add_skills': ['Clinical Rotation', 'Human Anatomy'],
-            'remove_skills': ['Clinical Basics'],
-            'priority': 'Low'
-        },
-        {
-            'department': 'Nursing and Midwifery',
-            'add_skills': ['Public Health', 'Paediatric Care', 'Clinical Practice'],
-            'remove_skills': ['Paediatric Care Basics'],
-            'priority': 'Low'
-        },
-        {
-            'department': 'Pharmacy',
-            'add_skills': ['Pharmacotherapeutics', 'Pharmaceutical Technology'],
-            'remove_skills': ['Massage'],
-            'priority': 'Medium'
-        },
-        {
-            'department': 'Law',
-            'add_skills': ['Bachelor of Laws'],
-            'priority': 'Medium'
-        },
-        {
-            'department': 'Social Science',
-            'add_skills': ['Psychology', 'Sociology', 'Political Science', 'Anthropology', 'Criminology', 'Economics', 'International Relations', 'Geography'],
-            'remove_skills': ['Social Work'],
-            'priority': 'High'
-        },
-        {
-            'department': 'Art and Languages',
-            'add_skills': ['Music', 'Sculpture', 'Painting', 'Literature', 'Architecture', 'Performing Arts', 'Cinema', 'French', 'Spanish', 'Chinese', 'English'],
-            'remove_skills': ['Dancing'],
-            'priority': 'Medium'
         }
     ]
 
 
+def get_real_job_matches(user_skills, limit=10):
+    """Get real job matches based on user skills"""
+    if not user_skills:
+        return []
+    
+    jobs = Job.query.filter_by(status='published').all()
+    if not jobs:
+        return []
+    
+    # Use HybridParser with quick parse
+    from app.utils.hybrid_parser import HybridParser
+    parser = HybridParser()
+    
+    scored_jobs = []
+    for job in jobs:
+        # Use _quick_parse to extract skills from job description
+        result = parser._quick_parse(job.description or '')
+        
+        job_skills = []
+        if result and isinstance(result, dict):
+            # Extract skills from the result
+            skills_data = result.get('skills', {})
+            if isinstance(skills_data, dict):
+                for category, skills in skills_data.items():
+                    if isinstance(skills, list):
+                        job_skills.extend(skills)
+                    elif isinstance(skills, str):
+                        job_skills.append(skills)
+            elif isinstance(skills_data, list):
+                job_skills = skills_data
+        
+        if job_skills:
+            match_count = len(set(user_skills) & set(job_skills))
+            match_score = (match_count / len(job_skills)) * 100
+            
+            scored_jobs.append({
+                'job': job,
+                'score': round(match_score, 1),
+                'matched_skills': list(set(user_skills) & set(job_skills))[:5],
+                'total_skills': len(job_skills)
+            })
+    
+    scored_jobs.sort(key=lambda x: x['score'], reverse=True)
+    return scored_jobs[:limit]    
+
+
 # ========== RECRUITER HUB HELPER FUNCTIONS ==========
 def get_recruiter_stats(recruiter_id):
-    from models import Job, Placement
-    
+    """Get real recruiter statistics"""
     total_jobs = Job.query.filter_by(recruiter_id=recruiter_id).count()
     active_jobs = Job.query.filter_by(recruiter_id=recruiter_id, status='published').count()
     total_placements = Placement.query.filter_by(recruiter_id=recruiter_id).count()
     
-    from sqlalchemy import func
     total_earnings = db.session.query(func.sum(Placement.commission_amount))\
         .filter_by(recruiter_id=recruiter_id, commission_paid=True).scalar() or 0
     
@@ -366,8 +566,8 @@ def get_recruiter_stats(recruiter_id):
         'total_jobs': total_jobs,
         'active_jobs': active_jobs,
         'total_placements': total_placements,
-        'total_earnings': total_earnings,
-        'pending_earnings': pending_earnings
+        'total_earnings': float(total_earnings),
+        'pending_earnings': float(pending_earnings)
     }
 
 
@@ -377,11 +577,22 @@ def register_routes(app):
     # ========== PUBLIC ROUTES ==========
     @app.route('/')
     def index():
-        return render_template('base.html')
+        # Get real stats for homepage
+        stats = {
+            'students': get_real_student_count(),
+            'employers': get_real_recruiter_count(),
+            'jobs': get_real_job_count(),
+            'placements': get_real_placement_count()
+        }
+        return render_template('base.html', stats=stats)
     
     @app.route('/privacy-policy')
     def privacy_policy():
         return render_template('privacy_policy.html')
+    
+    @app.route('/terms-of-use')
+    def terms_of_use():
+        return render_template('terms_of_use.html')
     
     # ========== STUDENT-ONLY ROUTES ==========
     @app.route('/upload-cv', methods=['GET', 'POST'])
@@ -423,7 +634,10 @@ def register_routes(app):
                     if user:
                         all_skills = []
                         for category, skills in parsed_data.get('skills', {}).items():
-                            all_skills.extend(skills)
+                            if isinstance(skills, list):
+                                all_skills.extend(skills)
+                            elif isinstance(skills, str):
+                                all_skills.append(skills)
                         
                         detected_sector = SkillAnalyzer.detect_sector(all_skills)
                         parsed_data['detected_sector'] = detected_sector
@@ -444,6 +658,7 @@ def register_routes(app):
                         user.save_cv_analysis(parsed_data)
                         user.detected_sector = detected_sector
                         user.employability_score = employability['score']
+                        user.cv_filename = file.filename
                         
                         existing_candidate = Candidate.query.filter_by(user_id=current_user.id).first()
                         if existing_candidate:
@@ -457,6 +672,7 @@ def register_routes(app):
                             existing_candidate.cv_text = parsed_data.get('raw_text', '')
                             existing_candidate.is_processed = True
                             existing_candidate.last_updated = datetime.utcnow()
+                            existing_candidate.cv_filename = file.filename
                         else:
                             candidate = Candidate(
                                 user_id=current_user.id,
@@ -477,7 +693,6 @@ def register_routes(app):
                         db.session.commit()
                         print(f"✅ CV data saved to database for user {user.email}")
                     
-                    # Store in session as JSON instead of compressed pickle
                     try:
                         session['parsed_cv'] = json.dumps(parsed_data)
                         session['cv_filename'] = file.filename
@@ -512,7 +727,6 @@ def register_routes(app):
         
         parsed_data = get_parsed_data_from_session()
         
-        # Ensure parsed_data is a dictionary
         if not parsed_data or not isinstance(parsed_data, dict):
             user = User.query.get(current_user.id)
             if user and user.cv_analysis:
@@ -549,7 +763,10 @@ def register_routes(app):
         if parsed_data and parsed_data.get('skills'):
             all_skills = []
             for category, skills in parsed_data['skills'].items():
-                all_skills.extend(skills)
+                if isinstance(skills, list):
+                    all_skills.extend(skills)
+                elif isinstance(skills, str):
+                    all_skills.append(skills)
             
             detected_sector = SkillAnalyzer.detect_sector(all_skills)
             session['detected_sector'] = detected_sector
@@ -567,7 +784,7 @@ def register_routes(app):
             
             gaps = SkillAnalyzer.analyze_gaps(all_skills, market_demands)
             roadmap = SkillAnalyzer.generate_learning_roadmap(gaps)
-            job_matches = SkillAnalyzer.get_job_recommendations(all_skills)
+            job_matches = get_real_job_matches(all_skills)
             
             return render_template('skill_analysis.html', 
                                  user=current_user, 
@@ -629,6 +846,10 @@ def register_routes(app):
     @app.route('/job-matches')
     @login_required
     def job_matches():
+        if not current_user or not current_user.is_authenticated:
+            flash('Please log in to access this page.', 'warning')
+            return redirect(url_for('auth.login'))
+        
         if current_user.is_recruiter():
             flash('This feature is for job seekers only.', 'warning')
             return redirect(url_for('recruiter.dashboard'))
@@ -636,75 +857,28 @@ def register_routes(app):
             flash('This feature is for job seekers only.', 'warning')
             return redirect(url_for('admin.index'))
         
-        # DIRECT FIX: Get raw data from session and force it to be a dict
-        raw_data = session.get('parsed_cv', None)
+        session_data = get_parsed_data_from_session()
         
         parsed_data = {}
-        
-        if raw_data:
-            # If it's already a dict, use it
-            if isinstance(raw_data, dict):
-                parsed_data = raw_data
-                print(f"✅ parsed_data is already a dict")
-            # If it's a string, try to parse it
-            elif isinstance(raw_data, str):
-                print(f"🔍 Raw data is a string, attempting to parse...")
-                # Try base64 decode first (our compression format)
-                try:
-                    decoded = base64.b64decode(raw_data.encode('utf-8'))
-                    parsed_data = pickle.loads(decoded)
-                    if isinstance(parsed_data, dict):
-                        print(f"✅ Successfully decompressed from base64")
-                    else:
-                        parsed_data = {}
-                except:
-                    # Try JSON
-                    try:
-                        parsed_data = json.loads(raw_data)
-                        if isinstance(parsed_data, dict):
-                            print(f"✅ Successfully parsed from JSON")
-                        else:
-                            parsed_data = {}
-                    except:
-                        # Try ast.literal_eval
-                        try:
-                            parsed_data = ast.literal_eval(raw_data)
-                            if isinstance(parsed_data, dict):
-                                print(f"✅ Successfully parsed from literal_eval")
-                            else:
-                                parsed_data = {}
-                        except:
-                            print(f"❌ Could not parse string data")
-                            parsed_data = {}
-        
-        # If still no data, try database
-        if not parsed_data or not isinstance(parsed_data, dict):
-            print("🔍 Trying to get from database...")
+        if session_data and isinstance(session_data, dict):
+            parsed_data = session_data
+        else:
             user = User.query.get(current_user.id)
             if user and user.cv_analysis:
-                parsed_data = user.get_cv_analysis()
-                if parsed_data and isinstance(parsed_data, dict):
-                    # Re-compress and store in session as JSON string (clean format)
+                db_data = user.get_cv_analysis()
+                if db_data and isinstance(db_data, dict):
+                    parsed_data = db_data
                     try:
                         session['parsed_cv'] = json.dumps(parsed_data)
-                        print(f"✅ Stored JSON in session")
-                    except:
-                        pass
-                else:
-                    parsed_data = {}
+                    except Exception as e:
+                        print(f"Error storing session data: {e}")
         
-        # FINAL SAFETY: Ensure it's a dict with 'skills'
         if not isinstance(parsed_data, dict):
-            print(f"⚠️ WARNING: parsed_data is {type(parsed_data)}, using empty dict")
             parsed_data = {}
         
         if 'skills' not in parsed_data:
             parsed_data['skills'] = {}
         
-        print(f"✅ Final parsed_data type: {type(parsed_data)}")
-        print(f"✅ Skills count: {len(parsed_data.get('skills', {}))}")
-        
-        # Now safely use it
         if parsed_data.get('skills'):
             all_skills = []
             for category, skills in parsed_data['skills'].items():
@@ -713,7 +887,7 @@ def register_routes(app):
                 elif isinstance(skills, str):
                     all_skills.append(skills)
             
-            job_matches = SkillAnalyzer.get_job_recommendations(all_skills)
+            job_matches = get_real_job_matches(all_skills)
             return render_template('job_matches.html', 
                                  user=current_user, 
                                  job_matches=job_matches,
@@ -721,14 +895,13 @@ def register_routes(app):
                                  skill_analyzer=SkillAnalyzer,
                                  no_cv=False)
         
-        # No data or empty skills
         return render_template('job_matches.html', 
                              user=current_user, 
                              job_matches=None, 
                              parsed_data={'skills': {}},
                              skill_analyzer=SkillAnalyzer, 
                              no_cv=True)
-    
+
     @app.route('/career-assistant')
     @login_required
     def career_assistant():
@@ -785,7 +958,10 @@ def register_routes(app):
         
         if parsed_data:
             for category, skills in parsed_data.get('skills', {}).items():
-                user_skills.extend(skills)
+                if isinstance(skills, list):
+                    user_skills.extend(skills)
+                elif isinstance(skills, str):
+                    user_skills.append(skills)
             experience = parsed_data.get('experience_years', 0)
             sector = SkillAnalyzer.detect_sector(user_skills)
         
@@ -794,7 +970,6 @@ def register_routes(app):
         
         return jsonify(response)
     
-    # ========== DASHBOARD ROUTE ==========
     @app.route('/dashboard')
     @login_required
     def dashboard():
@@ -825,7 +1000,6 @@ def register_routes(app):
         
         return render_template('dashboard.html', user=current_user, parsed_data=parsed_data)
     
-    # ========== PROFILE ROUTE ==========
     @app.route('/profile', methods=['GET', 'POST'])
     @login_required
     def profile():
@@ -838,6 +1012,7 @@ def register_routes(app):
             current_job = request.form.get('current_job')
             company = request.form.get('company')
             skills = request.form.get('skills')
+            university_department = request.form.get('university_department')
             
             user = User.query.get(current_user.id)
             if user:
@@ -846,6 +1021,7 @@ def register_routes(app):
                 user.bio = bio or user.bio
                 user.location = location or user.location
                 user.phone = phone or user.phone
+                user.university_department = university_department or user.university_department
                 
                 if user.profile:
                     user.profile.current_job = current_job or user.profile.current_job
@@ -867,7 +1043,6 @@ def register_routes(app):
         
         return render_template('profile.html', user=current_user)
     
-    # ========== PROFILE PICTURE UPLOAD ==========
     @app.route('/upload-profile-pic', methods=['POST'])
     @login_required
     def upload_profile_pic():
@@ -900,7 +1075,26 @@ def register_routes(app):
         
         return jsonify({'success': True, 'message': 'Profile picture updated successfully!'})
     
-    # ========== CHANGE PASSWORD ==========
+    # ========== NOTIFICATION SETTINGS ROUTE ==========
+    @app.route('/update-notification-settings', methods=['POST'])
+    @login_required
+    def update_notification_settings():
+        """Update user notification preferences"""
+        user = User.query.get(current_user.id)
+        if not user:
+            flash('User not found.', 'error')
+            return redirect(url_for('profile'))
+        
+        # Update notification settings
+        user.receive_notifications = request.form.get('receive_notifications') == 'true'
+        user.email_notifications = request.form.get('email_notifications') == 'true'
+        user.sms_notifications = request.form.get('sms_notifications') == 'true'
+        user.notification_frequency = request.form.get('notification_frequency', 'daily')
+        
+        db.session.commit()
+        flash('✅ Notification settings updated successfully!', 'success')
+        return redirect(url_for('profile'))
+    
     @app.route('/change-password', methods=['POST'])
     @login_required
     def change_password():
@@ -932,7 +1126,6 @@ def register_routes(app):
         flash('Password changed successfully!', 'success')
         return redirect(url_for('profile'))
     
-    # ========== UNIVERSITY DASHBOARD ==========
     @app.route('/university-dashboard')
     @login_required
     def university_dashboard():
@@ -950,11 +1143,13 @@ def register_routes(app):
         if not isinstance(parsed_data, dict):
             parsed_data = {}
         
+        # Get REAL analytics
         analytics = {
-            'total_students': 1247,
-            'employability_rate': 87,
-            'skill_gaps_identified': 15,
-            'partners': 32,
+            'total_students': get_real_student_count(),
+            'employability_rate': get_real_employability_rate(),
+            'skill_gaps_identified': get_real_skill_gaps_count(),
+            'partners': get_real_recruiter_count(),
+            'jobs': get_real_job_count(),
             'departments': get_department_performance(),
             'top_skill_gaps': get_top_skill_gaps(parsed_data),
             'industry_trends': get_industry_trends(),
@@ -969,7 +1164,6 @@ def register_routes(app):
                              parsed_data=parsed_data,
                              current_time=current_time)
     
-    # ========== PARSING STATUS API ==========
     @app.route('/api/parsing-status')
     @login_required
     def parsing_status():
@@ -989,14 +1183,12 @@ def register_routes(app):
     @app.route('/job-alerts')
     @login_required
     def job_alerts():
-        """Manage job alerts page"""
         alerts = JobAlert.query.filter_by(user_id=current_user.id).all()
         return render_template('job_alerts.html', user=current_user, alerts=alerts)
 
     @app.route('/job-alerts/create', methods=['GET', 'POST'])
     @login_required
     def create_job_alert():
-        """Create a new job alert"""
         if request.method == 'POST':
             keywords = request.form.get('keywords')
             job_type = request.form.get('job_type')
@@ -1028,9 +1220,24 @@ def register_routes(app):
                 db.session.rollback()
                 flash(f'Error creating alert: {str(e)}', 'error')
         
-        # Get unique categories from jobs
-        categories = db.session.query(Job.category).distinct().all()
-        categories = [c[0] for c in categories if c[0]]
+        # Use predefined categories - NO DATABASE QUERY
+        categories = [
+            'Technology',
+            'Healthcare',
+            'Law',
+            'Finance',
+            'Education',
+            'Agriculture',
+            'Business',
+            'Creative Arts',
+            'Trades',
+            'Engineering',
+            'Social Services',
+            'Customer Service',
+            'Administration',
+            'Sales',
+            'Marketing'
+        ]
         
         return render_template('create_job_alert.html', 
                              user=current_user, 
@@ -1039,7 +1246,6 @@ def register_routes(app):
     @app.route('/job-alerts/<int:alert_id>/edit', methods=['GET', 'POST'])
     @login_required
     def edit_job_alert(alert_id):
-        """Edit an existing job alert"""
         alert = JobAlert.query.get_or_404(alert_id)
         
         if alert.user_id != current_user.id:
@@ -1065,8 +1271,24 @@ def register_routes(app):
                 db.session.rollback()
                 flash(f'Error updating alert: {str(e)}', 'error')
         
-        categories = db.session.query(Job.category).distinct().all()
-        categories = [c[0] for c in categories if c[0]]
+        # Use predefined categories
+        categories = [
+            'Technology',
+            'Healthcare',
+            'Law',
+            'Finance',
+            'Education',
+            'Agriculture',
+            'Business',
+            'Creative Arts',
+            'Trades',
+            'Engineering',
+            'Social Services',
+            'Customer Service',
+            'Administration',
+            'Sales',
+            'Marketing'
+        ]
         
         return render_template('edit_job_alert.html', 
                              user=current_user, 
@@ -1076,7 +1298,6 @@ def register_routes(app):
     @app.route('/job-alerts/<int:alert_id>/delete', methods=['POST'])
     @login_required
     def delete_job_alert(alert_id):
-        """Delete a job alert"""
         alert = JobAlert.query.get_or_404(alert_id)
         
         if alert.user_id != current_user.id:
@@ -1096,7 +1317,6 @@ def register_routes(app):
     @app.route('/job-alerts/<int:alert_id>/toggle', methods=['POST'])
     @login_required
     def toggle_job_alert(alert_id):
-        """Toggle alert active status"""
         alert = JobAlert.query.get_or_404(alert_id)
         
         if alert.user_id != current_user.id:
@@ -1114,16 +1334,37 @@ def register_routes(app):
             db.session.rollback()
             return jsonify({'success': False, 'message': str(e)}), 500
 
+    @app.route('/check-alerts')
+    @login_required
+    def check_alerts_manually():
+        """Manually trigger job alert checking (for testing)"""
+        # Check if user is authenticated
+        if not current_user or not current_user.is_authenticated:
+            flash('Please log in to access this page.', 'warning')
+            return redirect(url_for('auth.login'))
+        
+        # Check if user is admin
+        if not current_user.is_admin():
+            flash('Only admins can trigger alerts manually.', 'warning')
+            return redirect(url_for('dashboard'))
+        
+        try:
+            from app.utils.job_alert_checker import check_job_alerts
+            sent, errors = check_job_alerts()
+            flash(f'✅ Check complete: {sent} notifications sent, {errors} errors', 'success')
+        except Exception as e:
+            flash(f'❌ Error checking alerts: {str(e)}', 'error')
+        
+        return redirect(url_for('admin.index'))
+
     @app.route('/api/job-alerts/check-new')
     @login_required
     def check_new_jobs_for_alerts():
-        """Check if there are new jobs for user's alerts"""
         alerts = JobAlert.query.filter_by(user_id=current_user.id, is_active=True).all()
         
         results = []
         for alert in alerts:
             last_sent = alert.last_sent_at or datetime.utcnow() - timedelta(days=7)
-            # Find matching jobs posted after last_sent
             jobs = Job.query.filter(
                 Job.status == 'published',
                 Job.posted_at > last_sent
@@ -1144,7 +1385,264 @@ def register_routes(app):
             'results': results
         })
     
-    # ========== CLEAR SESSION ==========
+    # ========== INTERVIEW PRACTICE ROUTES ==========
+    @app.route('/interview-practice')
+    @login_required
+    def interview_practice_hub():
+        if current_user.is_recruiter():
+            flash('This feature is for job seekers only.', 'warning')
+            return redirect(url_for('recruiter.dashboard'))
+        if current_user.is_admin():
+            flash('This feature is for job seekers only.', 'warning')
+            return redirect(url_for('admin.index'))
+        
+        sessions = InterviewPractice.query.filter_by(
+            user_id=current_user.id
+        ).order_by(InterviewPractice.created_at.desc()).all()
+        
+        return render_template('interview/hub.html',
+            user=current_user,
+            sessions=sessions
+        )
+
+    @app.route('/interview-practice/setup', methods=['GET', 'POST'])
+    @login_required
+    def interview_practice_setup():
+        if current_user.is_recruiter() or current_user.is_admin():
+            flash('This feature is for job seekers only.', 'warning')
+            return redirect(url_for('dashboard'))
+        
+        skills = []
+        parsed_data = get_parsed_data_from_session()
+        if parsed_data and parsed_data.get('skills'):
+            for category, skill_list in parsed_data['skills'].items():
+                if isinstance(skill_list, list):
+                    skills.extend(skill_list)
+                elif isinstance(skill_list, str):
+                    skills.append(skill_list)
+        
+        if request.method == 'POST':
+            job_title = request.form.get('job_title')
+            industry = request.form.get('industry')
+            experience_level = request.form.get('experience_level', 'mid')
+            question_type = request.form.get('question_type', 'technical')
+            num_questions = int(request.form.get('num_questions', 5))
+            
+            if not job_title:
+                flash('Please enter a job title.', 'error')
+                return redirect(url_for('interview_practice_setup'))
+            
+            try:
+                practice = InterviewPractice(
+                    user_id=current_user.id,
+                    job_title=job_title,
+                    industry=industry,
+                    experience_level=experience_level,
+                    question_type=question_type,
+                    status='in_progress'
+                )
+                db.session.add(practice)
+                db.session.flush()
+                
+                questions = generate_interview_questions(
+                    job_title=job_title,
+                    industry=industry,
+                    experience_level=experience_level,
+                    question_type=question_type,
+                    skills=skills,
+                    num_questions=num_questions
+                )
+                
+                for i, q in enumerate(questions):
+                    question = InterviewQuestion(
+                        practice_id=practice.id,
+                        question_text=q['question'],
+                        question_type=q.get('type', question_type),
+                        category=q.get('category'),
+                        difficulty=q.get('difficulty', 'medium'),
+                        order=i,
+                        expected_answer=q.get('expected_answer'),
+                        tips=q.get('tips')
+                    )
+                    db.session.add(question)
+                
+                db.session.commit()
+                
+                flash('✅ Interview practice session created!', 'success')
+                return redirect(url_for('interview_practice_session', practice_id=practice.id))
+                
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Error creating interview session: {str(e)}', 'error')
+                return redirect(url_for('interview_practice_setup'))
+        
+        return render_template('interview/setup.html',
+            user=current_user,
+            skills=skills[:10]
+        )
+
+    @app.route('/interview-practice/<int:practice_id>')
+    @login_required
+    def interview_practice_session(practice_id):
+        practice = InterviewPractice.query.filter_by(
+            id=practice_id,
+            user_id=current_user.id
+        ).first_or_404()
+        
+        questions = InterviewQuestion.query.filter_by(
+            practice_id=practice.id
+        ).order_by(InterviewQuestion.order).all()
+        
+        responses = {}
+        for q in questions:
+            response = InterviewResponse.query.filter_by(
+                practice_id=practice.id,
+                question_id=q.id
+            ).first()
+            if response:
+                responses[q.id] = response
+        
+        answered_count = sum(1 for r in responses.values() if r.answer is not None)
+        
+        return render_template('interview/session.html',
+            user=current_user,
+            practice=practice,
+            questions=questions,
+            responses=responses,
+            answered_count=answered_count,
+            now=datetime.utcnow()
+        )
+
+    @app.route('/interview-practice/<int:practice_id>/answer', methods=['POST'])
+    @login_required
+    def interview_practice_answer(practice_id):
+        practice = InterviewPractice.query.filter_by(
+            id=practice_id,
+            user_id=current_user.id
+        ).first_or_404()
+        
+        question_id = request.form.get('question_id', type=int)
+        answer = request.form.get('answer')
+        time_taken = request.form.get('time_taken', 0, type=int)
+        
+        if not answer:
+            return jsonify({'success': False, 'message': 'Please provide an answer.'}), 400
+        
+        response = InterviewResponse.query.filter_by(
+            practice_id=practice.id,
+            question_id=question_id
+        ).first()
+        
+        if not response:
+            response = InterviewResponse(
+                practice_id=practice.id,
+                question_id=question_id
+            )
+            db.session.add(response)
+        
+        response.answer = answer
+        response.time_taken = time_taken
+        response.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Answer saved!'})
+
+    @app.route('/interview-practice/<int:practice_id>/feedback', methods=['POST'])
+    @login_required
+    def interview_practice_feedback(practice_id):
+        practice = InterviewPractice.query.filter_by(
+            id=practice_id,
+            user_id=current_user.id
+        ).first_or_404()
+        
+        question_id = request.form.get('question_id', type=int)
+        
+        question = InterviewQuestion.query.filter_by(
+            id=question_id,
+            practice_id=practice.id
+        ).first_or_404()
+        
+        response = InterviewResponse.query.filter_by(
+            practice_id=practice.id,
+            question_id=question_id
+        ).first_or_404()
+        
+        if not response.answer:
+            return jsonify({'success': False, 'message': 'No answer to evaluate.'}), 400
+        
+        feedback = get_interview_feedback(
+            question=question.question_text,
+            answer=response.answer,
+            job_title=practice.job_title,
+            question_type=question.question_type
+        )
+        
+        response.feedback = feedback.get('feedback')
+        response.score = feedback.get('score', 0)
+        response.strengths = feedback.get('strengths', [])
+        response.improvements = feedback.get('improvements', [])
+        response.key_points = feedback.get('key_points', [])
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'feedback': feedback
+        })
+
+    @app.route('/interview-practice/<int:practice_id>/complete', methods=['POST'])
+    @login_required
+    def interview_practice_complete(practice_id):
+        practice = InterviewPractice.query.filter_by(
+            id=practice_id,
+            user_id=current_user.id
+        ).first_or_404()
+        
+        responses = InterviewResponse.query.filter_by(practice_id=practice.id).all()
+        if responses:
+            scores = [r.score for r in responses if r.score > 0]
+            if scores:
+                practice.score = sum(scores) / len(scores)
+        
+        practice.status = 'completed'
+        practice.completed_at = datetime.utcnow()
+        db.session.commit()
+        
+        flash('✅ Interview practice completed!', 'success')
+        return redirect(url_for('interview_practice_summary', practice_id=practice.id))
+
+    @app.route('/interview-practice/<int:practice_id>/summary')
+    @login_required
+    def interview_practice_summary(practice_id):
+        practice = InterviewPractice.query.filter_by(
+            id=practice_id,
+            user_id=current_user.id
+        ).first_or_404()
+        
+        responses = InterviewResponse.query.filter_by(
+            practice_id=practice.id
+        ).all()
+        
+        return render_template('interview/summary.html',
+            user=current_user,
+            practice=practice,
+            responses=responses
+        )
+
+    @app.route('/interview-practice/<int:practice_id>/delete', methods=['POST'])
+    @login_required
+    def interview_practice_delete(practice_id):
+        practice = InterviewPractice.query.filter_by(
+            id=practice_id,
+            user_id=current_user.id
+        ).first_or_404()
+        
+        db.session.delete(practice)
+        db.session.commit()
+        
+        flash('Interview session deleted.', 'success')
+        return redirect(url_for('interview_practice_hub'))
+    
     @app.route('/clear-session')
     @login_required
     def clear_session():
@@ -1154,6 +1652,198 @@ def register_routes(app):
         return redirect(url_for('dashboard'))
 
 
+# ========== INTERVIEW HELPER FUNCTIONS ==========
+
+def generate_interview_questions(job_title, industry, experience_level, question_type, skills, num_questions=5):
+    """Generate interview questions using AI"""
+    questions = []
+    
+    prompt = f"""Generate {num_questions} interview questions for a {question_type} interview for a {job_title} position.
+
+Industry: {industry or 'General'}
+Experience Level: {experience_level}
+Skills: {', '.join(skills[:5]) if skills else 'General'}
+
+For each question, provide:
+1. The question text
+2. Category (e.g., Python, Leadership, Problem Solving)
+3. Difficulty (easy, medium, hard)
+4. Expected answer (brief)
+5. Tips for answering
+
+Return as a JSON array with fields: question, type, category, difficulty, expected_answer, tips"""
+
+    try:
+        assistant = OpenAIAssistant()
+        response = assistant.get_response(prompt, skills, 0, 'interview')
+        answer = response.get('answer', '')
+        
+        try:
+            import json
+            json_start = answer.find('[')
+            json_end = answer.rfind(']') + 1
+            if json_start != -1 and json_end > json_start:
+                json_str = answer[json_start:json_end]
+                questions = json.loads(json_str)
+            else:
+                questions = generate_fallback_questions(job_title, question_type, num_questions)
+        except:
+            questions = generate_fallback_questions(job_title, question_type, num_questions)
+            
+    except Exception as e:
+        print(f"AI question generation error: {e}")
+        questions = generate_fallback_questions(job_title, question_type, num_questions)
+    
+    return questions
+
+
+def generate_fallback_questions(job_title, question_type, num_questions):
+    """Generate fallback questions if AI is unavailable"""
+    questions = []
+    
+    technical_questions = {
+        'data analyst': [
+            "What is the difference between INNER JOIN and LEFT JOIN in SQL?",
+            "How do you handle missing data in a dataset?",
+            "Explain the difference between correlation and causation.",
+            "What is a pivot table and when would you use it?",
+            "How would you clean a dataset with inconsistent formats?",
+            "What is the purpose of data normalization?"
+        ],
+        'software engineer': [
+            "Explain the difference between a class and an object.",
+            "What is the time complexity of a binary search?",
+            "How does garbage collection work?",
+            "What is the difference between GET and POST requests?",
+            "Explain the SOLID principles.",
+            "What is a design pattern? Give an example."
+        ],
+        'product manager': [
+            "How would you prioritize features for a new product?",
+            "What is a product roadmap?",
+            "Explain the importance of user research.",
+            "How do you measure product success?",
+            "What is the difference between product and project management?",
+            "How would you handle a feature request that doesn't align with the product vision?"
+        ],
+        'data scientist': [
+            "Explain the bias-variance tradeoff.",
+            "What is the difference between classification and regression?",
+            "How do you evaluate a machine learning model?",
+            "What is the difference between bagging and boosting?",
+            "Explain the concept of feature engineering.",
+            "What is cross-validation and why is it important?"
+        ]
+    }
+    
+    behavioral_questions = [
+        "Tell me about a time you had to work under pressure.",
+        "Describe a situation where you had to resolve a conflict with a coworker.",
+        "How do you handle criticism?",
+        "Give an example of a time you went above and beyond for a project.",
+        "Describe a time when you had to learn something new quickly.",
+        "Tell me about a failure and what you learned from it.",
+        "How do you prioritize tasks when everything is urgent?",
+        "Describe a situation where you demonstrated leadership."
+    ]
+    
+    general_questions = [
+        "Tell me about yourself.",
+        "Why do you want to work in this industry?",
+        "Where do you see yourself in 5 years?",
+        "What are your strengths and weaknesses?",
+        "Why should we hire you?",
+        "Tell me about a project you're proud of."
+    ]
+    
+    if question_type == 'technical':
+        job_lower = job_title.lower()
+        for title, qs in technical_questions.items():
+            if title in job_lower:
+                base_questions = qs
+                break
+        else:
+            base_questions = technical_questions.get('software engineer', [])
+        
+        questions = base_questions[:num_questions]
+        if len(questions) < num_questions:
+            import random
+            remaining = num_questions - len(questions)
+            questions.extend(random.sample(behavioral_questions, min(remaining, len(behavioral_questions))))
+    
+    elif question_type == 'behavioral':
+        import random
+        questions = random.sample(behavioral_questions, min(num_questions, len(behavioral_questions)))
+    else:
+        import random
+        questions = random.sample(general_questions, min(num_questions, len(general_questions)))
+    
+    formatted = []
+    for i, q in enumerate(questions):
+        formatted.append({
+            'question': q,
+            'type': question_type,
+            'category': 'General' if question_type == 'general' else 'Technical',
+            'difficulty': 'medium',
+            'expected_answer': 'Provide a clear, concise, and structured response.',
+            'tips': 'Be specific, use examples, and stay focused on the question.'
+        })
+    
+    return formatted
+
+
+def get_interview_feedback(question, answer, job_title, question_type):
+    """Get AI feedback on an interview answer"""
+    prompt = f"""You are an expert interview coach. Provide feedback on this interview answer.
+
+Job Title: {job_title}
+Question Type: {question_type}
+Question: {question}
+Candidate's Answer: {answer}
+
+Provide feedback in the following format (JSON):
+{{
+    "feedback": "Overall feedback on the answer",
+    "score": 0-100,
+    "strengths": ["Strength 1", "Strength 2"],
+    "improvements": ["Improvement 1", "Improvement 2"],
+    "key_points": ["Key point 1", "Key point 2"]
+}}"""
+
+    try:
+        assistant = OpenAIAssistant()
+        response = assistant.get_response(prompt, [], 0, 'interview_coach')
+        answer_text = response.get('answer', '')
+        
+        try:
+            import json
+            json_start = answer_text.find('{')
+            json_end = answer_text.rfind('}') + 1
+            if json_start != -1 and json_end > json_start:
+                json_str = answer_text[json_start:json_end]
+                return json.loads(json_str)
+        except:
+            pass
+        
+        return {
+            'feedback': 'Good effort! Consider providing more specific examples and structuring your answer clearly.',
+            'score': 75,
+            'strengths': ['You addressed the question', 'Good effort'],
+            'improvements': ['Add more specific examples', 'Structure your answer more clearly'],
+            'key_points': ['Answer the question directly', 'Use the STAR method']
+        }
+        
+    except Exception as e:
+        print(f"Feedback generation error: {e}")
+        return {
+            'feedback': 'Good effort! Review the tips and try again.',
+            'score': 70,
+            'strengths': ['You attempted the question'],
+            'improvements': ['Provide more detail', 'Use examples'],
+            'key_points': ['Answer directly', 'Be specific']
+        }
+
+
 def create_app():
     """Application factory pattern"""
     app = Flask(__name__, 
@@ -1161,38 +1851,28 @@ def create_app():
                 static_url_path='/static')
     app.config.from_object('config.Config')
     
-    # Initialize Flask-Mail
     mail.init_app(app)
     app.mail = mail
     
-    # Configure upload
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     
-    # Set session configuration
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
     app.config['PERMANENT_SESSION_LIFETIME'] = 3600
     
-    # Initialize extensions
     initialize_extensions(app)
     
-    # Initialize Flask-Migrate
     migrate = Migrate(app, db)
     
-    # Configure login manager
     configure_login_manager()
     
-    # Initialize OAuth
     from app.utils.oauth import configure_oauth
     configure_oauth(app)
     
-    # Register blueprints
     register_blueprints(app)
     
-    # Register routes
     register_routes(app)
     
-    # Register blueprints
     app.register_blueprint(recruiter_bp)
     app.register_blueprint(admin_bp) 
     app.register_blueprint(jobs_bp) 

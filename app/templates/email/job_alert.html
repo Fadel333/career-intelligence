@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Job Alert</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 10px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header { text-align: center; border-bottom: 2px solid #4F46E5; padding-bottom: 20px; }
+        .header h1 { color: #4F46E5; margin: 0; }
+        .job-card { background: #f8f9fa; border-radius: 8px; padding: 15px; margin: 15px 0; border-left: 4px solid #4F46E5; }
+        .job-title { font-size: 18px; font-weight: bold; color: #1a202c; }
+        .job-company { color: #4a5568; }
+        .job-location { color: #718096; font-size: 14px; }
+        .job-match { color: #48bb78; font-weight: bold; font-size: 14px; }
+        .btn { display: inline-block; background: #4F46E5; color: white; padding: 10px 25px; border-radius: 5px; text-decoration: none; margin-top: 10px; }
+        .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #a0aec0; font-size: 12px; }
+        .badge { display: inline-block; background: #48bb78; color: white; padding: 2px 10px; border-radius: 20px; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔔 New Job Matches</h1>
+            <p style="color: #718096;">Hi {{ user.fullname }},</p>
+        </div>
+        
+        <p>We found <strong>{{ jobs|length }}</strong> new job{% if jobs|length > 1 %}s{% endif %} that match your alert preferences:</p>
+        
+        <div style="background: #ebf8ff; padding: 10px 15px; border-radius: 8px; margin: 15px 0;">
+            <p style="margin: 0; color: #2b6cb0;">
+                <strong>Alert:</strong> 
+                {% if alert.keywords %}Keywords: "{{ alert.keywords }}" {% endif %}
+                {% if alert.location %}Location: {{ alert.location }} {% endif %}
+                {% if alert.job_type %}Type: {{ alert.job_type }} {% endif %}
+            </p>
+        </div>
+        
+        {% for job in jobs %}
+        <div class="job-card">
+            <div class="job-title">{{ job.title }}</div>
+            <div class="job-company">🏢 {{ job.company }}</div>
+            <div class="job-location">📍 {{ job.location or 'Remote' }}</div>
+            {% if job.match_score %}
+            <div class="job-match">✅ {{ job.match_score }}% match</div>
+            {% endif %}
+            <a href="{{ url_for('jobs.job_detail', job_id=job.id, _external=True) }}" class="btn">View Job →</a>
+        </div>
+        {% endfor %}
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="{{ url_for('job_alerts', _external=True) }}" style="color: #4F46E5;">Manage your alerts</a> | 
+            <a href="{{ url_for('job_matches', _external=True) }}" style="color: #4F46E5;">View all matches</a>
+        </div>
+        
+        <div class="footer">
+            <p>You received this email because you have a job alert set up on FADTECH Labs Career Intelligence System.</p>
+            <p>To stop receiving these emails, <a href="{{ url_for('job_alerts', _external=True) }}" style="color: #4F46E5;">manage your alerts</a>.</p>
+            <p>&copy; 2026 FADTECH Labs. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

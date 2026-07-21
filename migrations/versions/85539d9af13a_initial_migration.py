@@ -1,8 +1,8 @@
 """Initial migration
 
-Revision ID: 67f6ace39bd6
+Revision ID: 85539d9af13a
 Revises: 
-Create Date: 2026-07-18 00:24:23.666654
+Create Date: 2026-07-20 04:27:50.785436
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '67f6ace39bd6'
+revision = '85539d9af13a'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -44,6 +44,7 @@ def upgrade():
     sa.Column('recruiter_commission_rate', sa.Integer(), nullable=True),
     sa.Column('total_earnings', sa.Float(), nullable=True),
     sa.Column('total_placements', sa.Integer(), nullable=True),
+    sa.Column('retention_days', sa.Integer(), nullable=True),
     sa.PrimaryKeyConstraint('id')
     )
     with op.batch_alter_table('users', schema=None) as batch_op:
@@ -75,6 +76,24 @@ def upgrade():
     with op.batch_alter_table('candidates', schema=None) as batch_op:
         batch_op.create_index(batch_op.f('ix_candidates_email'), ['email'], unique=False)
 
+    op.create_table('job_alerts',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('keywords', sa.String(length=500), nullable=True),
+    sa.Column('job_type', sa.String(length=50), nullable=True),
+    sa.Column('location', sa.String(length=200), nullable=True),
+    sa.Column('salary_min', sa.Float(), nullable=True),
+    sa.Column('salary_max', sa.Float(), nullable=True),
+    sa.Column('category', sa.String(length=100), nullable=True),
+    sa.Column('experience_level', sa.String(length=50), nullable=True),
+    sa.Column('frequency', sa.String(length=20), nullable=True),
+    sa.Column('is_active', sa.Boolean(), nullable=True),
+    sa.Column('last_sent_at', sa.DateTime(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('profiles',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
@@ -106,6 +125,7 @@ def upgrade():
     sa.Column('location', sa.String(length=255), nullable=True),
     sa.Column('auto_approve_candidates', sa.Boolean(), nullable=True),
     sa.Column('min_match_percentage', sa.Float(), nullable=True),
+    sa.Column('retention_days', sa.Integer(), nullable=True),
     sa.Column('total_candidates_reviewed', sa.Integer(), nullable=True),
     sa.Column('total_jobs_posted', sa.Integer(), nullable=True),
     sa.Column('active_jobs', sa.Integer(), nullable=True),
@@ -154,6 +174,15 @@ def upgrade():
     sa.ForeignKeyConstraint(['recruiter_id'], ['recruiter_profiles.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('job_alert_logs',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('alert_id', sa.Integer(), nullable=False),
+    sa.Column('job_id', sa.Integer(), nullable=False),
+    sa.Column('sent_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['alert_id'], ['job_alerts.id'], ),
+    sa.ForeignKeyConstraint(['job_id'], ['jobs.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('job_applications',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('job_id', sa.Integer(), nullable=False),
@@ -169,6 +198,8 @@ def upgrade():
     sa.Column('applied_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.Column('reviewed_at', sa.DateTime(), nullable=True),
+    sa.Column('expires_at', sa.DateTime(), nullable=True),
+    sa.Column('is_deleted', sa.Boolean(), nullable=True),
     sa.ForeignKeyConstraint(['job_id'], ['jobs.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -219,9 +250,11 @@ def downgrade():
         batch_op.drop_index(batch_op.f('ix_job_applications_applicant_email'))
 
     op.drop_table('job_applications')
+    op.drop_table('job_alert_logs')
     op.drop_table('jobs')
     op.drop_table('recruiter_profiles')
     op.drop_table('profiles')
+    op.drop_table('job_alerts')
     with op.batch_alter_table('candidates', schema=None) as batch_op:
         batch_op.drop_index(batch_op.f('ix_candidates_email'))
 

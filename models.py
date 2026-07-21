@@ -85,6 +85,12 @@ class User(UserMixin, db.Model):
     # Application retention settings
     retention_days = db.Column(db.Integer, default=30)  # Days to keep applications
     
+    # ========== NOTIFICATION PREFERENCES ==========
+    receive_notifications = db.Column(db.Boolean, default=True)
+    email_notifications = db.Column(db.Boolean, default=True)
+    sms_notifications = db.Column(db.Boolean, default=False)
+    notification_frequency = db.Column(db.String(20), default='daily')  # 'realtime', 'daily', 'weekly'
+    
     # Relationships - ALL BACKREF NAMES ARE UNIQUE
     profile = db.relationship('Profile', backref='user_profile', uselist=False, cascade='all, delete-orphan')
     
@@ -183,7 +189,12 @@ class User(UserMixin, db.Model):
             'company_name': self.company_name,
             'total_earnings': self.total_earnings,
             'total_placements': self.total_placements,
-            'retention_days': self.retention_days
+            'retention_days': self.retention_days,
+            # Notification preferences
+            'receive_notifications': self.receive_notifications,
+            'email_notifications': self.email_notifications,
+            'sms_notifications': self.sms_notifications,
+            'notification_frequency': self.notification_frequency
         }
 
 
@@ -750,7 +761,127 @@ class JobAlertLog(db.Model):
     
     def __repr__(self):
         return f'<JobAlertLog Alert {self.alert_id} -> Job {self.job_id}>'
+# ============================================
+# INTERVIEW PRACTICE MODELS
+# ============================================
 
+class InterviewPractice(db.Model):
+    """Interview practice sessions for users"""
+    __tablename__ = 'interview_practices'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # Session details
+    job_title = db.Column(db.String(255), nullable=False)
+    industry = db.Column(db.String(100), nullable=True)
+    experience_level = db.Column(db.String(50), default='mid')
+    question_type = db.Column(db.String(50), default='technical')
+    
+    # Status
+    status = db.Column(db.String(50), default='in_progress')
+    score = db.Column(db.Float, default=0.0)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships - Clean approach with unique backrefs
+    user = db.relationship('User', backref='interview_practices')
+    questions = db.relationship('InterviewQuestion', backref='interview_practice', lazy=True, cascade='all, delete-orphan')
+    responses = db.relationship('InterviewResponse', backref='interview_practice_responses', lazy=True, cascade='all, delete-orphan')
+    
+    def __repr__(self):
+        return f'<InterviewPractice {self.job_title} - User {self.user_id}>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'job_title': self.job_title,
+            'industry': self.industry,
+            'experience_level': self.experience_level,
+            'question_type': self.question_type,
+            'status': self.status,
+            'score': self.score,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'total_questions': len(self.questions) if self.questions else 0,
+            'questions_answered': sum(1 for r in self.responses if r.answer is not None) if self.responses else 0
+        }
+
+
+class InterviewQuestion(db.Model):
+    """Interview questions for practice"""
+    __tablename__ = 'interview_questions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    practice_id = db.Column(db.Integer, db.ForeignKey('interview_practices.id'), nullable=False)
+    
+    # Question details
+    question_text = db.Column(db.Text, nullable=False)
+    question_type = db.Column(db.String(50), default='technical')
+    category = db.Column(db.String(100), nullable=True)
+    difficulty = db.Column(db.String(20), default='medium')
+    order = db.Column(db.Integer, default=0)
+    
+    # Expected answer (for reference)
+    expected_answer = db.Column(db.Text, nullable=True)
+    tips = db.Column(db.Text, nullable=True)
+    
+    # Relationships - Use back_populates for clean bidirectional relationships
+    practice = db.relationship('InterviewPractice', back_populates='questions')
+    response = db.relationship('InterviewResponse', back_populates='question', uselist=False, cascade='all, delete-orphan')
+    
+    def __repr__(self):
+        return f'<InterviewQuestion {self.id} - {self.question_text[:50]}...>'
+
+
+class InterviewResponse(db.Model):
+    """User's response to an interview question"""
+    __tablename__ = 'interview_responses'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    practice_id = db.Column(db.Integer, db.ForeignKey('interview_practices.id'), nullable=False)
+    question_id = db.Column(db.Integer, db.ForeignKey('interview_questions.id'), nullable=False)
+    
+    # Response details
+    answer = db.Column(db.Text, nullable=True)
+    audio_url = db.Column(db.String(500), nullable=True)
+    time_taken = db.Column(db.Integer, default=0)
+    
+    # AI Feedback
+    feedback = db.Column(db.Text, nullable=True)
+    score = db.Column(db.Float, default=0.0)
+    strengths = db.Column(db.JSON, default=list)
+    improvements = db.Column(db.JSON, default=list)
+    key_points = db.Column(db.JSON, default=list)
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships - Clean bidirectional relationships
+    practice = db.relationship('InterviewPractice', back_populates='responses')
+    question = db.relationship('InterviewQuestion', back_populates='response')
+    
+    def __repr__(self):
+        return f'<InterviewResponse {self.id} - Score: {self.score}>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'question_id': self.question_id,
+            'question_text': self.question.question_text if self.question else None,
+            'answer': self.answer,
+            'time_taken': self.time_taken,
+            'feedback': self.feedback,
+            'score': self.score,
+            'strengths': self.strengths,
+            'improvements': self.improvements,
+            'key_points': self.key_points,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
 
 # ============================================
 # USER LOADER

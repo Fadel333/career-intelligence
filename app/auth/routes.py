@@ -19,6 +19,7 @@ def register():
         password = request.form.get("password")
         confirm_password = request.form.get("confirm_password")
         user_type = request.form.get("user_type", "student")
+        company_name = request.form.get("company_name", "").strip()
         terms = request.form.get("terms")
         
         # Validation
@@ -36,6 +37,11 @@ def register():
         
         if not terms:
             flash("You must agree to the Terms of Service.", "error")
+            return redirect(url_for("auth.register"))
+        
+        # For recruiters, company name is required
+        if user_type == 'recruiter' and not company_name:
+            flash("Company name is required for recruiters.", "error")
             return redirect(url_for("auth.register"))
         
         # Check if user exists
@@ -67,15 +73,22 @@ def register():
             if user_type == 'recruiter':
                 recruiter_profile = RecruiterProfile(
                     user_id=user.id,
-                    company_name=name + "'s Company",
+                    company_name=company_name or f"{name}'s Company",
                     min_match_percentage=70.0,
                     verification_status='pending'
                 )
                 db.session.add(recruiter_profile)
+                
+                # Also set company_name in User model
+                user.company_name = company_name or f"{name}'s Company"
             
             db.session.commit()
 
-            send_welcome_email(user)
+            # Send welcome email (skip if email service not configured)
+            try:
+                send_welcome_email(user)
+            except Exception as e:
+                print(f"Welcome email error: {e}")
             
             flash("Account created successfully! Welcome!", "success")
             
@@ -84,6 +97,7 @@ def register():
             
             # Redirect based on user type
             if user_type == 'recruiter':
+                flash("Please complete your recruiter profile setup.", "info")
                 return redirect(url_for('recruiter.setup_profile'))
             elif user_type == 'university':
                 return redirect(url_for('university_dashboard'))
@@ -139,6 +153,7 @@ def login():
     
     return render_template("login.html")
 
+
 @auth_bp.route("/logout")
 @login_required
 def logout():
@@ -161,8 +176,12 @@ def google_login():
         flash('Google OAuth is not configured. Please contact support.', 'error')
         return redirect(url_for('auth.login'))
     
+    # Generate a nonce and store it in the session
+    nonce = secrets.token_urlsafe(16)
+    session['oauth_nonce'] = nonce
+    
     redirect_uri = url_for('auth.google_authorize', _external=True)
-    return oauth.google.authorize_redirect(redirect_uri)
+    return oauth.google.authorize_redirect(redirect_uri, nonce=nonce)
 
 
 @auth_bp.route('/authorize/google')
@@ -174,7 +193,14 @@ def google_authorize():
     
     try:
         token = oauth.google.authorize_access_token()
-        user_info = oauth.google.parse_id_token(token)
+        
+        # Use userinfo endpoint (most reliable method)
+        resp = oauth.google.get('https://www.googleapis.com/oauth2/v3/userinfo', token=token)
+        user_info = resp.json()
+        
+        if not user_info or not user_info.get('email'):
+            flash('Could not get user information from Google.', 'error')
+            return redirect(url_for('auth.login'))
         
         profile = {
             'email': user_info.get('email'),
@@ -187,6 +213,7 @@ def google_authorize():
         return handle_oauth_callback('Google', profile)
         
     except Exception as e:
+        print(f"Google OAuth error: {e}")
         flash(f'Google authentication failed: {str(e)}', 'error')
         return redirect(url_for('auth.login'))
 

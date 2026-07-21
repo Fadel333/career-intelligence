@@ -9,9 +9,10 @@
         <p class="text-white/60">AI-powered job recommendations based on your skills</p>
     </div>
 
-    {% set parsed_data = session.get('parsed_cv', None) %}
+    <!-- ✅ Check if parsed_data exists and is a dict -->
+    {% set has_cv = parsed_data is defined and parsed_data is mapping and parsed_data.get('skills') %}
     
-    {% if not parsed_data %}
+    {% if not has_cv %}
     <!-- No CV Uploaded Yet -->
     <div class="glass-card p-12 text-center" data-aos="fade-up">
         <i class="fas fa-cloud-upload-alt text-6xl text-white/30 mb-4"></i>

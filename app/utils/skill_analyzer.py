@@ -697,3 +697,47 @@ class SkillAnalyzer:
         recommendations.sort(key=lambda x: x['match_percentage'], reverse=True)
         
         return recommendations[:5]
+
+@staticmethod
+def extract_skills_from_text(text):
+    """Extract skills from text using the existing skill extraction logic"""
+    if not text:
+        return []
+    
+    from app.utils.hybrid_parser import HybridParser
+    parser = HybridParser()
+    
+    # Use the parser's skill extraction
+    result = parser.extract_skills(text)
+    
+    if result and isinstance(result, dict):
+        all_skills = []
+        for category, skills in result.items():
+            if isinstance(skills, list):
+                all_skills.extend(skills)
+            elif isinstance(skills, str):
+                all_skills.append(skills)
+        return all_skills
+    
+    return []  
+     
+@staticmethod
+def extract_skills_from_text(text):
+    """Extract skills from text using hybrid parser"""
+    if not text:
+        return []
+    
+    from app.utils.hybrid_parser import HybridParser
+    parser = HybridParser()
+    
+    result = parser.extract_skills(text)
+    
+    all_skills = []
+    if result and isinstance(result, dict):
+        for category, skills in result.items():
+            if isinstance(skills, list):
+                all_skills.extend(skills)
+            elif isinstance(skills, str):
+                all_skills.append(skills)
+    
+    return all_skills

@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Interview Practice - FADTECH Labs{% endblock %}
+
+{% block content %}
+<section class="max-w-7xl mx-auto px-6 py-8">
+    <div class="flex justify-between items-center mb-8" data-aos="fade-up">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">🎯 Interview Practice</h1>
+            <p class="text-white/60">Practice interviews with AI-powered feedback</p>
+        </div>
+        <a href="{{ url_for('interview_practice_setup') }}" class="btn-primary px-6 py-3 rounded-full text-white font-semibold inline-flex items-center gap-2">
+            <i class="fas fa-plus"></i> New Session
+        </a>
+    </div>
+
+    {% if sessions %}
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" data-aos="fade-up">
+            {% for session in sessions %}
+            <div class="glass-card p-6 hover:border-teal-400/30 transition-all">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 class="text-xl font-bold text-white">{{ session.job_title }}</h3>
+                        <div class="flex flex-wrap gap-2 mt-1">
+                            <span class="text-white/50 text-sm">
+                                <i class="fas fa-briefcase mr-1"></i> {{ session.question_type|title }}
+                            </span>
+                            <span class="text-white/50 text-sm">
+                                <i class="fas fa-chart-line mr-1"></i> {{ session.experience_level|title }}
+                            </span>
+                        </div>
+                    </div>
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold
+                        {% if session.status == 'completed' %}bg-green-500/20 text-green-400
+                        {% elif session.status == 'in_progress' %}bg-yellow-500/20 text-yellow-400
+                        {% else %}bg-gray-500/20 text-gray-400{% endif %}">
+                        {{ session.status|title }}
+                    </span>
+                </div>
+                
+                <div class="space-y-2 text-sm text-white/60">
+                    <div class="flex justify-between">
+                        <span>Questions</span>
+                        <span>{{ session.total_questions }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Answered</span>
+                        <span>{{ session.questions_answered }}</span>
+                    </div>
+                    {% if session.score > 0 %}
+                    <div class="flex justify-between">
+                        <span>Score</span>
+                        <span class="text-teal-400 font-bold">{{ session.score|round(0) }}%</span>
+                    </div>
+                    {% endif %}
+                    <div class="flex justify-between">
+                        <span>Date</span>
+                        <span>{{ session.created_at.strftime('%b %d, %Y') }}</span>
+                    </div>
+                </div>
+                
+                <div class="flex gap-2 mt-4 pt-4 border-t border-white/10">
+                    {% if session.status == 'in_progress' %}
+                        <a href="{{ url_for('interview_practice_session', practice_id=session.id) }}" 
+                           class="flex-1 btn-primary text-center py-2 rounded-full text-white text-sm font-semibold">
+                            <i class="fas fa-play mr-1"></i> Continue
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('interview_practice_summary', practice_id=session.id) }}" 
+                           class="flex-1 btn-outline text-center py-2 rounded-full text-white text-sm font-semibold">
+                            <i class="fas fa-chart-bar mr-1"></i> View Results
+                        </a>
+                    {% endif %}
+                    <form method="POST" action="{{ url_for('interview_practice_delete', practice_id=session.id) }}" 
+                          onsubmit="return confirm('Delete this session?')">
+                        <button type="submit" class="bg-red-500/20 hover:bg-red-500/30 px-3 py-2 rounded-full text-red-400 text-sm">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="glass-card p-12 text-center" data-aos="fade-up">
+            <i class="fas fa-microphone text-6xl text-white/30 mb-4"></i>
+            <h2 class="text-2xl font-bold text-white mb-2">No Practice Sessions</h2>
+            <p class="text-white/60 mb-6">Start your first interview practice session</p>
+            <a href="{{ url_for('interview_practice_setup') }}" class="btn-primary px-8 py-3 rounded-full text-white font-semibold inline-flex items-center gap-2">
+                <i class="fas fa-plus"></i> Start Practice
+            </a>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

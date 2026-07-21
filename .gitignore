@@ -19,3 +19,5 @@ static/verification_docs/
 "check_user.py" 
 "setup_admin.py" 
 ".env" 
+*.yaml
+config.py

@@ -23,7 +23,9 @@ def configure_oauth(app):
     github_client_id = os.environ.get('GITHUB_CLIENT_ID', '')
     github_client_secret = os.environ.get('GITHUB_CLIENT_SECRET', '')
     
-    # Google OAuth
+    # ============================================================
+    # GOOGLE OAUTH - FIXED
+    # ============================================================
     if google_client_id and google_client_secret:
         oauth.register(
             name='google',
@@ -32,10 +34,15 @@ def configure_oauth(app):
             server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
             client_kwargs={
                 'scope': 'openid email profile'
-            }
+            },
+            # ✅ FIX: Remove authorize_params - let the route handle nonce
+            redirect_uri=os.environ.get('GOOGLE_REDIRECT_URI', 'http://localhost:5000/auth/authorize/google')
         )
+        print("✅ Google OAuth configured")
     
-    # LinkedIn OAuth
+    # ============================================================
+    # LINKEDIN OAUTH
+    # ============================================================
     if linkedin_client_id and linkedin_client_secret:
         oauth.register(
             name='linkedin',
@@ -46,10 +53,14 @@ def configure_oauth(app):
             api_base_url='https://api.linkedin.com/v2/',
             client_kwargs={
                 'scope': 'openid profile email'
-            }
+            },
+            redirect_uri=os.environ.get('LINKEDIN_REDIRECT_URI', 'http://localhost:5000/auth/authorize/linkedin')
         )
+        print("✅ LinkedIn OAuth configured")
     
-    # GitHub OAuth
+    # ============================================================
+    # GITHUB OAUTH
+    # ============================================================
     if github_client_id and github_client_secret:
         oauth.register(
             name='github',
@@ -60,8 +71,10 @@ def configure_oauth(app):
             api_base_url='https://api.github.com/',
             client_kwargs={
                 'scope': 'user:email'
-            }
+            },
+            redirect_uri=os.environ.get('GITHUB_REDIRECT_URI', 'http://localhost:5000/auth/authorize/github')
         )
+        print("✅ GitHub OAuth configured")
     
     return oauth
 
@@ -95,7 +108,7 @@ def handle_oauth_login(provider, profile):
             email=email,
             password=hashed_password,
             user_type='student',
-            is_verified=True  # OAuth users are pre-verified
+            is_verified=True
         )
         
         try:
