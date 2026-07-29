@@ -21,4 +21,4 @@ ENV FLASK_APP=run.py
 ENV PYTHONUNBUFFERED=1
 
 # Run the application
-CMD ["gunicorn", "run:app"]
+CMD ["gunicorn", "wsgi:app"]
