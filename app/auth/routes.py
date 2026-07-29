@@ -7,6 +7,7 @@ from extensions import db
 from app.utils.oauth import oauth
 from app.utils.email import send_welcome_email
 import secrets
+from datetime import datetime, timedelta
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -312,3 +313,85 @@ def handle_oauth_callback(provider, profile):
     """Handle OAuth callback for all providers"""
     from app.utils.oauth import handle_oauth_login
     return handle_oauth_login(provider, profile)
+
+# app/auth/routes.py
+
+@auth_bp.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    """Request password reset"""
+    if request.method == 'POST':
+        email = request.form.get('email')
+        
+        if not email:
+            flash('Please enter your email address.', 'error')
+            return redirect(url_for('auth.forgot_password'))
+        
+        user = User.query.filter_by(email=email).first()
+        
+        # Always show success message even if user doesn't exist (security best practice)
+        if not user:
+            flash('If an account exists with this email, you will receive a password reset link.', 'success')
+            return redirect(url_for('auth.login'))
+        
+        # Generate reset token
+        import secrets
+        token = secrets.token_urlsafe(32)
+        
+        # Set expiry (24 hours from now)
+        user.reset_token = token
+        user.reset_token_expiry = datetime.utcnow() + timedelta(hours=24)
+        
+        db.session.commit()
+        
+        # Send reset email
+        try:
+            from app.utils.email import send_password_reset_email
+            send_password_reset_email(user, token)
+            flash('Password reset link sent to your email.', 'success')
+        except Exception as e:
+            print(f"Email error: {e}")
+            flash('We could not send the reset email. Please try again later.', 'error')
+        
+        return redirect(url_for('auth.login'))
+    
+    return render_template('forgot_password.html')
+
+
+@auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    """Reset password using token"""
+    user = User.query.filter_by(reset_token=token).first()
+    
+    if not user:
+        flash('Invalid or expired reset token.', 'error')
+        return redirect(url_for('auth.forgot_password'))
+    
+    # Check if token expired
+    if user.reset_token_expiry and user.reset_token_expiry < datetime.utcnow():
+        flash('Password reset link has expired. Please request a new one.', 'error')
+        return redirect(url_for('auth.forgot_password'))
+    
+    if request.method == 'POST':
+        password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')
+        
+        if not password or len(password) < 8:
+            flash('Password must be at least 8 characters long.', 'error')
+            return render_template('reset_password.html', token=token)
+        
+        if password != confirm_password:
+            flash('Passwords do not match.', 'error')
+            return render_template('reset_password.html', token=token)
+        
+        # Update password
+        from werkzeug.security import generate_password_hash
+        user.password = generate_password_hash(password)
+        user.reset_token = None
+        user.reset_token_expiry = None
+        
+        db.session.commit()
+        
+        flash('Password reset successfully! Please login with your new password.', 'success')
+        return redirect(url_for('auth.login'))
+    
+    return render_template('reset_password.html', token=token)

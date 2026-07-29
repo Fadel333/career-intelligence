@@ -7,17 +7,17 @@
     <!-- Header -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div class="flex items-center gap-4">
-            <a href="{{ url_for('jobs.recruiter_applications') }}" class="text-[#0f172a] hover:text-[#ef4444] transition">
+            <a href="{{ url_for('jobs.recruiter_applications') }}" class="text-white/60 hover:text-teal-400 transition">
                 <i class="fas fa-arrow-left"></i>
             </a>
             <div>
-                <h1 class="text-3xl font-bold text-[#0f172a]">Application Details</h1>
-                <p class="text-[#475569]">Review {{ application.applicant_name }}'s application</p>
+                <h1 class="text-3xl font-bold text-white">Application Details</h1>
+                <p class="text-white/60">Review {{ application.applicant_name }}'s application</p>
             </div>
         </div>
         <div class="flex gap-3">
             <a href="mailto:{{ application.applicant_email }}" 
-               class="btn-secondary px-4 py-2 rounded-xl text-[#0f172a] font-semibold text-sm">
+               class="btn-outline px-4 py-2 rounded-xl text-white font-semibold text-sm">
                 <i class="fas fa-envelope mr-2"></i> Contact
             </a>
             {% if application.cv_filepath %}
@@ -30,24 +30,24 @@
     </div>
 
     <!-- Status Bar -->
-    <div class="card p-4 mb-6">
+    <div class="glass-card p-4 mb-6">
         <div class="flex flex-wrap items-center gap-4">
             <div>
-                <p class="text-[#94a3b8] text-sm">Current Status</p>
+                <p class="text-white/50 text-sm">Current Status</p>
                 <span class="px-3 py-1 rounded-full text-sm font-semibold
-                    {% if application.status == 'pending' %}bg-yellow-100 text-yellow-600
-                    {% elif application.status == 'reviewed' %}bg-blue-100 text-blue-600
-                    {% elif application.status == 'shortlisted' %}bg-purple-100 text-purple-600
-                    {% elif application.status == 'hired' %}bg-green-100 text-green-600
-                    {% elif application.status == 'rejected' %}bg-red-100 text-red-600
-                    {% else %}bg-[#f1f5f9] text-[#475569]{% endif %}">
+                    {% if application.status == 'pending' %}bg-yellow-500/20 text-yellow-400
+                    {% elif application.status == 'reviewed' %}bg-blue-500/20 text-blue-400
+                    {% elif application.status == 'shortlisted' %}bg-purple-500/20 text-purple-400
+                    {% elif application.status == 'hired' %}bg-green-500/20 text-green-400
+                    {% elif application.status == 'rejected' %}bg-red-500/20 text-red-400
+                    {% else %}bg-white/10 text-white/60{% endif %}">
                     {{ application.status|title }}
                 </span>
             </div>
-            <div class="text-[#94a3b8] text-sm">
+            <div class="text-white/50 text-sm">
                 <i class="fas fa-calendar mr-1"></i> Applied: {{ application.applied_at.strftime('%B %d, %Y at %I:%M %p') }}
             </div>
-            <div class="text-[#94a3b8] text-sm">
+            <div class="text-white/50 text-sm">
                 <i class="fas fa-briefcase mr-1"></i> {{ job.title }}
             </div>
         </div>
@@ -57,46 +57,46 @@
         <!-- Main Content -->
         <div class="lg:col-span-2 space-y-6">
             <!-- Applicant Info -->
-            <div class="card p-6">
-                <h2 class="text-xl font-bold text-[#0f172a] mb-4">👤 Applicant Information</h2>
+            <div class="glass-card p-6">
+                <h2 class="text-xl font-bold text-white mb-4">👤 Applicant Information</h2>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <p class="text-[#94a3b8] text-sm">Full Name</p>
-                        <p class="text-[#0f172a] font-medium">{{ application.applicant_name }}</p>
+                        <p class="text-white/50 text-sm">Full Name</p>
+                        <p class="text-white font-medium">{{ application.applicant_name }}</p>
                     </div>
                     <div>
-                        <p class="text-[#94a3b8] text-sm">Email</p>
-                        <p class="text-[#0f172a] font-medium">{{ application.applicant_email }}</p>
+                        <p class="text-white/50 text-sm">Email</p>
+                        <p class="text-white font-medium">{{ application.applicant_email }}</p>
                     </div>
                     <div>
-                        <p class="text-[#94a3b8] text-sm">Phone</p>
-                        <p class="text-[#0f172a] font-medium">{{ application.applicant_phone or 'Not provided' }}</p>
+                        <p class="text-white/50 text-sm">Phone</p>
+                        <p class="text-white font-medium">{{ application.applicant_phone or 'Not provided' }}</p>
                     </div>
                     <div>
-                        <p class="text-[#94a3b8] text-sm">Applied For</p>
-                        <p class="text-[#0f172a] font-medium">{{ job.title }}</p>
+                        <p class="text-white/50 text-sm">Applied For</p>
+                        <p class="text-white font-medium">{{ job.title }}</p>
                     </div>
                 </div>
             </div>
 
             <!-- Cover Letter -->
-            <div class="card p-6">
+            <div class="glass-card p-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-[#0f172a]">📝 Cover Letter</h2>
+                    <h2 class="text-xl font-bold text-white">📝 Cover Letter</h2>
                 </div>
                 {% if application.cover_letter %}
-                    <div class="bg-[#f8fafc] rounded-xl p-4 whitespace-pre-line border border-[#e2e8f0] max-h-[300px] overflow-y-auto">
+                    <div class="bg-white/5 rounded-xl p-4 whitespace-pre-line border border-white/10 max-h-[300px] overflow-y-auto text-white/80">
                         {{ application.cover_letter }}
                     </div>
                 {% else %}
-                    <p class="text-[#94a3b8]">No cover letter provided.</p>
+                    <p class="text-white/50">No cover letter provided.</p>
                 {% endif %}
             </div>
 
             <!-- CV Preview -->
-            <div class="card p-6">
+            <div class="glass-card p-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-bold text-[#0f172a]">📄 CV / Resume</h2>
+                    <h2 class="text-xl font-bold text-white">📄 CV / Resume</h2>
                     {% if application.cv_filename %}
                         <a href="{{ url_for('jobs.download_cv', application_id=application.id) }}" 
                            class="btn-primary px-4 py-2 rounded-xl text-white text-sm font-semibold">
@@ -105,12 +105,12 @@
                     {% endif %}
                 </div>
                 {% if application.cv_filename %}
-                    <div class="bg-[#f8fafc] rounded-xl p-4 border border-[#e2e8f0]">
+                    <div class="bg-white/5 rounded-xl p-4 border border-white/10">
                         <div class="flex items-center gap-3">
-                            <i class="fas fa-file-pdf text-red-500 text-2xl"></i>
+                            <i class="fas fa-file-pdf text-red-400 text-2xl"></i>
                             <div>
-                                <p class="text-[#0f172a] font-medium">{{ application.cv_filename }}</p>
-                                <p class="text-[#94a3b8] text-sm">Uploaded on {{ application.applied_at.strftime('%B %d, %Y') }}</p>
+                                <p class="text-white font-medium">{{ application.cv_filename }}</p>
+                                <p class="text-white/50 text-sm">Uploaded on {{ application.applied_at.strftime('%B %d, %Y') }}</p>
                             </div>
                             <a href="{{ url_for('jobs.download_cv', application_id=application.id) }}" 
                                class="ml-auto btn-primary px-4 py-2 rounded-xl text-white text-sm font-semibold">
@@ -121,12 +121,12 @@
                     
                     <!-- PDF Preview -->
                     <div class="mt-4">
-                        <p class="text-[#94a3b8] text-sm mb-2">Preview:</p>
+                        <p class="text-white/50 text-sm mb-2">Preview:</p>
                         <iframe src="{{ url_for('static', filename=application.cv_filepath.replace('static/', '')) }}" 
-                                class="w-full h-[500px] border border-[#e2e8f0] rounded-xl"></iframe>
+                                class="w-full h-[500px] border border-white/10 rounded-xl bg-white"></iframe>
                     </div>
                 {% else %}
-                    <p class="text-[#94a3b8]">No CV uploaded.</p>
+                    <p class="text-white/50">No CV uploaded.</p>
                 {% endif %}
             </div>
         </div>
@@ -134,24 +134,24 @@
         <!-- Sidebar -->
         <div class="space-y-6">
             <!-- Status Update -->
-            <div class="card p-6">
-                <h2 class="text-xl font-bold text-[#0f172a] mb-4">📊 Update Status</h2>
+            <div class="glass-card p-6">
+                <h2 class="text-xl font-bold text-white mb-4">📊 Update Status</h2>
                 <form method="POST" action="{{ url_for('jobs.update_application_status', application_id=application.id) }}" class="space-y-4">
                     <div>
-                        <label class="text-[#475569] text-sm block mb-1">Status</label>
+                        <label class="text-white/60 text-sm block mb-1">Status</label>
                         <select name="status" 
-                                class="w-full border border-[#e2e8f0] rounded-xl px-4 py-2 text-[#0f172a] focus:border-[#0f172a] focus:outline-none">
-                            <option value="pending" {% if application.status == 'pending' %}selected{% endif %}>Pending</option>
-                            <option value="reviewed" {% if application.status == 'reviewed' %}selected{% endif %}>Reviewed</option>
-                            <option value="shortlisted" {% if application.status == 'shortlisted' %}selected{% endif %}>Shortlisted</option>
-                            <option value="hired" {% if application.status == 'hired' %}selected{% endif %}>Hired ✅</option>
-                            <option value="rejected" {% if application.status == 'rejected' %}selected{% endif %}>Rejected ❌</option>
+                                class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white focus:border-teal-400 focus:outline-none transition">
+                            <option value="pending" {% if application.status == 'pending' %}selected{% endif %} class="bg-gray-800">Pending</option>
+                            <option value="reviewed" {% if application.status == 'reviewed' %}selected{% endif %} class="bg-gray-800">Reviewed</option>
+                            <option value="shortlisted" {% if application.status == 'shortlisted' %}selected{% endif %} class="bg-gray-800">Shortlisted</option>
+                            <option value="hired" {% if application.status == 'hired' %}selected{% endif %} class="bg-gray-800">Hired ✅</option>
+                            <option value="rejected" {% if application.status == 'rejected' %}selected{% endif %} class="bg-gray-800">Rejected ❌</option>
                         </select>
                     </div>
                     <div>
-                        <label class="text-[#475569] text-sm block mb-1">Notes</label>
+                        <label class="text-white/60 text-sm block mb-1">Notes</label>
                         <textarea name="notes" rows="3" 
-                                  class="w-full border border-[#e2e8f0] rounded-xl px-4 py-2 text-[#0f172a] placeholder-[#94a3b8] focus:border-[#0f172a] focus:outline-none"
+                                  class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-white placeholder-white/40 focus:border-teal-400 focus:outline-none transition"
                                   placeholder="Add notes about this candidate...">{{ application.notes or '' }}</textarea>
                     </div>
                     <button type="submit" class="w-full btn-primary px-4 py-2 rounded-xl text-white font-semibold">
@@ -161,11 +161,11 @@
             </div>
 
             <!-- Quick Actions -->
-            <div class="card p-6">
-                <h2 class="text-xl font-bold text-[#0f172a] mb-4">⚡ Quick Actions</h2>
+            <div class="glass-card p-6">
+                <h2 class="text-xl font-bold text-white mb-4">⚡ Quick Actions</h2>
                 <div class="space-y-2">
                     <a href="mailto:{{ application.applicant_email }}" 
-                       class="w-full btn-secondary px-4 py-2 rounded-xl text-[#0f172a] font-semibold text-sm block text-center">
+                       class="w-full btn-outline px-4 py-2 rounded-xl text-white font-semibold text-sm block text-center">
                         <i class="fas fa-envelope mr-2"></i> Contact Candidate
                     </a>
                     {% if application.cv_filepath %}
@@ -175,55 +175,55 @@
                         </a>
                     {% endif %}
                     <a href="{{ url_for('recruiter.candidate_detail', candidate_id=application.user_id) if application.user_id else '#' }}" 
-                       class="w-full btn-secondary px-4 py-2 rounded-xl text-[#0f172a] font-semibold text-sm block text-center {% if not application.user_id %}opacity-50 cursor-not-allowed{% endif %}">
+                       class="w-full btn-outline px-4 py-2 rounded-xl text-white font-semibold text-sm block text-center {% if not application.user_id %}opacity-50 cursor-not-allowed{% endif %}">
                         <i class="fas fa-user mr-2"></i> View Full Profile
                     </a>
                 </div>
             </div>
 
             <!-- Application Timeline -->
-            <div class="card p-6">
-                <h2 class="text-xl font-bold text-[#0f172a] mb-4">📅 Timeline</h2>
+            <div class="glass-card p-6">
+                <h2 class="text-xl font-bold text-white mb-4">📅 Timeline</h2>
                 <div class="space-y-3">
                     <div class="flex items-start gap-3">
-                        <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                            <i class="fas fa-check text-green-600 text-sm"></i>
+                        <div class="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-check text-green-400 text-sm"></i>
                         </div>
                         <div>
-                            <p class="text-[#0f172a] font-medium">Application Submitted</p>
-                            <p class="text-[#94a3b8] text-sm">{{ application.applied_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                            <p class="text-white font-medium">Application Submitted</p>
+                            <p class="text-white/50 text-sm">{{ application.applied_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
                         </div>
                     </div>
                     {% if application.reviewed_at %}
                     <div class="flex items-start gap-3">
-                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                            <i class="fas fa-eye text-blue-600 text-sm"></i>
+                        <div class="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-eye text-blue-400 text-sm"></i>
                         </div>
                         <div>
-                            <p class="text-[#0f172a] font-medium">Application Reviewed</p>
-                            <p class="text-[#94a3b8] text-sm">{{ application.reviewed_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                            <p class="text-white font-medium">Application Reviewed</p>
+                            <p class="text-white/50 text-sm">{{ application.reviewed_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
                         </div>
                     </div>
                     {% endif %}
                     {% if application.status == 'hired' %}
                     <div class="flex items-start gap-3">
-                        <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                            <i class="fas fa-check-circle text-green-600 text-sm"></i>
+                        <div class="w-8 h-8 bg-green-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-check-circle text-green-400 text-sm"></i>
                         </div>
                         <div>
-                            <p class="text-[#0f172a] font-medium">Candidate Hired</p>
-                            <p class="text-[#94a3b8] text-sm">{{ application.updated_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                            <p class="text-white font-medium">Candidate Hired</p>
+                            <p class="text-white/50 text-sm">{{ application.updated_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
                         </div>
                     </div>
                     {% endif %}
                     {% if application.status == 'rejected' %}
                     <div class="flex items-start gap-3">
-                        <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-                            <i class="fas fa-times text-red-600 text-sm"></i>
+                        <div class="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-times text-red-400 text-sm"></i>
                         </div>
                         <div>
-                            <p class="text-[#0f172a] font-medium">Application Rejected</p>
-                            <p class="text-[#94a3b8] text-sm">{{ application.updated_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
+                            <p class="text-white font-medium">Application Rejected</p>
+                            <p class="text-white/50 text-sm">{{ application.updated_at.strftime('%B %d, %Y at %I:%M %p') }}</p>
                         </div>
                     </div>
                     {% endif %}

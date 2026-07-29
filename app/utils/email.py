@@ -3,36 +3,60 @@ from flask import current_app, render_template
 from flask_mail import Message
 from threading import Thread
 import os
+import logging
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 # We'll use the mail instance from the app
 def send_async_email(app, msg):
     """Send email asynchronously"""
     with app.app_context():
-        # Get mail instance from app
-        mail = app.extensions.get('mail')
-        if mail:
-            mail.send(msg)
-        else:
-            # Fallback: try to send directly
-            from flask_mail import Mail
-            mail = Mail(app)
-            mail.send(msg)
+        try:
+            # Get mail instance from app
+            mail = app.extensions.get('mail')
+            if mail:
+                print(f"📧 Sending email to: {msg.recipients}")
+                mail.send(msg)
+                print(f"✅ Email sent successfully to {msg.recipients}")
+            else:
+                print("❌ Mail extension not found in app")
+                # Fallback: try to send directly
+                from flask_mail import Mail
+                mail = Mail(app)
+                mail.send(msg)
+                print(f"✅ Email sent via fallback to {msg.recipients}")
+        except Exception as e:
+            print(f"❌ Error sending email: {e}")
+            logger.error(f"Email error: {e}")
+            raise
 
 def send_email(subject, recipients, html_body, text_body=None, sender=None):
     """Send an email"""
-    app = current_app._get_current_object()
-    
-    msg = Message(
-        subject=subject,
-        recipients=recipients if isinstance(recipients, list) else [recipients],
-        html=html_body,
-        body=text_body,
-        sender=sender or app.config.get('MAIL_DEFAULT_SENDER', 'noreply@fadtechlabs.com')
-    )
-    
-    # Send in background
-    Thread(target=send_async_email, args=(app, msg)).start()
-    return True
+    try:
+        app = current_app._get_current_object()
+        print(f"📧 Preparing email: {subject}")
+        print(f"📧 Recipients: {recipients}")
+        
+        msg = Message(
+            subject=subject,
+            recipients=recipients if isinstance(recipients, list) else [recipients],
+            html=html_body,
+            body=text_body,
+            sender=sender or app.config.get('MAIL_DEFAULT_SENDER', 'noreply@fadtechlabs.com')
+        )
+        
+        print(f"📧 From: {msg.sender}")
+        print(f"📧 Thread started...")
+        
+        # Send in background
+        Thread(target=send_async_email, args=(app, msg)).start()
+        print(f"📧 Email thread started for {recipients}")
+        return True
+    except Exception as e:
+        print(f"❌ Failed to prepare email: {e}")
+        logger.error(f"Send email error: {e}")
+        return False
 
 
 # ============================================
@@ -359,6 +383,7 @@ def send_application_status_update_email(application):
     
     send_email(subject, application.applicant_email, html)
 
+
 def send_job_published_email(job):
     """Send job published confirmation to recruiter"""
     from models import RecruiterProfile, User
@@ -478,3 +503,100 @@ def send_candidate_match_email(recruiter, candidate, job=None):
     """
     
     send_email(subject, user.email, html)
+
+
+# ============================================
+# PASSWORD RESET EMAIL
+# ============================================
+
+def send_password_reset_email(user, token):
+    """Send password reset email to user"""
+    print(f"📧 ===== SENDING PASSWORD RESET EMAIL =====")
+    print(f"📧 User: {user.email}")
+    print(f"📧 Token: {token[:20]}...")
+    
+    subject = "🔐 Reset Your Password - FADTECH Labs"
+    
+    # Get base URL from config or use default
+    base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
+    reset_url = f"{base_url}/auth/reset-password/{token}"
+    
+    print(f"📧 Reset URL: {reset_url}")
+    
+    html = f"""
+    <html>
+    <head>
+        <style>
+            body {{ font-family: 'Inter', Arial, sans-serif; background: #f8f6f0; color: #2c3e50; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }}
+            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #4F46E5; }}
+            .logo {{ font-size: 28px; font-weight: 800; color: #2c3e50; }}
+            .logo span {{ color: #4F46E5; }}
+            .content {{ padding: 30px 0; }}
+            .btn {{ display: inline-block; padding: 12px 30px; background: #4F46E5; color: white; text-decoration: none; border-radius: 50px; font-weight: 600; }}
+            .btn:hover {{ background: #4338CA; }}
+            .footer {{ text-align: center; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }}
+            .token-box {{ background: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace; margin: 10px 0; word-break: break-all; font-size: 12px; }}
+            .warning {{ background: #fef3c7; padding: 16px; border-radius: 12px; border-left: 4px solid #f59e0b; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <div class="logo">FADTECH <span>Labs</span></div>
+                <p style="color: #666; margin-top: 4px;">Career Intelligence System</p>
+            </div>
+            <div class="content">
+                <h2 style="color: #2c3e50;">🔐 Reset Your Password</h2>
+                
+                <p style="color: #555; line-height: 1.6;">Hi {user.fullname},</p>
+                
+                <p style="color: #555; line-height: 1.6;">
+                    We received a request to reset your password for your FADTECH Labs account.
+                    Click the button below to set a new password:
+                </p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{reset_url}" class="btn">Reset Password</a>
+                </div>
+                
+                <p style="color: #718096; font-size: 14px; text-align: center;">
+                    Or copy and paste this link into your browser:
+                </p>
+                
+                <div class="token-box">
+                    {reset_url}
+                </div>
+                
+                <div class="warning">
+                    <p style="margin: 0; color: #92400e; font-size: 14px;">
+                        ⚠️ This link will expire in <strong>24 hours</strong>.
+                    </p>
+                </div>
+                
+                <p style="color: #718096; font-size: 14px; margin-top: 20px;">
+                    If you didn't request this, please ignore this email and your password will remain unchanged.
+                </p>
+                
+                <div style="margin: 20px 0; padding: 15px; background: #ebf8ff; border-radius: 5px;">
+                    <p style="color: #2b6cb0; font-size: 12px; margin: 0;">
+                        <strong>🔒 Security Tip:</strong> Never share this link with anyone.
+                    </p>
+                </div>
+            </div>
+            <div class="footer">
+                <p>© 2026 FADTECH Labs. All rights reserved.</p>
+                <p>Ghana · West Africa</p>
+                <p style="margin-top: 4px;">
+                    <a href="{base_url}" style="color: #4F46E5; text-decoration: none;">Visit our website</a>
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    print(f"📧 HTML email built, sending...")
+    result = send_email(subject, user.email, html)
+    print(f"📧 Send result: {result}")
+    return result

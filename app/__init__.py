@@ -545,7 +545,66 @@ def get_real_job_matches(user_skills, limit=10):
             })
     
     scored_jobs.sort(key=lambda x: x['score'], reverse=True)
-    return scored_jobs[:limit]    
+    return scored_jobs[:limit]
+
+
+# ========== TRENDING SKILLS FUNCTIONS ==========
+def get_trending_skills(limit=10):
+    """Get trending skills from job market data"""
+    from app.utils.hybrid_parser import HybridParser
+    parser = HybridParser()
+    
+    jobs = Job.query.filter_by(status='published').all()
+    if not jobs:
+        return [
+            {'skill': 'Python', 'growth': '+45%', 'demand': 92},
+            {'skill': 'Machine Learning', 'growth': '+38%', 'demand': 88},
+            {'skill': 'Cloud Computing', 'growth': '+35%', 'demand': 85},
+            {'skill': 'Data Analysis', 'growth': '+30%', 'demand': 82},
+            {'skill': 'Cybersecurity', 'growth': '+28%', 'demand': 78}
+        ]
+    
+    all_job_skills = []
+    for job in jobs[:50]:
+        if job.description:
+            result = parser._quick_parse(job.description)
+            if result and isinstance(result, dict):
+                skills_data = result.get('skills', {})
+                if isinstance(skills_data, dict):
+                    for category, skills in skills_data.items():
+                        if isinstance(skills, list):
+                            all_job_skills.extend(skills)
+                        elif isinstance(skills, str):
+                            all_job_skills.append(skills)
+                elif isinstance(skills_data, list):
+                    all_job_skills.extend(skills_data)
+    
+    skill_counts = Counter(all_job_skills)
+    top_skills = skill_counts.most_common(limit)
+    
+    trending = []
+    total_jobs = len(jobs)
+    for skill, count in top_skills:
+        demand_pct = (count / total_jobs) * 100 if total_jobs > 0 else 0
+        growth = min(50, max(5, demand_pct * 0.4))
+        trending.append({
+            'skill': skill,
+            'growth': f'+{round(growth)}%',
+            'demand': round(demand_pct)
+        })
+    
+    return trending if trending else get_mock_trending_skills()
+
+
+def get_mock_trending_skills():
+    """Fallback trending skills"""
+    return [
+        {'skill': 'Python', 'growth': '+45%', 'demand': 92},
+        {'skill': 'Machine Learning', 'growth': '+38%', 'demand': 88},
+        {'skill': 'Cloud Computing', 'growth': '+35%', 'demand': 85},
+        {'skill': 'Data Analysis', 'growth': '+30%', 'demand': 82},
+        {'skill': 'Cybersecurity', 'growth': '+28%', 'demand': 78}
+    ]
 
 
 # ========== RECRUITER HUB HELPER FUNCTIONS ==========
@@ -973,6 +1032,7 @@ def register_routes(app):
     @app.route('/dashboard')
     @login_required
     def dashboard():
+        # Get parsed data from session or database
         parsed_data = get_parsed_data_from_session()
         
         if not parsed_data or not isinstance(parsed_data, dict):
@@ -993,12 +1053,138 @@ def register_routes(app):
         if not parsed_data.get('skills'):
             parsed_data['skills'] = {}
         
-        if current_user.is_recruiter():
+        # ========== REAL STATS ==========
+        # Get all skills from parsed data
+        all_skills = []
+        for category, skills in parsed_data.get('skills', {}).items():
+            if isinstance(skills, list):
+                all_skills.extend(skills)
+            elif isinstance(skills, str):
+                all_skills.append(skills)
+        
+        # 1. Employability Score
+        employability_score = current_user.employability_score or 0
+        if employability_score == 0 and all_skills:
+            detected_sector = SkillAnalyzer.detect_sector(all_skills)
+            market_demands = SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get(
+                detected_sector,
+                SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get('technology', {})
+            )
+            employability_result = SkillAnalyzer.calculate_employability_score(
+                all_skills,
+                parsed_data.get('experience_years', 0),
+                market_demands
+            )
+            employability_score = employability_result.get('score', 0)
+        
+        # 2. Skills Identified
+        skills_identified = len(all_skills)
+        
+        # 3. Courses Recommended
+        courses_recommended = 0
+        gaps = []
+        if all_skills:
+            detected_sector = SkillAnalyzer.detect_sector(all_skills)
+            market_demands = SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get(
+                detected_sector,
+                SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get('technology', {})
+            )
+            gaps = SkillAnalyzer.analyze_gaps(all_skills, market_demands)
+            if gaps:
+                courses_recommended = len(gaps) * 2
+        
+        # 4. Job Matches
+        job_matches = get_real_job_matches(all_skills, limit=10)
+        job_matches_count = len(job_matches)
+        
+        # 5. Learning Roadmap
+        roadmap = SkillAnalyzer.generate_learning_roadmap(gaps) if gaps else {'immediate': [], 'short_term': [], 'medium_term': [], 'long_term': []}
+        
+        # 6. Recent Activity
+        recent_activity = []
+        
+        if current_user.cv_uploaded_at:
+            recent_activity.append({
+                'action': 'CV Uploaded',
+                'description': f'You uploaded your CV',
+                'time': current_user.cv_uploaded_at,
+                'icon': 'fas fa-file-upload',
+                'color': 'text-teal-400'
+            })
+        
+        if current_user.profile and current_user.profile.updated_at:
+            recent_activity.append({
+                'action': 'Profile Updated',
+                'description': 'You updated your profile information',
+                'time': current_user.profile.updated_at,
+                'icon': 'fas fa-user-edit',
+                'color': 'text-purple-400'
+            })
+        
+        if job_matches_count > 0:
+            recent_activity.append({
+                'action': 'Job Matches Found',
+                'description': f'Found {job_matches_count} jobs matching your skills',
+                'time': datetime.utcnow(),
+                'icon': 'fas fa-briefcase',
+                'color': 'text-green-400'
+            })
+        
+        if skills_identified > 0:
+            recent_activity.append({
+                'action': 'Skill Analysis Complete',
+                'description': f'Identified {skills_identified} skills from your CV',
+                'time': current_user.cv_uploaded_at or datetime.utcnow(),
+                'icon': 'fas fa-chart-bar',
+                'color': 'text-blue-400'
+            })
+        
+        recent_activity.sort(key=lambda x: x['time'], reverse=True)
+        
+        # 7. Trending Skills
+        trending_skills = get_trending_skills()
+        
+        # 8. Skill Categories Breakdown - FIXED
+        skill_categories = {}
+        if isinstance(parsed_data, dict):
+            skills_data = parsed_data.get('skills', {})
+            if isinstance(skills_data, dict):
+                for category, skills in skills_data.items():
+                    if skills:
+                        if isinstance(skills, list):
+                            skill_categories[category] = len(skills)
+                        elif isinstance(skills, (str, int, float)):
+                            skill_categories[category] = 1
+                        else:
+                            skill_categories[category] = 0
+
+        # Ensure skill_categories is always a dictionary
+        if not skill_categories or not isinstance(skill_categories, dict):
+            skill_categories = {}
+
+        stats = {
+            'employability_score': employability_score,
+            'skills_identified': skills_identified,
+            'courses_recommended': courses_recommended,
+            'job_matches_count': job_matches_count,
+            'job_matches': job_matches[:5],
+            'recent_activity': recent_activity[:5],
+            'trending_skills': trending_skills[:5],
+            'skill_categories': skill_categories,  # Always a dict
+            'all_skills': all_skills
+        }
+        
+        if current_user.is_recruiter(): 
             return redirect(url_for('recruiter.dashboard'))
         if current_user.is_admin():
             return redirect(url_for('admin.index'))
         
-        return render_template('dashboard.html', user=current_user, parsed_data=parsed_data)
+        return render_template('dashboard.html', 
+                             user=current_user, 
+                             parsed_data=parsed_data,
+                             stats=stats,
+                             gaps=gaps[:4],
+                             roadmap=roadmap)
     
     @app.route('/profile', methods=['GET', 'POST'])
     @login_required

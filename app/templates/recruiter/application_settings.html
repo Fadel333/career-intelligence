@@ -3,53 +3,88 @@
 {% block title %}Application Settings - Recruiter Hub{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-sm">
-                <div class="card-header">
-                    <h4 class="mb-0"><i class="bi bi-gear"></i> Application Retention Settings</h4>
-                </div>
-                <div class="card-body">
-                    <p class="text-muted">Configure how long applications are kept before being automatically deleted.</p>
-                    
-                    <form method="POST">
-                        <div class="mb-3">
-                            <label class="form-label">Retention Period (Days)</label>
-                            <input type="number" class="form-control" name="retention_days" 
-                                   value="{{ recruiter.retention_days or 30 }}" min="7" max="365">
-                            <small class="text-muted">Applications will be automatically deleted after this many days. Minimum: 7 days, Maximum: 365 days.</small>
-                        </div>
-                        
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle"></i>
-                            <strong>How it works:</strong>
-                            <ul class="mb-0 mt-1">
-                                <li>Applications are soft-deleted (can be restored within 30 days)</li>
-                                <li>Expired applications are marked with a warning</li>
-                                <li>You can manually clean up expired applications</li>
-                                <li>Deleted applications can be restored from the trash</li>
-                            </ul>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-save"></i> Save Settings
-                        </button>
-                    </form>
-                    
-                    <hr class="my-4">
-                    
-                    <div class="d-flex gap-2">
-                        <a href="{{ url_for('recruiter.applications') }}" class="btn btn-secondary flex-grow-1">
-                            <i class="bi bi-arrow-left"></i> Back to Applications
-                        </a>
-                        <form action="{{ url_for('recruiter.cleanup_expired_applications') }}" method="POST">
-                            <button type="submit" class="btn btn-warning" onclick="return confirm('Delete all expired applications?')">
-                                <i class="bi bi-trash"></i> Cleanup Now
-                            </button>
-                        </form>
-                    </div>
-                </div>
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <!-- Header -->
+    <div class="flex items-center gap-4 mb-8">
+        <a href="{{ url_for('recruiter.applications') }}" class="text-white/60 hover:text-teal-400 transition">
+            <i class="fas fa-arrow-left"></i>
+        </a>
+        <div>
+            <h1 class="text-3xl font-bold text-white">Application Settings</h1>
+            <p class="text-white/60">Configure how long applications are kept before being automatically deleted</p>
+        </div>
+    </div>
+
+    <!-- Main Card -->
+    <div class="glass-card p-8">
+        <form method="POST" class="space-y-6">
+            <!-- Retention Period -->
+            <div>
+                <label class="block text-white/80 text-sm font-semibold mb-2">
+                    <i class="fas fa-clock mr-2 text-teal-400"></i> Retention Period (Days)
+                </label>
+                <input type="number" 
+                       name="retention_days" 
+                       value="{{ recruiter.retention_days or 30 }}" 
+                       min="7" 
+                       max="365"
+                       class="w-full max-w-xs px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-400/30 transition">
+                <p class="text-white/40 text-sm mt-2">
+                    <i class="fas fa-info-circle mr-1"></i> 
+                    Applications will be automatically deleted after this many days. 
+                    Minimum: <strong>7</strong> days | Maximum: <strong>365</strong> days
+                </p>
+            </div>
+
+            <!-- How It Works -->
+            <div class="bg-teal-500/10 border border-teal-500/20 rounded-xl p-5">
+                <h4 class="text-teal-400 font-semibold mb-2">
+                    <i class="fas fa-lightbulb mr-2"></i> How It Works
+                </h4>
+                <ul class="text-white/70 text-sm space-y-1.5">
+                    <li><i class="fas fa-check-circle text-teal-400 mr-2 w-4"></i> Applications are <strong>soft-deleted</strong> (can be restored within 30 days)</li>
+                    <li><i class="fas fa-check-circle text-teal-400 mr-2 w-4"></i> Expired applications are marked with a warning</li>
+                    <li><i class="fas fa-check-circle text-teal-400 mr-2 w-4"></i> You can manually clean up expired applications</li>
+                    <li><i class="fas fa-check-circle text-teal-400 mr-2 w-4"></i> Deleted applications can be restored from the trash</li>
+                </ul>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex flex-wrap gap-4 pt-4">
+                <button type="submit" class="btn-primary px-8 py-3 rounded-xl text-white font-semibold">
+                    <i class="fas fa-save mr-2"></i> Save Settings
+                </button>
+                <a href="{{ url_for('recruiter.applications') }}" class="btn-outline px-8 py-3 rounded-xl text-white font-semibold">
+                    <i class="fas fa-arrow-left mr-2"></i> Back to Applications
+                </a>
+                <form action="{{ url_for('recruiter.cleanup_expired_applications') }}" method="POST" class="inline">
+                    <button type="submit" 
+                            class="btn-danger px-8 py-3 rounded-xl text-white font-semibold"
+                            onclick="return confirm('⚠️ Delete all expired applications? This action cannot be undone.')">
+                        <i class="fas fa-trash-alt mr-2"></i> Cleanup Now
+                    </button>
+                </form>
+            </div>
+        </form>
+    </div>
+
+    <!-- Additional Info Card -->
+    <div class="glass-card p-6 mt-6">
+        <h3 class="text-white font-semibold mb-3">
+            <i class="fas fa-database text-teal-400 mr-2"></i> Current Status
+        </h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white/5 rounded-lg p-4 text-center">
+                <p class="text-2xl font-bold text-white">{{ total_applications or 0 }}</p>
+                <p class="text-white/50 text-sm">Total Applications</p>
+            </div>
+            <div class="bg-white/5 rounded-lg p-4 text-center">
+                <p class="text-2xl font-bold text-yellow-400">{{ expired_applications or 0 }}</p>
+                <p class="text-white/50 text-sm">Expired</p>
+            </div>
+            <div class="bg-white/5 rounded-lg p-4 text-center">
+                <p class="text-2xl font-bold text-red-400">{{ deleted_applications or 0 }}</p>
+                <p class="text-white/50 text-sm">Deleted (Trash)</p>
             </div>
         </div>
     </div>
