@@ -58,6 +58,7 @@ class Config:
     # ========== UPLOAD CONFIGURATION ==========
     UPLOAD_FOLDER = 'uploads'
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
+    ALLOWED_EXTENSIONS = {'pdf', 'docx'}
     
     # ========== SESSION CONFIGURATION ==========
     SESSION_COOKIE_SAMESITE = 'Lax'

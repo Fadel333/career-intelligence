@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 from collections import Counter
 from sqlalchemy import func
 
+
 # Add the current directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -24,6 +25,7 @@ from app.utils.skill_analyzer import SkillAnalyzer
 from app.utils.course_api import CourseAPI
 from app.utils.hybrid_parser import HybridParser
 from app.utils.openai_assistant import OpenAIAssistant
+from app.utils.cv_detector import CVDetector
 from models import User, Profile, RecruiterProfile, Candidate, Job, Placement, JobAlert, JobAlertLog, InterviewPractice, InterviewQuestion, InterviewResponse
 from app.recruiter import recruiter_bp 
 from app.admin.routes import admin_bp 
@@ -35,6 +37,41 @@ mail = Mail()
 # Configure upload settings
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf', 'docx'}
+
+# ========== CV FILE VALIDATION ==========
+ALLOWED_CV_MIME_TYPES = {
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/msword'
+}
+MAX_CV_FILE_SIZE = 10 * 1024 * 1024  # 10MB
+
+
+def is_valid_cv_file(file):
+    """Check if file is a valid CV (PDF or DOCX)"""
+    if not file:
+        return False, "No file selected."
+    if not file.filename:
+        return False, "No file selected."
+    
+    file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+    if file_ext not in ['pdf', 'docx']:
+        return False, "Please upload a PDF or DOCX file."
+    
+    if file.mimetype not in ALLOWED_CV_MIME_TYPES:
+        return False, "Invalid file type. Please upload a PDF or DOCX."
+    
+    file.seek(0, 2)
+    size = file.tell()
+    file.seek(0)
+    
+    if size > MAX_CV_FILE_SIZE:
+        return False, f"File too large. Maximum size is {MAX_CV_FILE_SIZE // (1024 * 1024)}MB."
+    if size == 0:
+        return False, "File is empty. Please upload a valid PDF or DOCX."
+    
+    return True, "Valid CV file"
+
 
 # Initialize hybrid parser
 hybrid_parser = HybridParser()
@@ -91,7 +128,7 @@ def decompress_parsed_data(compressed):
 
 
 def allowed_file(filename):
-    """Check if file has allowed extension"""
+    """Check if file has allowed extension (legacy function)"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
@@ -157,6 +194,50 @@ def clear_parsed_data_from_session():
         session.pop('parsed_cv', None)
     if 'cv_filename' in session:
         session.pop('cv_filename', None)
+    if 'parsing_status' in session:
+        session.pop('parsing_status', None)
+    if 'detected_sector' in session:
+        session.pop('detected_sector', None)
+    print("🧹 Cleared all CV data from session")
+
+
+def clear_user_cv_data(user_id):
+    """Clear all CV data for a user from the database"""
+    try:
+        user = User.query.get(user_id)
+        if user:
+            user.cv_analysis = None
+            user.detected_sector = None
+            user.employability_score = None
+            user.cv_filename = None
+            user.cv_uploaded_at = None
+            
+            candidate = Candidate.query.filter_by(user_id=user_id).first()
+            if candidate:
+                candidate.skills = []
+                candidate.employability_score = None
+                candidate.cv_text = None
+                candidate.cv_filename = None
+                candidate.is_processed = False
+            
+            db.session.commit()
+            print(f"🧹 Cleared CV data from database for user {user_id}")
+            return True
+    except Exception as e:
+        print(f"❌ Error clearing user CV data: {e}")
+        db.session.rollback()
+        return False
+
+
+def safe_delete_file(filepath):
+    """Safely delete a file with error handling"""
+    try:
+        if os.path.exists(filepath):
+            os.remove(filepath)
+            return True
+    except OSError as e:
+        print(f"Warning: Could not delete file {filepath}: {e}")
+    return False
 
 
 # ========== REAL ANALYTICS FUNCTIONS ==========
@@ -339,13 +420,11 @@ def get_industry_trends():
     if not jobs:
         return get_mock_industry_trends()
     
-    # Count jobs by category/sector
     sector_counts = Counter()
     for job in jobs:
         if job.category:
             sector_counts[job.category] += 1
     
-    # Get top sectors
     top_sectors = sector_counts.most_common(5)
     total = sum(sector_counts.values())
     
@@ -511,18 +590,15 @@ def get_real_job_matches(user_skills, limit=10):
     if not jobs:
         return []
     
-    # Use HybridParser with quick parse
     from app.utils.hybrid_parser import HybridParser
     parser = HybridParser()
     
     scored_jobs = []
     for job in jobs:
-        # Use _quick_parse to extract skills from job description
         result = parser._quick_parse(job.description or '')
         
         job_skills = []
         if result and isinstance(result, dict):
-            # Extract skills from the result
             skills_data = result.get('skills', {})
             if isinstance(skills_data, dict):
                 for category, skills in skills_data.items():
@@ -636,7 +712,6 @@ def register_routes(app):
     # ========== PUBLIC ROUTES ==========
     @app.route('/')
     def index():
-        # Get real stats for homepage
         stats = {
             'students': get_real_student_count(),
             'employers': get_real_recruiter_count(),
@@ -675,20 +750,77 @@ def register_routes(app):
                 flash('No file selected', 'error')
                 return redirect(url_for('upload_cv'))
             
-            if not allowed_file(file.filename):
-                flash('Invalid file type. Please upload PDF or DOCX', 'error')
+            # ---- validate file type / size ----
+            is_valid, error_message = is_valid_cv_file(file)
+            if not is_valid:
+                flash(error_message, 'error')
                 return redirect(url_for('upload_cv'))
             
+            # ---- save file to disk ----
             filename = secure_filename(f"{current_user.id}_{file.filename}")
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
             
+            # ---- CV content detection ----
+            try:
+                text = hybrid_parser._extract_text_fast(filepath)
+                
+                if not text:
+                    flash("⚠️ Could not read file content. Please ensure it's a valid PDF or DOCX.", "error")
+                    safe_delete_file(filepath)
+                    clear_parsed_data_from_session()
+                    clear_user_cv_data(current_user.id)
+                    return redirect(url_for('upload_cv'))
+                
+                is_cv, confidence, reason = CVDetector.detect(text)
+                
+                print(f"📊 CV Detection Report:")
+                print(f"   - Is CV: {is_cv}")
+                print(f"   - Confidence: {confidence*100:.1f}%")
+                print(f"   - Reason: {reason}")
+                
+                if not is_cv:
+                    flash(f"❌ CV detection failed: {reason} (Confidence: {confidence*100:.1f}%)", 'error')
+                    safe_delete_file(filepath)
+                    clear_parsed_data_from_session()
+                    clear_user_cv_data(current_user.id)
+                    return redirect(url_for('upload_cv'))
+                
+                # Reject if confidence is too low
+                if confidence < 0.3:
+                    print(f"⚠️ LOW CONFIDENCE: {confidence*100:.1f}% - rejecting file")
+                    flash(f"⚠️ File doesn't appear to be a valid CV (Confidence: {confidence*100:.1f}%). Please upload a proper CV/resume.", 'error')
+                    safe_delete_file(filepath)
+                    clear_parsed_data_from_session()
+                    clear_user_cv_data(current_user.id)
+                    return redirect(url_for('upload_cv'))
+                
+                print(f"✅ CV Detection: {reason} (Confidence: {confidence*100:.1f}%)")
+                
+            except Exception as e:
+                print(f"CV detection error: {e}")
+                flash('Error validating CV content. Please try again.', 'error')
+                safe_delete_file(filepath)
+                clear_parsed_data_from_session()
+                clear_user_cv_data(current_user.id)
+                return redirect(url_for('upload_cv'))
+            
             flash('Processing CV... Please wait.', 'info')
             
+            # ---- full parse + persist ----
             try:
                 parsed_data = hybrid_parser.parse_hybrid(filepath, current_user.id)
                 
                 if parsed_data:
+                    # Extra safety check
+                    if parsed_data.get('is_cv') is False:
+                        print(f"🚫 Parser rejected: Not a CV")
+                        flash(f"❌ File is not a valid CV: {parsed_data.get('reason', 'Unknown reason')}", 'error')
+                        safe_delete_file(filepath)
+                        clear_parsed_data_from_session()
+                        clear_user_cv_data(current_user.id)
+                        return redirect(url_for('upload_cv'))
+                    
                     user = User.query.get(current_user.id)
                     if user:
                         all_skills = []
@@ -718,6 +850,7 @@ def register_routes(app):
                         user.detected_sector = detected_sector
                         user.employability_score = employability['score']
                         user.cv_filename = file.filename
+                        user.cv_uploaded_at = datetime.utcnow()
                         
                         existing_candidate = Candidate.query.filter_by(user_id=current_user.id).first()
                         if existing_candidate:
@@ -753,23 +886,35 @@ def register_routes(app):
                         print(f"✅ CV data saved to database for user {user.email}")
                     
                     try:
-                        session['parsed_cv'] = json.dumps(parsed_data)
+                        json_data = json.dumps(parsed_data)
+                        if len(json_data) > 4000:
+                            session['parsed_cv'] = compress_parsed_data(parsed_data)
+                        else:
+                            session['parsed_cv'] = json_data
                         session['cv_filename'] = file.filename
                         session['parsing_status'] = parsed_data.get('status', 'processing')
-                        print(f"✅ Stored CV data as JSON in session")
+                        print(f"✅ Stored CV data in session with {parsed_data.get('total_skills', 0)} skills")
                     except Exception as e:
                         print(f"❌ Error storing session data: {e}")
                         flash('Error storing CV data. Please try again.', 'error')
+                        safe_delete_file(filepath)
+                        clear_parsed_data_from_session()
                         return redirect(url_for('upload_cv'))
                     
                     flash(f'✅ CV uploaded! Quick analysis complete. Found {parsed_data["total_skills"]} skills.', 'success')
                     return redirect(url_for('skill_analysis'))
                 else:
                     flash('Could not parse CV. Please ensure it\'s readable.', 'error')
+                    safe_delete_file(filepath)
+                    clear_parsed_data_from_session()
+                    clear_user_cv_data(current_user.id)
                     return redirect(url_for('upload_cv'))
             except Exception as e:
                 print(f"Error: {e}")
                 flash(f'Error parsing CV: {str(e)}', 'error')
+                safe_delete_file(filepath)
+                clear_parsed_data_from_session()
+                clear_user_cv_data(current_user.id)
                 return redirect(url_for('upload_cv'))
         
         return render_template('upload_cv.html', user=current_user)
@@ -784,28 +929,45 @@ def register_routes(app):
             flash('This feature is for job seekers only.', 'warning')
             return redirect(url_for('admin.index'))
         
-        parsed_data = get_parsed_data_from_session()
+        # FIRST: Try to get data from database (most reliable)
+        user = User.query.get(current_user.id)
+        parsed_data = None
+        showing_previous_cv = False
+        
+        if user and user.cv_analysis:
+            parsed_data = user.get_cv_analysis()
+            showing_previous_cv = True
+            print(f"📊 Skill Analysis: Retrieved {parsed_data.get('total_skills', 0)} skills from database")
+            
+            if parsed_data and isinstance(parsed_data, dict):
+                try:
+                    session['parsed_cv'] = json.dumps(parsed_data)
+                    session['cv_filename'] = user.cv_filename
+                    session['parsing_status'] = 'complete'
+                except Exception as e:
+                    print(f"Error updating session: {e}")
+        else:
+            # SECOND: Try session as fallback
+            parsed_data = get_parsed_data_from_session()
+            if parsed_data and isinstance(parsed_data, dict):
+                print(f"📊 Skill Analysis: Retrieved {parsed_data.get('total_skills', 0)} skills from session")
         
         if not parsed_data or not isinstance(parsed_data, dict):
-            user = User.query.get(current_user.id)
-            if user and user.cv_analysis:
-                parsed_data = user.get_cv_analysis()
-                if parsed_data and isinstance(parsed_data, dict):
-                    try:
-                        session['parsed_cv'] = json.dumps(parsed_data)
-                        session['cv_filename'] = user.cv_filename
-                    except:
-                        pass
-                else:
-                    parsed_data = {}
-        
-        if not isinstance(parsed_data, dict):
             parsed_data = {}
         
         if not parsed_data.get('skills'):
             parsed_data['skills'] = {}
         
-        if not parsed_data:
+        # Check if we have any actual data
+        has_data = False
+        if parsed_data and parsed_data.get('skills'):
+            for category, skills in parsed_data['skills'].items():
+                if skills:
+                    has_data = True
+                    break
+        
+        if not has_data:
+            print(f"⚠️ No CV data found for user {current_user.id}")
             return render_template('skill_analysis.html', 
                                  user=current_user, 
                                  parsed_data={'skills': {}},
@@ -817,7 +979,8 @@ def register_routes(app):
                                  roadmap={'immediate': [], 'short_term': [], 'medium_term': [], 'long_term': []},
                                  job_matches=[],
                                  all_skills=[],
-                                 no_cv=True)
+                                 no_cv=True,
+                                 showing_previous_cv=showing_previous_cv)
         
         if parsed_data and parsed_data.get('skills'):
             all_skills = []
@@ -826,6 +989,9 @@ def register_routes(app):
                     all_skills.extend(skills)
                 elif isinstance(skills, str):
                     all_skills.append(skills)
+            
+            print(f"📊 Total skills extracted: {len(all_skills)}")
+            print(f"📂 Skill categories: {list(parsed_data['skills'].keys())}")
             
             detected_sector = SkillAnalyzer.detect_sector(all_skills)
             session['detected_sector'] = detected_sector
@@ -855,13 +1021,15 @@ def register_routes(app):
                                  all_skills=all_skills,
                                  is_processing=False,
                                  detected_sector=detected_sector.capitalize(),
-                                 no_cv=False)
+                                 no_cv=False,
+                                 showing_previous_cv=showing_previous_cv)
         
         return render_template('skill_analysis.html', 
                              user=current_user, 
                              parsed_data={'skills': {}},
                              is_processing=False, 
-                             no_cv=True)
+                             no_cv=True,
+                             showing_previous_cv=showing_previous_cv)
     
     @app.route('/learning-roadmap')
     @login_required
@@ -1032,29 +1200,47 @@ def register_routes(app):
     @app.route('/dashboard')
     @login_required
     def dashboard():
-        # Get parsed data from session or database
-        parsed_data = get_parsed_data_from_session()
+        # FIRST: Check if current user has data in database
+        user = User.query.get(current_user.id)
+        parsed_data = None
         
-        if not parsed_data or not isinstance(parsed_data, dict):
-            user = User.query.get(current_user.id)
-            if user and user.cv_analysis:
-                parsed_data = user.get_cv_analysis()
-                if parsed_data and isinstance(parsed_data, dict):
-                    try:
-                        session['parsed_cv'] = json.dumps(parsed_data)
-                    except:
-                        pass
+        # Try to get data from database first
+        if user and user.cv_analysis:
+            parsed_data = user.get_cv_analysis()
+            print(f"📊 Dashboard: Retrieved {parsed_data.get('total_skills', 0)} skills from database for user {current_user.id}")
+            
+            if parsed_data and isinstance(parsed_data, dict):
+                try:
+                    session['parsed_cv'] = json.dumps(parsed_data)
+                    session['cv_filename'] = user.cv_filename
+                except Exception as e:
+                    print(f"Error updating session: {e}")
+        else:
+            # If no data in database, clear session to prevent showing old data
+            clear_parsed_data_from_session()
+            print(f"📊 Dashboard: No CV data found for user {current_user.id}, cleared session")
+            parsed_data = {}
+        
+        # If still no data, try session as fallback (but only if it belongs to current user)
+        if not parsed_data or not isinstance(parsed_data, dict) or not parsed_data.get('skills'):
+            session_data = get_parsed_data_from_session()
+            if session_data and isinstance(session_data, dict):
+                # Only use session data if it has skills
+                if session_data.get('skills'):
+                    parsed_data = session_data
+                    print(f"📊 Dashboard: Using session data for user {current_user.id}")
                 else:
+                    clear_parsed_data_from_session()
                     parsed_data = {}
-        
-        if not isinstance(parsed_data, dict):
+                    print(f"📊 Dashboard: Cleared empty session data")
+
+        if not parsed_data or not isinstance(parsed_data, dict):
             parsed_data = {}
         
         if not parsed_data.get('skills'):
             parsed_data['skills'] = {}
         
         # ========== REAL STATS ==========
-        # Get all skills from parsed data
         all_skills = []
         for category, skills in parsed_data.get('skills', {}).items():
             if isinstance(skills, list):
@@ -1103,7 +1289,7 @@ def register_routes(app):
         # 6. Recent Activity
         recent_activity = []
         
-        if current_user.cv_uploaded_at:
+        if hasattr(current_user, 'cv_uploaded_at') and current_user.cv_uploaded_at:
             recent_activity.append({
                 'action': 'CV Uploaded',
                 'description': f'You uploaded your CV',
@@ -1144,7 +1330,7 @@ def register_routes(app):
         # 7. Trending Skills
         trending_skills = get_trending_skills()
         
-        # 8. Skill Categories Breakdown - FIXED
+        # 8. Skill Categories Breakdown
         skill_categories = {}
         if isinstance(parsed_data, dict):
             skills_data = parsed_data.get('skills', {})
@@ -1158,7 +1344,6 @@ def register_routes(app):
                         else:
                             skill_categories[category] = 0
 
-        # Ensure skill_categories is always a dictionary
         if not skill_categories or not isinstance(skill_categories, dict):
             skill_categories = {}
 
@@ -1170,7 +1355,7 @@ def register_routes(app):
             'job_matches': job_matches[:5],
             'recent_activity': recent_activity[:5],
             'trending_skills': trending_skills[:5],
-            'skill_categories': skill_categories,  # Always a dict
+            'skill_categories': skill_categories,
             'all_skills': all_skills
         }
         
@@ -1251,8 +1436,7 @@ def register_routes(app):
         
         if current_user.profile_image:
             old_path = os.path.join('static/profile_pics', current_user.profile_image)
-            if os.path.exists(old_path):
-                os.remove(old_path)
+            safe_delete_file(old_path)
         
         file.save(filepath)
         
@@ -1265,13 +1449,11 @@ def register_routes(app):
     @app.route('/update-notification-settings', methods=['POST'])
     @login_required
     def update_notification_settings():
-        """Update user notification preferences"""
         user = User.query.get(current_user.id)
         if not user:
             flash('User not found.', 'error')
             return redirect(url_for('profile'))
         
-        # Update notification settings
         user.receive_notifications = request.form.get('receive_notifications') == 'true'
         user.email_notifications = request.form.get('email_notifications') == 'true'
         user.sms_notifications = request.form.get('sms_notifications') == 'true'
@@ -1329,7 +1511,6 @@ def register_routes(app):
         if not isinstance(parsed_data, dict):
             parsed_data = {}
         
-        # Get REAL analytics
         analytics = {
             'total_students': get_real_student_count(),
             'employability_rate': get_real_employability_rate(),
@@ -1406,23 +1587,11 @@ def register_routes(app):
                 db.session.rollback()
                 flash(f'Error creating alert: {str(e)}', 'error')
         
-        # Use predefined categories - NO DATABASE QUERY
         categories = [
-            'Technology',
-            'Healthcare',
-            'Law',
-            'Finance',
-            'Education',
-            'Agriculture',
-            'Business',
-            'Creative Arts',
-            'Trades',
-            'Engineering',
-            'Social Services',
-            'Customer Service',
-            'Administration',
-            'Sales',
-            'Marketing'
+            'Technology', 'Healthcare', 'Law', 'Finance', 'Education',
+            'Agriculture', 'Business', 'Creative Arts', 'Trades',
+            'Engineering', 'Social Services', 'Customer Service',
+            'Administration', 'Sales', 'Marketing'
         ]
         
         return render_template('create_job_alert.html', 
@@ -1457,23 +1626,11 @@ def register_routes(app):
                 db.session.rollback()
                 flash(f'Error updating alert: {str(e)}', 'error')
         
-        # Use predefined categories
         categories = [
-            'Technology',
-            'Healthcare',
-            'Law',
-            'Finance',
-            'Education',
-            'Agriculture',
-            'Business',
-            'Creative Arts',
-            'Trades',
-            'Engineering',
-            'Social Services',
-            'Customer Service',
-            'Administration',
-            'Sales',
-            'Marketing'
+            'Technology', 'Healthcare', 'Law', 'Finance', 'Education',
+            'Agriculture', 'Business', 'Creative Arts', 'Trades',
+            'Engineering', 'Social Services', 'Customer Service',
+            'Administration', 'Sales', 'Marketing'
         ]
         
         return render_template('edit_job_alert.html', 
@@ -1523,13 +1680,10 @@ def register_routes(app):
     @app.route('/check-alerts')
     @login_required
     def check_alerts_manually():
-        """Manually trigger job alert checking (for testing)"""
-        # Check if user is authenticated
         if not current_user or not current_user.is_authenticated:
             flash('Please log in to access this page.', 'warning')
             return redirect(url_for('auth.login'))
         
-        # Check if user is admin
         if not current_user.is_admin():
             flash('Only admins can trigger alerts manually.', 'warning')
             return redirect(url_for('dashboard'))

@@ -336,6 +336,7 @@ class Candidate(db.Model):
     # CV data
     cv_filename = db.Column(db.String(255))
     cv_filepath = db.Column(db.String(500))
+    cv_path = db.Column(db.String(500))
     cv_text = db.Column(db.Text)
     
     # Extracted fields

@@ -174,12 +174,7 @@
                             <i class="fas fa-download mr-2"></i> Download CV
                         </a>
                     {% endif %}
-                    <a href="{{ url_for('recruiter.candidate_detail', candidate_id=application.user_id) if application.user_id else '#' }}" 
-                       class="w-full btn-outline px-4 py-2 rounded-xl text-white font-semibold text-sm block text-center {% if not application.user_id %}opacity-50 cursor-not-allowed{% endif %}">
-                        <i class="fas fa-user mr-2"></i> View Full Profile
-                    </a>
-                </div>
-            </div>
+                    
 
             <!-- Application Timeline -->
             <div class="glass-card p-6">

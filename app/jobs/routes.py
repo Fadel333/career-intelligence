@@ -1,3 +1,5 @@
+# app/jobs/routes.py
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, send_file
 from flask_login import login_required, current_user
 from sqlalchemy import desc, func, or_
@@ -15,45 +17,122 @@ jobs_bp = Blueprint('jobs', __name__, url_prefix='/jobs')
 
 # Configure upload for CVs
 APPLICATION_UPLOAD_FOLDER = 'static/applications'
+
+# ========== CV FILE VALIDATION ==========
 ALLOWED_CV_EXTENSIONS = {'pdf', 'docx'}
+ALLOWED_CV_MIME_TYPES = {
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/msword'
+}
+MAX_CV_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
 
 def allowed_cv_file(filename):
+    """Check if file has allowed extension"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_CV_EXTENSIONS
+
+
+def is_valid_cv_file(file):
+    """Check if file is a valid CV (PDF or DOCX)"""
+    # Check 1: File exists
+    if not file:
+        return False, "No file selected."
+    
+    # Check 2: Filename exists
+    if not file.filename:
+        return False, "No file selected."
+    
+    # Check 3: File extension
+    file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
+    if file_ext not in ['pdf', 'docx']:
+        return False, "Please upload a PDF or DOCX file."
+    
+    # Check 4: MIME type
+    if file.mimetype not in ALLOWED_CV_MIME_TYPES:
+        return False, "Invalid file type. Please upload a PDF or DOCX."
+    
+    # Check 5: File size
+    file.seek(0, 2)  # Go to end of file
+    size = file.tell()
+    file.seek(0)  # Reset to beginning
+    
+    if size > MAX_CV_FILE_SIZE:
+        return False, f"File too large. Maximum size is {MAX_CV_FILE_SIZE // (1024 * 1024)}MB."
+    
+    if size == 0:
+        return False, "File is empty. Please upload a valid PDF or DOCX."
+    
+    return True, "Valid CV file"
 
 
 # ========== HELPER FUNCTIONS ==========
 def get_cv_file_path(application):
-    """Get the correct CV file path"""
-    if not application.cv_filepath:
+    """Get the correct CV file path - returns absolute path"""
+    if not application.cv_filename and not application.cv_filepath:
         return None
     
+    # Get the project root directory (go up from app/jobs/routes.py)
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    
     # Get just the filename
-    filename = os.path.basename(application.cv_filepath)
+    if application.cv_filename:
+        filename = application.cv_filename
+    else:
+        filename = os.path.basename(application.cv_filepath)
     
-    # Get project root directory
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    print(f"🔍 Looking for CV file: {filename}")
+    print(f"📁 Project root: {project_root}")
     
-    # Check possible locations in order
+    # Check possible locations in order with absolute paths
     possible_paths = [
-        os.path.join(project_root, 'static', 'applications', filename),  # Project root static
-        os.path.join(project_root, 'app', 'static', 'applications', filename),  # App static
-        os.path.join('static', 'applications', filename),  # Relative path
-        application.cv_filepath,  # Original path
+        # Check in static/applications from project root
+        os.path.join(project_root, 'static', 'applications', filename),
+        # Check in app/static/applications
+        os.path.join(project_root, 'app', 'static', 'applications', filename),
+        # Check in the uploads folder
+        os.path.join(project_root, 'uploads', filename),
+        # Check in static/applications from current directory (if relative)
+        os.path.join(os.getcwd(), 'static', 'applications', filename),
+        # Original stored path - convert to absolute if relative
+        os.path.join(project_root, application.cv_filepath) if application.cv_filepath else None,
+        # Just the filename in static/applications
+        os.path.join('static', 'applications', filename),
     ]
     
-    for path in possible_paths:
-        normalized_path = path.replace('\\', '/')
-        if os.path.exists(normalized_path):
-            return normalized_path
+    # Also check without the timestamp prefix
+    if '_' in filename:
+        parts = filename.split('_', 2)
+        if len(parts) >= 3:
+            clean_filename = parts[2]  # Remove timestamp and user_id
+            possible_paths.extend([
+                os.path.join(project_root, 'static', 'applications', clean_filename),
+                os.path.join(project_root, 'app', 'static', 'applications', clean_filename),
+                os.path.join(project_root, 'uploads', clean_filename),
+                os.path.join('static', 'applications', clean_filename),
+            ])
     
-    # If still not found, search the static/applications directory
+    # Filter out None values and normalize paths
+    for path in possible_paths:
+        if path:
+            # Convert to absolute path
+            abs_path = os.path.abspath(path)
+            print(f"🔍 Checking: {abs_path}")
+            if os.path.exists(abs_path):
+                print(f"✅ Found CV at: {abs_path}")
+                return abs_path
+    
+    # If still not found, search the static/applications directory recursively
     static_dir = os.path.join(project_root, 'static', 'applications')
     if os.path.exists(static_dir):
         for root, dirs, files in os.walk(static_dir):
-            if filename in files:
-                return os.path.join(root, filename).replace('\\', '/')
+            for file in files:
+                if file == filename or (len(filename.split('_')) >= 3 and file.endswith(filename.split('_')[-1])):
+                    full_path = os.path.join(root, file)
+                    print(f"✅ Found CV in search: {full_path}")
+                    return full_path
     
+    print(f"❌ CV not found. Tried: {possible_paths}")
     return None
 
 
@@ -182,17 +261,29 @@ def apply(job_id):
         cv_filename = None
         cv_filepath = None
         
-        if cv_file and allowed_cv_file(cv_file.filename):
+        # ========== VALIDATE CV FILE ==========
+        if cv_file and cv_file.filename:
+            is_valid, error_message = is_valid_cv_file(cv_file)
+            if not is_valid:
+                flash(error_message, 'error')
+                return redirect(url_for('jobs.apply', job_id=job_id))
+            
+            # Get project root and create upload folder
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            upload_folder = os.path.join(project_root, 'static', 'applications')
+            
             # Create upload folder if it doesn't exist
-            os.makedirs(APPLICATION_UPLOAD_FOLDER, exist_ok=True)
+            os.makedirs(upload_folder, exist_ok=True)
             
             timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
-            filename = secure_filename(f"{timestamp}_{cv_file.filename}")
-            filepath = os.path.join(APPLICATION_UPLOAD_FOLDER, filename).replace('\\', '/')
+            filename = secure_filename(f"{timestamp}_{current_user.id if current_user.is_authenticated else 'guest'}_{cv_file.filename}")
+            filepath = os.path.join(upload_folder, filename)
             cv_file.save(filepath)
             
             cv_filename = filename
-            cv_filepath = filepath
+            cv_filepath = os.path.join('static', 'applications', filename).replace('\\', '/')
+            
+            print(f"📄 CV saved to: {filepath}")
         
         application = JobApplication(
             job_id=job_id,
@@ -343,19 +434,31 @@ def download_cv(application_id):
         flash('No CV uploaded for this application.', 'warning')
         return redirect(url_for('jobs.application_detail', application_id=application.id))
     
-    # Get the correct file path using our helper
+    # Get the correct file path using our helper - returns absolute path
     file_path = get_cv_file_path(application)
     
     if not file_path or not os.path.exists(file_path):
-        # Try looking in the absolute path
-        if application.cv_filepath and os.path.exists(application.cv_filepath):
-            file_path = application.cv_filepath
-        else:
+        # Try looking in the absolute path from the stored cv_filepath
+        if application.cv_filepath:
+            # Try to resolve it from project root
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            abs_path = os.path.join(project_root, application.cv_filepath)
+            if os.path.exists(abs_path):
+                file_path = abs_path
+        
+        if not file_path or not os.path.exists(file_path):
             flash('CV file not found. Please contact support.', 'error')
             return redirect(url_for('jobs.application_detail', application_id=application.id))
     
+    # Ensure the file exists one more time before sending
+    if not os.path.exists(file_path):
+        flash('CV file not found. Please contact support.', 'error')
+        return redirect(url_for('jobs.application_detail', application_id=application.id))
+    
     # Use the filename from the application or extract from path
     download_name = application.cv_filename or os.path.basename(file_path)
+    
+    print(f"📄 Sending file: {file_path}")
     
     return send_file(
         file_path,
@@ -489,14 +592,14 @@ def api_application_status_counts():
         'rejected': result.get('rejected', 0)
     })
 
-# In your job creation/update route
+
+# ========== JOB ALERT TRIGGER ==========
 def create_job():
+    """Helper function for job creation with alert triggers"""
     # ... save job to database ...
     
     # After saving, check for matching alerts
     if job.status == 'published':
         from app.utils.job_alert_checker import check_job_alerts
-        # Check alerts (this will send notifications to users)
-        # You can run this in a background thread or Celery task
         import threading
         threading.Thread(target=check_job_alerts).start()

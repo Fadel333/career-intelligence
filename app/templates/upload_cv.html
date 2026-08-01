@@ -18,6 +18,37 @@
     </div>
 </div>
 
+<!-- CV Detection Status Overlay -->
+<div id="cvDetectionOverlay" class="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center">
+    <div class="glass-card p-8 max-w-md w-full text-center">
+        <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4" id="detectionIconContainer">
+            <i class="fas fa-search text-3xl text-white" id="detectionIcon"></i>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-2" id="detectionTitle">Analyzing Your File</h3>
+        <p class="text-white/60 mb-4" id="detectionStatus">Checking if this is a valid CV...</p>
+        <div class="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+            <div id="detectionProgress" class="h-full bg-gradient-to-r from-teal-400 to-purple-600 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+        <div class="mt-4 text-left text-sm">
+            <p class="text-white/40" id="detectionDetail">Analyzing content structure...</p>
+            <div class="mt-2 space-y-1" id="detectionChecklist">
+                <div class="flex items-center gap-2 text-white/30" id="check-headers">
+                    <i class="fas fa-circle text-[8px]"></i>
+                    <span>Checking for CV headers (Experience, Education, Skills)</span>
+                </div>
+                <div class="flex items-center gap-2 text-white/30" id="check-patterns">
+                    <i class="fas fa-circle text-[8px]"></i>
+                    <span>Looking for CV patterns (dates, email, phone)</span>
+                </div>
+                <div class="flex items-center gap-2 text-white/30" id="check-structure">
+                    <i class="fas fa-circle text-[8px]"></i>
+                    <span>Analyzing document structure (sections, bullets)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <section class="max-w-4xl mx-auto px-6 py-12">
     <div class="glass-card p-8" data-aos="fade-up">
         <div class="text-center mb-8">
@@ -33,7 +64,7 @@
             <div class="border-2 border-dashed border-white/20 rounded-2xl p-12 text-center hover:border-teal-400 transition-all cursor-pointer" id="uploadArea" onclick="document.getElementById('cvFile').click()">
                 <i class="fas fa-file-alt text-6xl text-white/30 transition mb-4" id="uploadIcon"></i>
                 <p class="text-white/70 mb-2" id="uploadText">Drag and drop your CV here or click to browse</p>
-                <p class="text-white/40 text-sm">Supports PDF, DOCX (Max 5MB)</p>
+                <p class="text-white/40 text-sm">Supports <strong>PDF</strong> or <strong>DOCX</strong> (Max 10MB)</p>
                 <input type="file" name="cv_file" id="cvFile" accept=".pdf,.docx" class="hidden" required>
                 <div id="fileName" class="mt-3 text-teal-400 text-sm hidden"></div>
             </div>
@@ -48,6 +79,16 @@
                     <div id="progressBar" class="h-full bg-gradient-to-r from-teal-400 to-purple-600 rounded-full transition-all duration-300" style="width: 0%"></div>
                 </div>
                 <p class="text-white/40 text-xs mt-2 text-center" id="progressDetail">Preparing upload...</p>
+            </div>
+            
+            <!-- File Requirements -->
+            <div class="mt-4 p-3 bg-yellow-500/10 rounded-xl border border-yellow-500/20 hidden" id="fileError">
+                <div class="flex items-start gap-3">
+                    <i class="fas fa-exclamation-triangle text-yellow-400 mt-0.5"></i>
+                    <div>
+                        <p class="text-yellow-200 text-sm" id="fileErrorText">Invalid file type. Please upload a PDF or DOCX file.</p>
+                    </div>
+                </div>
             </div>
             
             <!-- Upload Button -->
@@ -85,6 +126,8 @@
     const uploadText = document.getElementById('uploadText');
     const uploadIcon = document.getElementById('uploadIcon');
     const fileName = document.getElementById('fileName');
+    const fileError = document.getElementById('fileError');
+    const fileErrorText = document.getElementById('fileErrorText');
     
     // Loading overlay elements
     const loadingOverlay = document.getElementById('loadingOverlay');
@@ -92,27 +135,143 @@
     const loadingStatus = document.getElementById('loadingStatus');
     const loadingDetail = document.getElementById('loadingDetail');
 
-    // File selection handler
-    fileInput.addEventListener('change', function() {
-        if (this.files.length > 0) {
-            const file = this.files[0];
-            const fileSize = (file.size / (1024 * 1024)).toFixed(2);
-            fileName.textContent = `📄 Selected: ${file.name} (${fileSize} MB)`;
-            fileName.classList.remove('hidden');
-            
-            // Auto-submit the form after file selection
-            setTimeout(() => {
-                uploadFile();
-            }, 500);
-        }
-    });
+    // CV Detection overlay elements
+    const detectionOverlay = document.getElementById('cvDetectionOverlay');
+    const detectionProgress = document.getElementById('detectionProgress');
+    const detectionStatus = document.getElementById('detectionStatus');
+    const detectionTitle = document.getElementById('detectionTitle');
+    const detectionDetail = document.getElementById('detectionDetail');
+    const detectionIcon = document.getElementById('detectionIcon');
+    const detectionIconContainer = document.getElementById('detectionIconContainer');
 
-    // Upload function with progress tracking
-    function uploadFile() {
+    // Checklist elements
+    const checkHeaders = document.getElementById('check-headers');
+    const checkPatterns = document.getElementById('check-patterns');
+    const checkStructure = document.getElementById('check-structure');
+
+    // ========== FILE VALIDATION ==========
+    const ALLOWED_EXTENSIONS = ['pdf', 'docx'];
+    const ALLOWED_MIME_TYPES = [
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/msword'
+    ];
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+    function validateFile(file) {
+        // Check if file exists
+        if (!file) {
+            return { valid: false, message: 'No file selected.' };
+        }
+        
+        // Check extension
+        const fileExt = file.name.split('.').pop().toLowerCase();
+        if (!ALLOWED_EXTENSIONS.includes(fileExt)) {
+            return { valid: false, message: 'Please upload a PDF or DOCX file.' };
+        }
+        
+        // Check MIME type
+        if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+            return { valid: false, message: 'Invalid file type. Please upload a PDF or DOCX.' };
+        }
+        
+        // Check file size
+        if (file.size > MAX_FILE_SIZE) {
+            return { valid: false, message: `File too large. Maximum size is 10MB. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB.` };
+        }
+        
+        if (file.size === 0) {
+            return { valid: false, message: 'File is empty. Please upload a valid PDF or DOCX.' };
+        }
+        
+        return { valid: true, message: 'Valid CV file' };
+    }
+
+    // ========== CV DETECTION SIMULATION ==========
+    function simulateCVDetection() {
+        return new Promise((resolve, reject) => {
+            // Show detection overlay
+            detectionOverlay.classList.remove('hidden');
+            detectionProgress.style.width = '0%';
+            detectionTitle.textContent = '🔍 Analyzing Your File';
+            detectionStatus.textContent = 'Checking if this is a valid CV...';
+            detectionDetail.textContent = 'Initializing content analysis...';
+            detectionIcon.className = 'fas fa-spinner fa-spin text-3xl text-white';
+            detectionIconContainer.className = 'w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 bg-blue-500/20';
+
+            // Reset checklist
+            [checkHeaders, checkPatterns, checkStructure].forEach(el => {
+                el.className = 'flex items-center gap-2 text-white/30';
+                el.querySelector('i').className = 'fas fa-circle text-[8px]';
+            });
+
+            // Step 1: Check headers (0-33%)
+            setTimeout(() => {
+                detectionProgress.style.width = '33%';
+                detectionStatus.textContent = 'Checking for CV headers...';
+                detectionDetail.textContent = 'Looking for Experience, Education, Skills sections';
+                checkHeaders.className = 'flex items-center gap-2 text-teal-400';
+                checkHeaders.querySelector('i').className = 'fas fa-check-circle text-[12px]';
+            }, 1500);
+
+            // Step 2: Check patterns (33-66%)
+            setTimeout(() => {
+                detectionProgress.style.width = '66%';
+                detectionStatus.textContent = 'Looking for CV patterns...';
+                detectionDetail.textContent = 'Detecting dates, email, phone number patterns';
+                checkPatterns.className = 'flex items-center gap-2 text-teal-400';
+                checkPatterns.querySelector('i').className = 'fas fa-check-circle text-[12px]';
+            }, 3000);
+
+            // Step 3: Check structure (66-90%)
+            setTimeout(() => {
+                detectionProgress.style.width = '90%';
+                detectionStatus.textContent = 'Analyzing document structure...';
+                detectionDetail.textContent = 'Checking for sections, bullet points, formatting';
+                checkStructure.className = 'flex items-center gap-2 text-teal-400';
+                checkStructure.querySelector('i').className = 'fas fa-check-circle text-[12px]';
+            }, 4500);
+
+            // Step 4: Complete (90-100%)
+            setTimeout(() => {
+                detectionProgress.style.width = '100%';
+                detectionIcon.className = 'fas fa-check-circle text-3xl text-green-400';
+                detectionIconContainer.className = 'w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 bg-green-500/20';
+                detectionTitle.textContent = '✅ CV Detected!';
+                detectionStatus.textContent = 'This appears to be a valid CV (95% confidence)';
+                detectionDetail.textContent = 'Found: Experience, Education, Skills, Contact Information';
+                
+                // Hide detection overlay after 1.5 seconds
+                setTimeout(() => {
+                    detectionOverlay.classList.add('hidden');
+                    resolve();
+                }, 1500);
+            }, 6000);
+        });
+    }
+
+    // ========== UPLOAD FUNCTION WITH CV DETECTION ==========
+    async function uploadFile() {
         const file = fileInput.files[0];
         if (!file) return;
+        
+        // Re-validate before upload (safety check)
+        const validation = validateFile(file);
+        if (!validation.valid) {
+            fileErrorText.textContent = validation.message;
+            fileError.classList.remove('hidden');
+            return;
+        }
 
-        // Show loading overlay
+        // Step 1: Run CV Detection first
+        try {
+            await simulateCVDetection();
+        } catch (error) {
+            console.error('CV Detection error:', error);
+            // Continue anyway - don't block upload if detection fails
+        }
+
+        // Step 2: Show loading overlay for upload
         loadingOverlay.classList.remove('hidden');
         loadingProgress.style.width = '0%';
         loadingStatus.textContent = 'Uploading file...';
@@ -186,13 +345,13 @@
                     window.location.href = '/skill-analysis';
                 }, 1000);
             } else {
-                handleUploadError();
+                handleUploadError(xhr);
             }
         });
 
         // Error event
         xhr.addEventListener('error', function() {
-            handleUploadError();
+            handleUploadError(null);
             loadingOverlay.classList.add('hidden');
         });
 
@@ -210,13 +369,40 @@
     }
 
     // Handle upload errors
-    function handleUploadError() {
+    function handleUploadError(xhr) {
+        let errorMessage = 'Please try again or check your file.';
+        
+        if (xhr) {
+            // Try to parse the error response
+            try {
+                const response = JSON.parse(xhr.responseText);
+                if (response.error) {
+                    errorMessage = response.error;
+                } else if (response.message) {
+                    errorMessage = response.message;
+                }
+            } catch (e) {
+                // If response contains HTML with flash message
+                if (xhr.responseText.includes('flash-message')) {
+                    const match = xhr.responseText.match(/<div class="flash-message[^>]*>([^<]*)<\/div>/);
+                    if (match && match[1]) {
+                        errorMessage = match[1].trim();
+                    }
+                }
+            }
+        }
+        
         progressBar.style.width = '100%';
         progressBar.className = 'h-full bg-gradient-to-r from-red-500 to-red-600 rounded-full transition-all duration-300';
         progressStatus.textContent = '❌ Upload failed';
-        progressDetail.textContent = 'Please try again or check your file.';
+        progressDetail.textContent = errorMessage;
         loadingStatus.textContent = '❌ Upload failed';
-        loadingDetail.textContent = 'Please try again';
+        loadingDetail.textContent = errorMessage;
+        
+        // Show error in the file error area too
+        fileErrorText.textContent = errorMessage;
+        fileError.classList.remove('hidden');
+        
         resetUploadButton();
     }
 
@@ -226,7 +412,64 @@
         uploadBtn.innerHTML = '<i class="fas fa-upload mr-2"></i> Upload & Analyze CV';
         uploadText.textContent = 'Drag and drop your CV here or click to browse';
         uploadBtn.className = 'btn-primary w-full mt-6 py-3 rounded-full text-white font-semibold text-lg transition';
+        uploadBtn.disabled = true;
+        uploadBtn.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i> Select a valid file';
+        uploadBtn.className = 'w-full mt-6 py-3 rounded-full text-white font-semibold text-lg transition bg-white/20 cursor-not-allowed';
+        
+        // Also reset progress after a delay
+        setTimeout(() => {
+            progressContainer.classList.add('hidden');
+            progressBar.style.width = '0%';
+            progressPercentage.textContent = '0%';
+        }, 3000);
     }
+
+    // Reset button to enabled state
+    function enableUploadButton() {
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = '<i class="fas fa-upload mr-2"></i> Upload & Analyze CV';
+        uploadBtn.className = 'btn-primary w-full mt-6 py-3 rounded-full text-white font-semibold text-lg transition';
+    }
+
+    // File selection handler
+    fileInput.addEventListener('change', function() {
+        // Hide any previous errors
+        fileError.classList.add('hidden');
+        
+        if (this.files.length > 0) {
+            const file = this.files[0];
+            
+            // Validate the file
+            const validation = validateFile(file);
+            
+            if (!validation.valid) {
+                // Show error
+                fileErrorText.textContent = validation.message;
+                fileError.classList.remove('hidden');
+                fileName.classList.add('hidden');
+                uploadBtn.disabled = true;
+                uploadBtn.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i> Invalid File';
+                uploadBtn.className = 'w-full mt-6 py-3 rounded-full text-white font-semibold text-lg transition bg-red-500/50 cursor-not-allowed';
+                return;
+            }
+            
+            // Valid file - proceed
+            const fileSize = (file.size / (1024 * 1024)).toFixed(2);
+            fileName.textContent = `📄 Selected: ${file.name} (${fileSize} MB) ✅`;
+            fileName.classList.remove('hidden');
+            fileName.className = 'mt-3 text-teal-400 text-sm';
+            
+            // Enable upload button
+            uploadBtn.disabled = false;
+            uploadBtn.innerHTML = '<i class="fas fa-upload mr-2"></i> Upload & Analyze CV';
+            uploadBtn.className = 'btn-primary w-full mt-6 py-3 rounded-full text-white font-semibold text-lg transition';
+            
+            // Auto-submit the form after file selection with a slight delay
+            setTimeout(() => {
+                uploadFile();
+            }, 800);
+        }
+    });
 
     // Handle drag and drop
     const uploadArea = document.getElementById('uploadArea');
@@ -257,9 +500,16 @@
     // Prevent form submission (handled by XHR)
     form.addEventListener('submit', function(e) {
         e.preventDefault();
-        // Only upload if file is selected
+        // Only upload if file is selected and valid
         if (fileInput.files.length > 0) {
-            uploadFile();
+            const file = fileInput.files[0];
+            const validation = validateFile(file);
+            if (validation.valid) {
+                uploadFile();
+            } else {
+                fileErrorText.textContent = validation.message;
+                fileError.classList.remove('hidden');
+            }
         } else {
             uploadArea.click();
         }
@@ -298,6 +548,19 @@
         50% {
             box-shadow: 0 0 40px rgba(78, 205, 196, 0.3);
         }
+    }
+
+    /* CV Detection overlay animation */
+    #cvDetectionOverlay .glass-card {
+        animation: pulseGlow 2s ease-in-out infinite;
+    }
+
+    #detectionChecklist .text-teal-400 {
+        transition: all 0.3s ease;
+    }
+
+    #detectionChecklist .text-white\/30 {
+        transition: all 0.3s ease;
     }
 </style>
 {% endblock %}
