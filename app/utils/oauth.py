@@ -1,3 +1,4 @@
+# app/utils/oauth.py
 from authlib.integrations.flask_client import OAuth
 from flask import session, redirect, url_for, flash, current_app
 from werkzeug.security import generate_password_hash
@@ -13,7 +14,7 @@ def configure_oauth(app):
     """Configure OAuth providers"""
     oauth.init_app(app)
     
-    # Check if credentials exist, use placeholders if not
+    # Check if credentials exist
     google_client_id = os.environ.get('GOOGLE_CLIENT_ID', '')
     google_client_secret = os.environ.get('GOOGLE_CLIENT_SECRET', '')
     
@@ -24,7 +25,7 @@ def configure_oauth(app):
     github_client_secret = os.environ.get('GITHUB_CLIENT_SECRET', '')
     
     # ============================================================
-    # GOOGLE OAUTH - FIXED
+    # GOOGLE OAUTH
     # ============================================================
     if google_client_id and google_client_secret:
         oauth.register(
@@ -34,14 +35,12 @@ def configure_oauth(app):
             server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
             client_kwargs={
                 'scope': 'openid email profile'
-            },
-            # ✅ FIX: Remove authorize_params - let the route handle nonce
-            redirect_uri=os.environ.get('GOOGLE_REDIRECT_URI', 'http://localhost:5000/auth/authorize/google')
+            }
         )
         print("✅ Google OAuth configured")
     
     # ============================================================
-    # LINKEDIN OAUTH
+    # LINKEDIN OAUTH - FIXED
     # ============================================================
     if linkedin_client_id and linkedin_client_secret:
         oauth.register(
@@ -53,8 +52,7 @@ def configure_oauth(app):
             api_base_url='https://api.linkedin.com/v2/',
             client_kwargs={
                 'scope': 'openid profile email'
-            },
-            redirect_uri=os.environ.get('LINKEDIN_REDIRECT_URI', 'http://localhost:5000/auth/authorize/linkedin')
+            }
         )
         print("✅ LinkedIn OAuth configured")
     
@@ -71,8 +69,7 @@ def configure_oauth(app):
             api_base_url='https://api.github.com/',
             client_kwargs={
                 'scope': 'user:email'
-            },
-            redirect_uri=os.environ.get('GITHUB_REDIRECT_URI', 'http://localhost:5000/auth/authorize/github')
+            }
         )
         print("✅ GitHub OAuth configured")
     

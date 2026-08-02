@@ -308,6 +308,8 @@ def google_authorize():
         return redirect(url_for('auth.login'))
 
 
+# ========== LINKEDIN OAUTH - FIXED ==========
+
 @auth_bp.route('/login/linkedin')
 def linkedin_login():
     """LinkedIn OAuth login"""
@@ -328,23 +330,48 @@ def linkedin_authorize():
     
     try:
         token = oauth.linkedin.authorize_access_token()
+        
+        # ✅ FIX: Use the correct endpoint for LinkedIn
         resp = oauth.linkedin.get('userinfo', token=token)
         user_info = resp.json()
         
+        print(f"🔍 LinkedIn user info: {user_info}")  # Debug
+        
+        # ✅ Extract email and name from the response
+        email = user_info.get('email')
+        
+        # ✅ Get name from different possible fields
+        name = user_info.get('name')
+        given_name = user_info.get('given_name')
+        family_name = user_info.get('family_name')
+        
+        # If name is not available, combine given_name and family_name
+        if not name and given_name and family_name:
+            name = f"{given_name} {family_name}"
+        elif not name:
+            name = given_name or 'LinkedIn User'
+        
+        if not email:
+            flash('Could not get email from LinkedIn.', 'error')
+            return redirect(url_for('auth.login'))
+        
         profile = {
-            'email': user_info.get('email'),
-            'name': user_info.get('name'),
-            'given_name': user_info.get('given_name'),
-            'family_name': user_info.get('family_name'),
+            'email': email,
+            'name': name,
+            'given_name': given_name,
+            'family_name': family_name,
             'picture': user_info.get('picture')
         }
         
         return handle_oauth_callback('LinkedIn', profile)
         
     except Exception as e:
+        print(f"❌ LinkedIn OAuth error: {e}")
         flash(f'LinkedIn authentication failed: {str(e)}', 'error')
         return redirect(url_for('auth.login'))
 
+
+# ========== GITHUB OAUTH ==========
 
 @auth_bp.route('/login/github')
 def github_login():
@@ -366,9 +393,14 @@ def github_authorize():
     
     try:
         token = oauth.github.authorize_access_token()
+        
+        # Get user profile
         resp = oauth.github.get('user', token=token)
         user_info = resp.json()
         
+        print(f"🔍 GitHub user info: {user_info}")  # Debug
+        
+        # Get email (may be private)
         email = user_info.get('email')
         if not email:
             email_resp = oauth.github.get('user/emails', token=token)
@@ -377,6 +409,10 @@ def github_authorize():
                 if e.get('primary') and e.get('verified'):
                     email = e.get('email')
                     break
+        
+        if not email:
+            flash('Could not get email from GitHub.', 'error')
+            return redirect(url_for('auth.login'))
         
         profile = {
             'email': email,
@@ -388,6 +424,7 @@ def github_authorize():
         return handle_oauth_callback('GitHub', profile)
         
     except Exception as e:
+        print(f"❌ GitHub OAuth error: {e}")
         flash(f'GitHub authentication failed: {str(e)}', 'error')
         return redirect(url_for('auth.login'))
 
