@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block title %}Methodology — TalentForge AI{% endblock %}
+
+{% block content %}
+<section class="max-w-6xl mx-auto px-6 py-16">
+    <!-- Header -->
+    <div class="text-center mb-16">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-white mb-4">
+            How TalentForge AI Works
+        </h1>
+        <p class="text-xl text-[#c4b5d4] max-w-3xl mx-auto">
+            The AI methodology behind Africa's first talent intelligence platform — 
+            from data acquisition to personalized career roadmaps.
+        </p>
+    </div>
+
+    <!-- Executive Summary -->
+    <div class="card p-8 mb-12 border-indigo-500/20 border-2">
+        <div class="flex items-start gap-6">
+            <div class="w-16 h-16 flex-shrink-0 bg-indigo-500/10 rounded-2xl flex items-center justify-center">
+                <i class="fas fa-brain text-3xl text-indigo-400"></i>
+            </div>
+            <div>
+                <h2 class="text-2xl font-bold text-white mb-3">The Engine Behind the Intelligence</h2>
+                <p class="text-[#c4b5d4] leading-relaxed">
+                    TalentForge AI combines advanced natural language processing, real-time labor market data aggregation, 
+                    and retrieval-augmented generation (RAG) to deliver actionable career intelligence. Unlike generic platforms, 
+                    we analyze actual African labor market data — not assumptions — to help you understand exactly what skills 
+                    you need, what gaps exist, and how to close them fast.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. Data Acquisition -->
+    <div class="mb-16">
+        <div class="flex items-center gap-3 mb-6">
+            <span class="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold">1</span>
+            <h2 class="text-2xl font-bold text-white">Data Acquisition — Multi-Platform Intelligence</h2>
+        </div>
+        <p class="text-[#c4b5d4] mb-6">We continuously scrape and aggregate job postings from 10+ platforms to build a comprehensive picture of what employers are actually hiring for.</p>
+        
+        <div class="grid md:grid-cols-2 gap-4 mb-6">
+            <div class="bg-white/5 rounded-xl p-4 border border-white/5">
+                <div class="flex items-center gap-2 text-emerald-400 mb-2">
+                    <i class="fab fa-linkedin"></i>
+                    <span class="font-semibold">LinkedIn Jobs</span>
+                </div>
+                <p class="text-[#c4b5d4] text-sm">Global job titles, skills, experience requirements</p>
+            </div>
+            <div class="bg-white/5 rounded-xl p-4 border border-white/5">
+                <div class="flex items-center gap-2 text-emerald-400 mb-2">
+                    <i class="fas fa-briefcase"></i>
+                    <span class="font-semibold">Jobberman</span>
+                </div>
+                <p class="text-[#c4b5d4] text-sm">West African entry-level to mid-career roles</p>
+            </div>
+            <div class="bg-white/5 rounded-xl p-4 border border-white/5">
+                <div class="flex items-center gap-2 text-emerald-400 mb-2">
+                    <i class="fas fa-search"></i>
+                    <span class="font-semibold">Indeed Africa</span>
+                </div>
+                <p class="text-[#c4b5d4] text-sm">Pan-African job descriptions and skill requirements</p>
+            </div>
+            <div class="bg-white/5 rounded-xl p-4 border border-white/5">
+                <div class="flex items-center gap-2 text-emerald-400 mb-2">
+                    <i class="fas fa-chart-line"></i>
+                    <span class="font-semibold">Glassdoor</span>
+                </div>
+                <p class="text-[#c4b5d4] text-sm">Salary data, company reviews, skill benchmarks</p>
+            </div>
+        </div>
+        
+        <div class="bg-indigo-950/30 rounded-xl p-6 border border-indigo-500/20">
+            <p class="text-[#c4b5d4] text-sm">
+                <span class="text-indigo-400 font-semibold">Key Differentiator:</span> 
+                Unlike platforms that rely on a single data source, we aggregate from multiple sources to build a comprehensive, 
+                real-time picture of the African labor market.
+            </p>
+        </div>
+    </div>
+
+    <!-- 2. CV Parsing -->
+    <div class="mb-16">
+        <div class="flex items-center gap-3 mb-6">
+            <span class="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold">2</span>
+            <h2 class="text-2xl font-bold text-white">CV Parsing &amp; Skill Extraction</h2>
+        </div>
+        <div class="grid md:grid-cols-2 gap-8">
+            <div>
+                <h4 class="text-white font-semibold mb-3">Document Processing</h4>
+                <ul class="space-y-2 text-[#c4b5d4] text-sm">
+                    <li class="flex items-start gap-2"><i class="fas fa-check text-emerald-400 mt-0.5"></i> PDF, DOCX, and text file support</li>
+                    <li class="flex items-start gap-2"><i class="fas fa-check text-emerald-400 mt-0.5"></i> Document structure detection</li>
+                    <li class="flex items-start gap-2"><i class="fas fa-check text-emerald-400 mt-0.5"></i> Intelligent section segmentation</li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="text-white font-semibold mb-3">NLP-Based Skill Extraction</h4>
+                <ul class="space-y-2 text-[#c4b5d4] text-sm">
+                    <li class="flex items-start gap-2"><i class="fas fa-check text-emerald-400 mt-0.5"></i> Rule-based extraction with 5,000+ skill database</li>
+                    <li class="flex items-start gap-2"><i class="fas fa-check text-emerald-400 mt-0.5"></i> Context-aware extraction using Sentence Transformers</li>
+                    <li class="flex items-start gap-2"><i class="fas fa-check text-emerald-400 mt-0.5"></i> Automated skill categorization and classification</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Skill-Gap Analysis -->
+    <div class="mb-16">
+        <div class="flex items-center gap-3 mb-6">
+            <span class="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold">3</span>
+            <h2 class="text-2xl font-bold text-white">Skill-Gap Analysis Engine</h2>
+        </div>
+        <div class="grid md:grid-cols-3 gap-4">
+            <div class="bg-white/5 rounded-xl p-5 border border-white/5 text-center">
+                <div class="text-3xl font-bold text-indigo-400 mb-2">40%</div>
+                <p class="text-[#c4b5d4] text-sm">Skill Match — % of required skills present × Market Demand</p>
+            </div>
+            <div class="bg-white/5 rounded-xl p-5 border border-white/5 text-center">
+                <div class="text-3xl font-bold text-indigo-400 mb-2">25%</div>
+                <p class="text-[#c4b5d4] text-sm">Experience — Years × Role seniority multiplier</p>
+            </div>
+            <div class="bg-white/5 rounded-xl p-5 border border-white/5 text-center">
+                <div class="text-3xl font-bold text-indigo-400 mb-2">15%</div>
+                <p class="text-[#c4b5d4] text-sm">Education — Degree level × Field relevance</p>
+            </div>
+        </div>
+        <div class="mt-4 text-center text-[#c4b5d4] text-sm">
+            <span class="text-white font-medium">Plus:</span> Certifications (10%) + Market Alignment (10%)
+        </div>
+    </div>
+
+    <!-- 4. RAG-Powered AI Assistant -->
+    <div class="mb-16">
+        <div class="flex items-center gap-3 mb-6">
+            <span class="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold">4</span>
+            <h2 class="text-2xl font-bold text-white">RAG-Powered Career Assistant</h2>
+        </div>
+        <div class="grid md:grid-cols-3 gap-6">
+            <div class="card p-6 text-center">
+                <i class="fas fa-search text-3xl text-indigo-400 mb-3"></i>
+                <h4 class="text-white font-semibold mb-2">User Query</h4>
+                <p class="text-[#c4b5d4] text-sm">Natural language questions about careers, skills, or job market</p>
+            </div>
+            <div class="card p-6 text-center">
+                <i class="fas fa-database text-3xl text-indigo-400 mb-3"></i>
+                <h4 class="text-white font-semibold mb-2">Vector Search</h4>
+                <p class="text-[#c4b5d4] text-sm">Context retrieval from ChromaDB vector database</p>
+            </div>
+            <div class="card p-6 text-center">
+                <i class="fas fa-robot text-3xl text-indigo-400 mb-3"></i>
+                <h4 class="text-white font-semibold mb-2">AI Response</h4>
+                <p class="text-[#c4b5d4] text-sm">LLM generates personalized, context-aware answers</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Learning Roadmap -->
+    <div class="mb-16">
+        <div class="flex items-center gap-3 mb-6">
+            <span class="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold">5</span>
+            <h2 class="text-2xl font-bold text-white">Personalized Learning Roadmap</h2>
+        </div>
+        <div class="grid md:grid-cols-4 gap-4">
+            <div class="bg-white/5 rounded-xl p-4 text-center border border-white/5">
+                <span class="text-emerald-400 font-bold text-sm">0–3 Months</span>
+                <h4 class="text-white font-semibold mt-2">Immediate</h4>
+                <p class="text-[#c4b5d4] text-xs">Foundational skills &amp; quick wins</p>
+            </div>
+            <div class="bg-white/5 rounded-xl p-4 text-center border border-white/5">
+                <span class="text-indigo-400 font-bold text-sm">3–6 Months</span>
+                <h4 class="text-white font-semibold mt-2">Short Term</h4>
+                <p class="text-[#c4b5d4] text-xs">Core skills &amp; certifications</p>
+            </div>
+            <div class="bg-white/5 rounded-xl p-4 text-center border border-white/5">
+                <span class="text-yellow-400 font-bold text-sm">6–12 Months</span>
+                <h4 class="text-white font-semibold mt-2">Medium Term</h4>
+                <p class="text-[#c4b5d4] text-xs">Advanced skills &amp; projects</p>
+            </div>
+            <div class="bg-white/5 rounded-xl p-4 text-center border border-white/5">
+                <span class="text-rose-400 font-bold text-sm">12+ Months</span>
+                <h4 class="text-white font-semibold mt-2">Long Term</h4>
+                <p class="text-[#c4b5d4] text-xs">Expert &amp; leadership skills</p>
+            </div>
+        </div>
+        <p class="text-[#c4b5d4] text-sm text-center mt-4">
+            <i class="fas fa-info-circle text-indigo-400 mr-2"></i>
+            Course recommendations from Coursera, Udemy, edX, and African bootcamps
+        </p>
+    </div>
+
+    <!-- 6. Technology Stack -->
+    <div class="mb-12">
+        <div class="flex items-center gap-3 mb-6">
+            <span class="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center text-indigo-400 font-bold">6</span>
+            <h2 class="text-2xl font-bold text-white">Technology Stack</h2>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white/5 rounded-xl p-4 text-center border border-white/5">
+                <i class="fab fa-python text-3xl text-indigo-400 mb-2"></i>
+                <p class="text-[#c4b5d4] text-sm">Python / Flask</p>
+            </div>
+            <div class="bg-white/5 rounded-xl p-4 text-center border border-white/5">
+                <i class="fas fa-database text-3xl text-indigo-400 mb-2"></i>
+                <p class="text-[#c4b5d4] text-sm">PostgreSQL / Supabase</p>
+            </div>
+            <div class="bg-white/5 rounded-xl p-4 text-center border border-white/5">
+                <i class="fas fa-brain text-3xl text-indigo-400 mb-2"></i>
+                <p class="text-[#c4b5d4] text-sm">Sentence Transformers</p>
+            </div>
+            <div class="bg-white/5 rounded-xl p-4 text-center border border-white/5">
+                <i class="fas fa-chart-line text-3xl text-indigo-400 mb-2"></i>
+                <p class="text-[#c4b5d4] text-sm">ChromaDB / RAG</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Call to Action -->
+    <div class="card p-12 text-center border-2 border-indigo-800/30 mt-12">
+        <h2 class="text-3xl font-bold text-white mb-4">Ready to Experience the Intelligence?</h2>
+        <p class="text-[#c4b5d4] text-lg mb-6 max-w-2xl mx-auto">
+            Upload your CV today and discover your personalized career roadmap powered by Africa's first talent intelligence platform.
+        </p>
+        <a href="{{ url_for('upload_cv') }}" class="btn-primary px-8 py-3 rounded-full text-white font-bold inline-flex items-center gap-2">
+            <i class="fas fa-cloud-upload-alt"></i> Get Started
+        </a>
+    </div>
+</section>
+{% endblock %}

@@ -1,5 +1,5 @@
 # app/utils/email.py
-from flask import current_app, render_template
+from flask import current_app, render_template, url_for
 from flask_mail import Message
 from threading import Thread
 import os
@@ -43,7 +43,7 @@ def send_email(subject, recipients, html_body, text_body=None, sender=None):
             recipients=recipients if isinstance(recipients, list) else [recipients],
             html=html_body,
             body=text_body,
-            sender=sender or app.config.get('MAIL_DEFAULT_SENDER', 'noreply@fadtechlabs.com')
+            sender=sender or app.config.get('MAIL_DEFAULT_SENDER', 'noreply@talentforge.ai')
         )
         
         print(f"📧 From: {msg.sender}")
@@ -63,9 +63,88 @@ def send_email(subject, recipients, html_body, text_body=None, sender=None):
 # EMAIL TEMPLATES
 # ============================================
 
+# ========== EMAIL VERIFICATION ==========
+
+def send_verification_email(email, token, fullname):
+    """Send email verification link to new user"""
+    from flask import url_for
+    
+    verification_url = url_for('auth.verify_email', token=token, _external=True)
+    
+    subject = "✅ Verify Your Email - TalentForge AI"
+    
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: 'Inter', Arial, sans-serif; background: #f8f6f0; color: #2c3e50; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }}
+            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #6366f1; }}
+            .logo {{ font-size: 28px; font-weight: 800; color: #2c3e50; }}
+            .logo span {{ color: #6366f1; }}
+            .tagline {{ color: #10b981; font-size: 14px; font-weight: 500; }}
+            .content {{ padding: 30px 0; }}
+            .btn {{ display: inline-block; padding: 14px 35px; background: linear-gradient(135deg, #6366f1, #10b981); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; }}
+            .btn:hover {{ opacity: 0.9; }}
+            .footer {{ text-align: center; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }}
+            .token-box {{ background: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace; margin: 10px 0; word-break: break-all; font-size: 12px; }}
+            .warning {{ background: #fef3c7; padding: 16px; border-radius: 12px; border-left: 4px solid #f59e0b; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <div class="logo">TalentForge <span>AI</span></div>
+                <p class="tagline">Africa's Talent Intelligence Platform</p>
+            </div>
+            <div class="content">
+                <h2 style="color: #2c3e50;">Welcome, {fullname}! 👋</h2>
+                
+                <p style="color: #555; line-height: 1.6;">
+                    Thanks for registering with <strong>TalentForge AI</strong>. 
+                    Please verify your email address to get started.
+                </p>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{verification_url}" class="btn">Verify Email Address</a>
+                </div>
+                
+                <p style="color: #718096; font-size: 14px; text-align: center;">
+                    Or copy and paste this link into your browser:
+                </p>
+                
+                <div class="token-box">
+                    {verification_url}
+                </div>
+                
+                <div class="warning">
+                    <p style="margin: 0; color: #92400e; font-size: 14px;">
+                        ⚠️ This link expires in <strong>7 days</strong>.
+                    </p>
+                </div>
+                
+                <p style="color: #999; font-size: 12px; margin-top: 20px;">
+                    If you didn't create an account, you can safely ignore this email.
+                </p>
+            </div>
+            <div class="footer">
+                <p>© 2026 TalentForge AI. All rights reserved.</p>
+                <p>Ghana · West Africa</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return send_email(subject, email, html)
+
+
+# ========== WELCOME EMAIL ==========
+
 def send_welcome_email(user):
     """Send welcome email to new user"""
-    subject = "Welcome to FADTECH Labs! 🚀"
+    subject = "Welcome to TalentForge AI! 🚀"
     
     html = f"""
     <html>
@@ -73,23 +152,24 @@ def send_welcome_email(user):
         <style>
             body {{ font-family: 'Inter', Arial, sans-serif; background: #f8f6f0; color: #2c3e50; }}
             .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }}
-            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #ffd700; }}
+            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #6366f1; }}
             .logo {{ font-size: 28px; font-weight: 800; color: #2c3e50; }}
-            .logo span {{ color: #ffd700; }}
+            .logo span {{ color: #6366f1; }}
+            .tagline {{ color: #10b981; font-size: 14px; font-weight: 500; }}
             .content {{ padding: 30px 0; }}
-            .btn {{ display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #ffd700, #f0a500); color: #0a0a0a; text-decoration: none; border-radius: 50px; font-weight: 600; }}
+            .btn {{ display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #6366f1, #10b981); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; }}
             .footer {{ text-align: center; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }}
         </style>
     </head>
     <body>
         <div class="container">
             <div class="header">
-                <div class="logo">FADTECH <span>Labs</span></div>
-                <p style="color: #666; margin-top: 4px;">Career Intelligence System</p>
+                <div class="logo">TalentForge <span>AI</span></div>
+                <p class="tagline">Africa's Talent Intelligence Platform</p>
             </div>
             <div class="content">
                 <h2 style="color: #2c3e50;">Welcome, {user.fullname}! 👋</h2>
-                <p style="color: #555; line-height: 1.6;">Thank you for joining FADTECH Labs! We're excited to help you on your career journey.</p>
+                <p style="color: #555; line-height: 1.6;">Thank you for joining TalentForge AI! We're excited to help you on your career journey.</p>
                 
                 <div style="background: #f8f6f0; padding: 20px; border-radius: 12px; margin: 20px 0;">
                     <p style="margin: 0; font-weight: 600;">Your Account Details:</p>
@@ -97,15 +177,19 @@ def send_welcome_email(user):
                     <p style="margin: 4px 0; color: #555;">Account Type: {user.user_type.title()}</p>
                 </div>
                 
+                <div style="background: #e8f5e9; padding: 16px; border-radius: 12px; margin: 20px 0;">
+                    <p style="margin: 0; color: #2e7d32;">🎯 Get started by uploading your CV to receive your personalized skill analysis!</p>
+                </div>
+                
                 <div style="text-align: center; margin: 30px 0;">
                     <a href="http://localhost:5000/dashboard" class="btn">Go to Dashboard</a>
                 </div>
                 
-                <p style="color: #555; font-size: 14px;">Need help? Reply to this email or visit our <a href="http://localhost:5000" style="color: #ffd700;">support page</a>.</p>
+                <p style="color: #555; font-size: 14px;">Need help? Reply to this email or visit our <a href="http://localhost:5000" style="color: #6366f1;">support page</a>.</p>
             </div>
             <div class="footer">
-                <p>© 2026 FADTECH Labs. All rights reserved.</p>
-                <p>Building Africa's employability intelligence infrastructure.</p>
+                <p>© 2026 TalentForge AI. All rights reserved.</p>
+                <p>Building Africa's talent intelligence infrastructure.</p>
             </div>
         </div>
     </body>
@@ -130,18 +214,19 @@ def send_verification_approved_email(recruiter):
             .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }}
             .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #4CAF50; }}
             .logo {{ font-size: 28px; font-weight: 800; color: #2c3e50; }}
-            .logo span {{ color: #ffd700; }}
+            .logo span {{ color: #6366f1; }}
+            .tagline {{ color: #10b981; font-size: 14px; font-weight: 500; }}
             .content {{ padding: 30px 0; }}
             .success {{ background: #e8f5e9; padding: 16px; border-radius: 12px; border-left: 4px solid #4CAF50; }}
-            .btn {{ display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #ffd700, #f0a500); color: #0a0a0a; text-decoration: none; border-radius: 50px; font-weight: 600; }}
+            .btn {{ display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #6366f1, #10b981); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; }}
             .footer {{ text-align: center; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }}
         </style>
     </head>
     <body>
         <div class="container">
             <div class="header">
-                <div class="logo">FADTECH <span>Labs</span></div>
-                <p style="color: #666; margin-top: 4px;">Career Intelligence System</p>
+                <div class="logo">TalentForge <span>AI</span></div>
+                <p class="tagline">Africa's Talent Intelligence Platform</p>
             </div>
             <div class="content">
                 <div class="success">
@@ -166,7 +251,7 @@ def send_verification_approved_email(recruiter):
                 </div>
             </div>
             <div class="footer">
-                <p>© 2026 FADTECH Labs. All rights reserved.</p>
+                <p>© 2026 TalentForge AI. All rights reserved.</p>
             </div>
         </div>
     </body>
@@ -191,18 +276,19 @@ def send_verification_rejected_email(recruiter):
             .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }}
             .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #f44336; }}
             .logo {{ font-size: 28px; font-weight: 800; color: #2c3e50; }}
-            .logo span {{ color: #ffd700; }}
+            .logo span {{ color: #6366f1; }}
+            .tagline {{ color: #10b981; font-size: 14px; font-weight: 500; }}
             .content {{ padding: 30px 0; }}
             .rejected {{ background: #ffebee; padding: 16px; border-radius: 12px; border-left: 4px solid #f44336; }}
-            .btn {{ display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #ffd700, #f0a500); color: #0a0a0a; text-decoration: none; border-radius: 50px; font-weight: 600; }}
+            .btn {{ display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #6366f1, #10b981); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; }}
             .footer {{ text-align: center; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }}
         </style>
     </head>
     <body>
         <div class="container">
             <div class="header">
-                <div class="logo">FADTECH <span>Labs</span></div>
-                <p style="color: #666; margin-top: 4px;">Career Intelligence System</p>
+                <div class="logo">TalentForge <span>AI</span></div>
+                <p class="tagline">Africa's Talent Intelligence Platform</p>
             </div>
             <div class="content">
                 <div class="rejected">
@@ -232,7 +318,7 @@ def send_verification_rejected_email(recruiter):
                 </div>
             </div>
             <div class="footer">
-                <p>© 2026 FADTECH Labs. All rights reserved.</p>
+                <p>© 2026 TalentForge AI. All rights reserved.</p>
             </div>
         </div>
     </body>
@@ -256,19 +342,20 @@ def send_new_application_email(application, job):
         <style>
             body {{ font-family: 'Inter', Arial, sans-serif; background: #f8f6f0; color: #2c3e50; }}
             .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }}
-            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #4CAF50; }}
+            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #6366f1; }}
             .logo {{ font-size: 28px; font-weight: 800; color: #2c3e50; }}
-            .logo span {{ color: #ffd700; }}
+            .logo span {{ color: #6366f1; }}
+            .tagline {{ color: #10b981; font-size: 14px; font-weight: 500; }}
             .content {{ padding: 30px 0; }}
-            .btn {{ display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #ffd700, #f0a500); color: #0a0a0a; text-decoration: none; border-radius: 50px; font-weight: 600; }}
+            .btn {{ display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #6366f1, #10b981); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; }}
             .footer {{ text-align: center; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }}
         </style>
     </head>
     <body>
         <div class="container">
             <div class="header">
-                <div class="logo">FADTECH <span>Labs</span></div>
-                <p style="color: #666; margin-top: 4px;">Career Intelligence System</p>
+                <div class="logo">TalentForge <span>AI</span></div>
+                <p class="tagline">Africa's Talent Intelligence Platform</p>
             </div>
             <div class="content">
                 <h2 style="color: #2c3e50;">📝 New Job Application</h2>
@@ -292,7 +379,7 @@ def send_new_application_email(application, job):
                 </div>
             </div>
             <div class="footer">
-                <p>© 2026 FADTECH Labs. All rights reserved.</p>
+                <p>© 2026 TalentForge AI. All rights reserved.</p>
             </div>
         </div>
     </body>
@@ -321,10 +408,8 @@ def send_application_status_update_email(application):
     # Get company name safely
     company_name = 'N/A'
     if application.job:
-        # Try to get company name from recruiter relationship
         if hasattr(application.job, 'recruiter') and application.job.recruiter:
             company_name = application.job.recruiter.company_name or 'N/A'
-        # Or try to get it from the user who posted the job
         elif hasattr(application.job, 'poster') and application.job.poster:
             if hasattr(application.job.poster, 'company_name'):
                 company_name = application.job.poster.company_name or 'N/A'
@@ -335,19 +420,20 @@ def send_application_status_update_email(application):
         <style>
             body {{ font-family: 'Inter', Arial, sans-serif; background: #f8f6f0; color: #2c3e50; }}
             .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }}
-            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #ffd700; }}
+            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #6366f1; }}
             .logo {{ font-size: 28px; font-weight: 800; color: #2c3e50; }}
-            .logo span {{ color: #ffd700; }}
+            .logo span {{ color: #6366f1; }}
+            .tagline {{ color: #10b981; font-size: 14px; font-weight: 500; }}
             .content {{ padding: 30px 0; }}
-            .btn {{ display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #ffd700, #f0a500); color: #0a0a0a; text-decoration: none; border-radius: 50px; font-weight: 600; }}
+            .btn {{ display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #6366f1, #10b981); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; }}
             .footer {{ text-align: center; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }}
         </style>
     </head>
     <body>
         <div class="container">
             <div class="header">
-                <div class="logo">FADTECH <span>Labs</span></div>
-                <p style="color: #666; margin-top: 4px;">Career Intelligence System</p>
+                <div class="logo">TalentForge <span>AI</span></div>
+                <p class="tagline">Africa's Talent Intelligence Platform</p>
             </div>
             <div class="content">
                 <h2 style="color: #2c3e50;">📋 Application Status Updated</h2>
@@ -374,7 +460,7 @@ def send_application_status_update_email(application):
                 </div>
             </div>
             <div class="footer">
-                <p>© 2026 FADTECH Labs. All rights reserved.</p>
+                <p>© 2026 TalentForge AI. All rights reserved.</p>
             </div>
         </div>
     </body>
@@ -400,23 +486,24 @@ def send_job_published_email(job):
             .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }}
             .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #4CAF50; }}
             .logo {{ font-size: 28px; font-weight: 800; color: #2c3e50; }}
-            .logo span {{ color: #ffd700; }}
+            .logo span {{ color: #6366f1; }}
+            .tagline {{ color: #10b981; font-size: 14px; font-weight: 500; }}
             .content {{ padding: 30px 0; }}
-            .btn {{ display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #ffd700, #f0a500); color: #0a0a0a; text-decoration: none; border-radius: 50px; font-weight: 600; }}
+            .btn {{ display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #6366f1, #10b981); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; }}
             .footer {{ text-align: center; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }}
         </style>
     </head>
     <body>
         <div class="container">
             <div class="header">
-                <div class="logo">FADTECH <span>Labs</span></div>
-                <p style="color: #666; margin-top: 4px;">Career Intelligence System</p>
+                <div class="logo">TalentForge <span>AI</span></div>
+                <p class="tagline">Africa's Talent Intelligence Platform</p>
             </div>
             <div class="content">
                 <h2 style="color: #2c3e50;">✅ Job Published Successfully!</h2>
                 
                 <p style="color: #555; line-height: 1.6;">Dear {recruiter.company_name},</p>
-                <p style="color: #555; line-height: 1.6;">Your job posting has been published and is now live on the FADTECH Labs job board!</p>
+                <p style="color: #555; line-height: 1.6;">Your job posting has been published and is now live on the TalentForge AI job board!</p>
                 
                 <div style="background: #f8f6f0; padding: 20px; border-radius: 12px; margin: 20px 0;">
                     <p style="margin: 0; font-weight: 600;">📌 Job Details:</p>
@@ -437,7 +524,7 @@ def send_job_published_email(job):
                 </div>
             </div>
             <div class="footer">
-                <p>© 2026 FADTECH Labs. All rights reserved.</p>
+                <p>© 2026 TalentForge AI. All rights reserved.</p>
             </div>
         </div>
     </body>
@@ -462,19 +549,20 @@ def send_candidate_match_email(recruiter, candidate, job=None):
         <style>
             body {{ font-family: 'Inter', Arial, sans-serif; background: #f8f6f0; color: #2c3e50; }}
             .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }}
-            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #ffd700; }}
+            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #6366f1; }}
             .logo {{ font-size: 28px; font-weight: 800; color: #2c3e50; }}
-            .logo span {{ color: #ffd700; }}
+            .logo span {{ color: #6366f1; }}
+            .tagline {{ color: #10b981; font-size: 14px; font-weight: 500; }}
             .content {{ padding: 30px 0; }}
-            .btn {{ display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #ffd700, #f0a500); color: #0a0a0a; text-decoration: none; border-radius: 50px; font-weight: 600; }}
+            .btn {{ display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #6366f1, #10b981); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; }}
             .footer {{ text-align: center; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }}
         </style>
     </head>
     <body>
         <div class="container">
             <div class="header">
-                <div class="logo">FADTECH <span>Labs</span></div>
-                <p style="color: #666; margin-top: 4px;">Career Intelligence System</p>
+                <div class="logo">TalentForge <span>AI</span></div>
+                <p class="tagline">Africa's Talent Intelligence Platform</p>
             </div>
             <div class="content">
                 <h2 style="color: #2c3e50;">🎯 New Candidate Match Found!</h2>
@@ -495,7 +583,7 @@ def send_candidate_match_email(recruiter, candidate, job=None):
                 </div>
             </div>
             <div class="footer">
-                <p>© 2026 FADTECH Labs. All rights reserved.</p>
+                <p>© 2026 TalentForge AI. All rights reserved.</p>
             </div>
         </div>
     </body>
@@ -515,7 +603,7 @@ def send_password_reset_email(user, token):
     print(f"📧 User: {user.email}")
     print(f"📧 Token: {token[:20]}...")
     
-    subject = "🔐 Reset Your Password - FADTECH Labs"
+    subject = "🔐 Reset Your Password - TalentForge AI"
     
     # Get base URL from config or use default
     base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
@@ -529,12 +617,13 @@ def send_password_reset_email(user, token):
         <style>
             body {{ font-family: 'Inter', Arial, sans-serif; background: #f8f6f0; color: #2c3e50; }}
             .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }}
-            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #4F46E5; }}
+            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #6366f1; }}
             .logo {{ font-size: 28px; font-weight: 800; color: #2c3e50; }}
-            .logo span {{ color: #4F46E5; }}
+            .logo span {{ color: #6366f1; }}
+            .tagline {{ color: #10b981; font-size: 14px; font-weight: 500; }}
             .content {{ padding: 30px 0; }}
-            .btn {{ display: inline-block; padding: 12px 30px; background: #4F46E5; color: white; text-decoration: none; border-radius: 50px; font-weight: 600; }}
-            .btn:hover {{ background: #4338CA; }}
+            .btn {{ display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #6366f1, #10b981); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; }}
+            .btn:hover {{ opacity: 0.9; }}
             .footer {{ text-align: center; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }}
             .token-box {{ background: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace; margin: 10px 0; word-break: break-all; font-size: 12px; }}
             .warning {{ background: #fef3c7; padding: 16px; border-radius: 12px; border-left: 4px solid #f59e0b; }}
@@ -543,8 +632,8 @@ def send_password_reset_email(user, token):
     <body>
         <div class="container">
             <div class="header">
-                <div class="logo">FADTECH <span>Labs</span></div>
-                <p style="color: #666; margin-top: 4px;">Career Intelligence System</p>
+                <div class="logo">TalentForge <span>AI</span></div>
+                <p class="tagline">Africa's Talent Intelligence Platform</p>
             </div>
             <div class="content">
                 <h2 style="color: #2c3e50;">🔐 Reset Your Password</h2>
@@ -552,7 +641,7 @@ def send_password_reset_email(user, token):
                 <p style="color: #555; line-height: 1.6;">Hi {user.fullname},</p>
                 
                 <p style="color: #555; line-height: 1.6;">
-                    We received a request to reset your password for your FADTECH Labs account.
+                    We received a request to reset your password for your TalentForge AI account.
                     Click the button below to set a new password:
                 </p>
                 
@@ -585,10 +674,10 @@ def send_password_reset_email(user, token):
                 </div>
             </div>
             <div class="footer">
-                <p>© 2026 FADTECH Labs. All rights reserved.</p>
+                <p>© 2026 TalentForge AI. All rights reserved.</p>
                 <p>Ghana · West Africa</p>
                 <p style="margin-top: 4px;">
-                    <a href="{base_url}" style="color: #4F46E5; text-decoration: none;">Visit our website</a>
+                    <a href="{base_url}" style="color: #6366f1; text-decoration: none;">Visit our website</a>
                 </p>
             </div>
         </div>

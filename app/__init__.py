@@ -727,7 +727,12 @@ def register_routes(app):
     @app.route('/terms-of-use')
     def terms_of_use():
         return render_template('terms_of_use.html')
-    
+
+    @app.route('/methodology')
+    def methodology():
+        """Methodology page explaining how TalentForge AI works"""
+        return render_template('methodology.html')
+
     # ========== STUDENT-ONLY ROUTES ==========
     @app.route('/upload-cv', methods=['GET', 'POST'])
     @login_required

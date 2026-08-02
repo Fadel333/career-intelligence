@@ -5,12 +5,37 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from models import User, Profile, RecruiterProfile
 from extensions import db
 from app.utils.oauth import oauth
-from app.utils.email import send_welcome_email
+from app.utils.email import send_welcome_email, send_verification_email
 import secrets
 from datetime import datetime, timedelta
+import jwt
 
 auth_bp = Blueprint("auth", __name__)
 
+
+# ========== TOKEN FUNCTIONS ==========
+
+def generate_verification_token(user_id):
+    """Generate email verification token (expires in 7 days)"""
+    payload = {
+        'user_id': user_id,
+        'exp': datetime.utcnow() + timedelta(days=7)
+    }
+    return jwt.encode(payload, current_app.config['SECRET_KEY'], algorithm='HS256')
+
+
+def verify_token(token):
+    """Verify and decode token"""
+    try:
+        payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        return payload['user_id']
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
+
+
+# ========== REGISTRATION ==========
 
 @auth_bp.route("/register", methods=["GET", "POST"])
 def register():
@@ -51,15 +76,15 @@ def register():
             flash("An account with this email already exists. Please login instead.", "error")
             return redirect(url_for("auth.login"))
         
-        # Create new user
+        # ✅ Create user as INACTIVE (requires email verification)
         hashed_password = generate_password_hash(password)
         user = User(
             fullname=name,
             email=email,
             password=hashed_password,
             user_type=user_type,
-            is_active=True,
-            is_verified=True
+            is_active=False,      # ✅ User cannot login until verified
+            is_verified=False     # ✅ Not verified yet
         )
         
         try:
@@ -85,27 +110,18 @@ def register():
             
             db.session.commit()
 
-            # Send welcome email (skip if email service not configured)
+            # ✅ GENERATE AND SEND VERIFICATION EMAIL
             try:
-                send_welcome_email(user)
+                token = generate_verification_token(user.id)
+                send_verification_email(email, token, name)
+                flash("✅ Please check your email to verify your account.", "success")
             except Exception as e:
-                print(f"Welcome email error: {e}")
+                print(f"Verification email error: {e}")
+                # Still create account, but warn user
+                flash("⚠️ Account created but we couldn't send verification email. Please contact support.", "warning")
             
-            flash("Account created successfully! Welcome!", "success")
-            
-            # Log the user in
-            login_user(user)
-            
-            # Redirect based on user type
-            if user_type == 'recruiter':
-                flash("Please complete your recruiter profile setup.", "info")
-                return redirect(url_for('recruiter.setup_profile'))
-            elif user_type == 'university':
-                return redirect(url_for('university_dashboard'))
-            elif user_type == 'admin':
-                return redirect(url_for('admin.index'))
-            else:
-                return redirect(url_for('dashboard'))
+            # ✅ DO NOT LOGIN USER - they need to verify first
+            return redirect(url_for("auth.login"))
                 
         except Exception as e:
             db.session.rollback()
@@ -116,6 +132,71 @@ def register():
     # GET request - show registration form
     return render_template("register.html")
 
+
+# ========== EMAIL VERIFICATION ==========
+
+@auth_bp.route('/verify/<token>')
+def verify_email(token):
+    """Verify user's email address"""
+    user_id = verify_token(token)
+    
+    if not user_id:
+        flash('❌ Invalid or expired verification link.', 'error')
+        return redirect(url_for('auth.login'))
+    
+    user = User.query.get(user_id)
+    
+    if not user:
+        flash('❌ User not found.', 'error')
+        return redirect(url_for('auth.login'))
+    
+    if user.is_verified:
+        flash('✅ Email already verified. Please login.', 'success')
+        return redirect(url_for('auth.login'))
+    
+    # ✅ ACTIVATE USER
+    user.is_verified = True
+    user.is_active = True
+    db.session.commit()
+    
+    flash('✅ Email verified! You can now login.', 'success')
+    return redirect(url_for('auth.login'))
+
+
+@auth_bp.route('/resend-verification', methods=['GET', 'POST'])
+def resend_verification():
+    """Resend verification email"""
+    if request.method == 'POST':
+        email = request.form.get('email')
+        
+        if not email:
+            flash('Please enter your email address.', 'error')
+            return redirect(url_for('auth.resend_verification'))
+        
+        user = User.query.filter_by(email=email).first()
+        
+        if not user:
+            flash('No account found with this email.', 'error')
+            return redirect(url_for('auth.resend_verification'))
+        
+        if user.is_verified:
+            flash('✅ Email already verified. Please login.', 'success')
+            return redirect(url_for('auth.login'))
+        
+        try:
+            token = generate_verification_token(user.id)
+            send_verification_email(user.email, token, user.fullname)
+            flash('✅ Verification email resent. Please check your inbox.', 'success')
+        except Exception as e:
+            print(f"Resend verification error: {e}")
+            flash('Could not send verification email. Please try again later.', 'error')
+        
+        return redirect(url_for('auth.login'))
+    
+    return render_template('resend_verification.html')
+
+
+# ========== LOGIN ==========
 
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
@@ -130,30 +211,41 @@ def login():
         
         user = User.query.filter_by(email=email).first()
         
-        if user and check_password_hash(user.password, password):
-            login_user(user, remember=bool(remember))
-            flash(f"Welcome back, {user.fullname}!", "success")
-            
-            next_page = request.args.get('next')
-            if next_page:
-                return redirect(next_page)
-            
-            # Redirect based on user type
-            if user.user_type == 'admin':
-                return redirect(url_for('admin.index'))
-            elif user.user_type == 'recruiter':
-                return redirect(url_for('recruiter.dashboard'))
-            elif user.user_type == 'university':
-                return redirect(url_for('university_dashboard'))
-            else:
-                # Students and professionals
-                return redirect(url_for('dashboard'))
-        else:
+        if not user or not check_password_hash(user.password, password):
             flash("Invalid email or password.", "error")
             return redirect(url_for("auth.login"))
+        
+        # ✅ CHECK IF EMAIL IS VERIFIED
+        if not user.is_verified:
+            flash("⚠️ Please verify your email first. Check your inbox or request a new verification link.", "error")
+            return redirect(url_for("auth.resend_verification"))
+        
+        # ✅ CHECK IF USER IS ACTIVE
+        if not user.is_active:
+            flash("⚠️ Your account is inactive. Please contact support.", "error")
+            return redirect(url_for("auth.login"))
+        
+        login_user(user, remember=bool(remember))
+        flash(f"Welcome back, {user.fullname}!", "success")
+        
+        next_page = request.args.get('next')
+        if next_page:
+            return redirect(next_page)
+        
+        # Redirect based on user type
+        if user.user_type == 'admin':
+            return redirect(url_for('admin.index'))
+        elif user.user_type == 'recruiter':
+            return redirect(url_for('recruiter.dashboard'))
+        elif user.user_type == 'university':
+            return redirect(url_for('university_dashboard'))
+        else:
+            return redirect(url_for('dashboard'))
     
     return render_template("login.html")
 
+
+# ========== LOGOUT ==========
 
 @auth_bp.route("/logout")
 @login_required
@@ -177,7 +269,6 @@ def google_login():
         flash('Google OAuth is not configured. Please contact support.', 'error')
         return redirect(url_for('auth.login'))
     
-    # Generate a nonce and store it in the session
     nonce = secrets.token_urlsafe(16)
     session['oauth_nonce'] = nonce
     
@@ -194,8 +285,6 @@ def google_authorize():
     
     try:
         token = oauth.google.authorize_access_token()
-        
-        # Use userinfo endpoint (most reliable method)
         resp = oauth.google.get('https://www.googleapis.com/oauth2/v3/userinfo', token=token)
         user_info = resp.json()
         
@@ -239,8 +328,6 @@ def linkedin_authorize():
     
     try:
         token = oauth.linkedin.authorize_access_token()
-        
-        # Get user profile from LinkedIn
         resp = oauth.linkedin.get('userinfo', token=token)
         user_info = resp.json()
         
@@ -279,15 +366,11 @@ def github_authorize():
     
     try:
         token = oauth.github.authorize_access_token()
-        
-        # Get user profile from GitHub
         resp = oauth.github.get('user', token=token)
         user_info = resp.json()
         
-        # Get email from GitHub (may be private)
         email = user_info.get('email')
         if not email:
-            # If email is private, get it from the emails endpoint
             email_resp = oauth.github.get('user/emails', token=token)
             emails = email_resp.json()
             for e in emails:
@@ -314,7 +397,8 @@ def handle_oauth_callback(provider, profile):
     from app.utils.oauth import handle_oauth_login
     return handle_oauth_login(provider, profile)
 
-# app/auth/routes.py
+
+# ========== PASSWORD RESET ==========
 
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
@@ -328,22 +412,15 @@ def forgot_password():
         
         user = User.query.filter_by(email=email).first()
         
-        # Always show success message even if user doesn't exist (security best practice)
         if not user:
             flash('If an account exists with this email, you will receive a password reset link.', 'success')
             return redirect(url_for('auth.login'))
         
-        # Generate reset token
-        import secrets
         token = secrets.token_urlsafe(32)
-        
-        # Set expiry (24 hours from now)
         user.reset_token = token
         user.reset_token_expiry = datetime.utcnow() + timedelta(hours=24)
-        
         db.session.commit()
         
-        # Send reset email
         try:
             from app.utils.email import send_password_reset_email
             send_password_reset_email(user, token)
@@ -366,7 +443,6 @@ def reset_password(token):
         flash('Invalid or expired reset token.', 'error')
         return redirect(url_for('auth.forgot_password'))
     
-    # Check if token expired
     if user.reset_token_expiry and user.reset_token_expiry < datetime.utcnow():
         flash('Password reset link has expired. Please request a new one.', 'error')
         return redirect(url_for('auth.forgot_password'))
@@ -383,12 +459,9 @@ def reset_password(token):
             flash('Passwords do not match.', 'error')
             return render_template('reset_password.html', token=token)
         
-        # Update password
-        from werkzeug.security import generate_password_hash
         user.password = generate_password_hash(password)
         user.reset_token = None
         user.reset_token_expiry = None
-        
         db.session.commit()
         
         flash('Password reset successfully! Please login with your new password.', 'success')
