@@ -76,15 +76,15 @@ def register():
             flash("An account with this email already exists. Please login instead.", "error")
             return redirect(url_for("auth.login"))
         
-        # ✅ Create user as INACTIVE (requires email verification)
+        # Create user as INACTIVE (requires email verification)
         hashed_password = generate_password_hash(password)
         user = User(
             fullname=name,
             email=email,
             password=hashed_password,
             user_type=user_type,
-            is_active=False,      # ✅ User cannot login until verified
-            is_verified=False     # ✅ Not verified yet
+            is_active=False,
+            is_verified=False
         )
         
         try:
@@ -104,23 +104,20 @@ def register():
                     verification_status='pending'
                 )
                 db.session.add(recruiter_profile)
-                
-                # Also set company_name in User model
                 user.company_name = company_name or f"{name}'s Company"
             
             db.session.commit()
 
-            # ✅ GENERATE AND SEND VERIFICATION EMAIL
+            # Generate and send verification email
             try:
                 token = generate_verification_token(user.id)
                 send_verification_email(email, token, name)
                 flash("✅ Please check your email to verify your account.", "success")
             except Exception as e:
                 print(f"Verification email error: {e}")
-                # Still create account, but warn user
                 flash("⚠️ Account created but we couldn't send verification email. Please contact support.", "warning")
             
-            # ✅ DO NOT LOGIN USER - they need to verify first
+            # DO NOT LOGIN USER - they need to verify first
             return redirect(url_for("auth.login"))
                 
         except Exception as e:
@@ -129,7 +126,6 @@ def register():
             flash("An error occurred. Please try again.", "error")
             return redirect(url_for("auth.register"))
     
-    # GET request - show registration form
     return render_template("register.html")
 
 
@@ -154,7 +150,7 @@ def verify_email(token):
         flash('✅ Email already verified. Please login.', 'success')
         return redirect(url_for('auth.login'))
     
-    # ✅ ACTIVATE USER
+    # ACTIVATE USER
     user.is_verified = True
     user.is_active = True
     db.session.commit()
@@ -215,12 +211,12 @@ def login():
             flash("Invalid email or password.", "error")
             return redirect(url_for("auth.login"))
         
-        # ✅ CHECK IF EMAIL IS VERIFIED
+        # CHECK IF EMAIL IS VERIFIED
         if not user.is_verified:
             flash("⚠️ Please verify your email first. Check your inbox or request a new verification link.", "error")
             return redirect(url_for("auth.resend_verification"))
         
-        # ✅ CHECK IF USER IS ACTIVE
+        # CHECK IF USER IS ACTIVE
         if not user.is_active:
             flash("⚠️ Your account is inactive. Please contact support.", "error")
             return redirect(url_for("auth.login"))
@@ -308,7 +304,7 @@ def google_authorize():
         return redirect(url_for('auth.login'))
 
 
-# ========== LINKEDIN OAUTH - FIXED ==========
+# ========== LINKEDIN OAUTH ==========
 
 @auth_bp.route('/login/linkedin')
 def linkedin_login():
@@ -331,16 +327,14 @@ def linkedin_authorize():
     try:
         token = oauth.linkedin.authorize_access_token()
         
-        # ✅ FIX: Use the correct endpoint for LinkedIn
+        # Use the correct endpoint for LinkedIn
         resp = oauth.linkedin.get('userinfo', token=token)
         user_info = resp.json()
         
-        print(f"🔍 LinkedIn user info: {user_info}")  # Debug
+        print(f"🔍 LinkedIn user info: {user_info}")
         
-        # ✅ Extract email and name from the response
+        # Extract email and name from the response
         email = user_info.get('email')
-        
-        # ✅ Get name from different possible fields
         name = user_info.get('name')
         given_name = user_info.get('given_name')
         family_name = user_info.get('family_name')
@@ -398,7 +392,7 @@ def github_authorize():
         resp = oauth.github.get('user', token=token)
         user_info = resp.json()
         
-        print(f"🔍 GitHub user info: {user_info}")  # Debug
+        print(f"🔍 GitHub user info: {user_info}")
         
         # Get email (may be private)
         email = user_info.get('email')

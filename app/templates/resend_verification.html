@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Resend Verification - TalentForge AI{% endblock %}
+
+{% block content %}
+<section class="max-w-md mx-auto px-6 py-16">
+    <div class="glass-card p-8 text-center">
+        <div class="w-20 h-20 bg-gradient-to-br from-indigo-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-envelope text-3xl text-white"></i>
+        </div>
+        <h1 class="text-2xl font-bold text-white mb-2">Resend Verification Email</h1>
+        <p class="text-white/60 text-sm mb-6">Enter your email address to receive a new verification link.</p>
+
+        <form method="POST">
+            <div class="mb-4">
+                <input type="email" name="email" required placeholder="Enter your email"
+                       class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:border-indigo-400 outline-none transition">
+            </div>
+            <button type="submit" class="btn-primary w-full py-3 rounded-full text-white font-semibold transition">
+                <i class="fas fa-paper-plane mr-2"></i> Send Verification Email
+            </button>
+        </form>
+
+        <div class="mt-4 text-sm">
+            <a href="{{ url_for('auth.login') }}" class="text-indigo-400 hover:text-indigo-300 transition">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Login
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -67,7 +67,7 @@ class Config:
 
     # ========== EMAIL CONFIGURATION - SENDGRID ==========
     SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
-    SENDGRID_FROM_EMAIL = os.environ.get('SENDGRID_FROM_EMAIL', 'noreply@talentforge.ai')
+    SENDGRID_FROM_EMAIL = os.environ.get('SENDGRID_FROM_EMAIL', 'fadtechlabs.com@gmail.com')
     SENDGRID_FROM_NAME = os.environ.get('SENDGRID_FROM_NAME', 'TalentForge AI')
     
     # ========== EMAIL CONFIGURATION - SMTP FALLBACK ==========
@@ -76,7 +76,7 @@ class Config:
     MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'True') == 'True'
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
-    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@talentforge.ai')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'fadtechlabs.com@gmail.com')
     MAIL_DEBUG = os.environ.get('MAIL_DEBUG', 'False') == 'True'
     
     # ========== OAUTH CONFIGURATION ==========

@@ -55,7 +55,7 @@ def send_email(subject, recipients, html_body, text_body=None, sender=None):
     try:
         app = current_app._get_current_object()
         recipients_list = recipients if isinstance(recipients, list) else [recipients]
-        sender_email = sender or app.config.get('MAIL_DEFAULT_SENDER', 'noreply@talentforge.ai')
+        sender_email = sender or app.config.get('MAIL_DEFAULT_SENDER', 'fadtechlabs.com@gmail.com')
 
         print(f"📧 Preparing email: {subject}")
         print(f"📧 Recipients: {recipients_list}")
