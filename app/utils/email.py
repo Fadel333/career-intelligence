@@ -4,54 +4,69 @@ from flask_mail import Message
 from threading import Thread
 import os
 import logging
+import requests
 
 # Set up logging
 logger = logging.getLogger(__name__)
 
 # We'll use the mail instance from the app
-def send_async_email(app, msg):
-    """Send email asynchronously"""
+def send_async_email(app, subject, recipients, html_body, sender):
+    """Send email asynchronously via SendGrid API"""
     with app.app_context():
         try:
-            # Get mail instance from app
-            mail = app.extensions.get('mail')
-            if mail:
-                print(f"📧 Sending email to: {msg.recipients}")
-                mail.send(msg)
-                print(f"✅ Email sent successfully to {msg.recipients}")
+            print(f"📧 Sending email to: {recipients}")
+
+            api_key = app.config.get('SENDGRID_API_KEY')
+            if not api_key:
+                print("❌ SENDGRID_API_KEY not set")
+                logger.error("SENDGRID_API_KEY not configured")
+                return
+
+            response = requests.post(
+                "https://api.sendgrid.com/v3/mail/send",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "personalizations": [
+                        {"to": [{"email": r} for r in recipients]}
+                    ],
+                    "from": {"email": sender},
+                    "subject": subject,
+                    "content": [{"type": "text/html", "value": html_body}],
+                },
+                timeout=10,
+            )
+
+            if response.status_code in (200, 201, 202):
+                print(f"✅ Email sent successfully to {recipients}")
             else:
-                print("❌ Mail extension not found in app")
-                # Fallback: try to send directly
-                from flask_mail import Mail
-                mail = Mail(app)
-                mail.send(msg)
-                print(f"✅ Email sent via fallback to {msg.recipients}")
+                print(f"❌ SendGrid error {response.status_code}: {response.text}")
+                logger.error(f"SendGrid error {response.status_code}: {response.text}")
+
         except Exception as e:
             print(f"❌ Error sending email: {e}")
             logger.error(f"Email error: {e}")
-            raise
+
 
 def send_email(subject, recipients, html_body, text_body=None, sender=None):
-    """Send an email"""
+    """Send an email via SendGrid (async, non-blocking)"""
     try:
         app = current_app._get_current_object()
+        recipients_list = recipients if isinstance(recipients, list) else [recipients]
+        sender_email = sender or app.config.get('MAIL_DEFAULT_SENDER', 'noreply@talentforge.ai')
+
         print(f"📧 Preparing email: {subject}")
-        print(f"📧 Recipients: {recipients}")
-        
-        msg = Message(
-            subject=subject,
-            recipients=recipients if isinstance(recipients, list) else [recipients],
-            html=html_body,
-            body=text_body,
-            sender=sender or app.config.get('MAIL_DEFAULT_SENDER', 'noreply@talentforge.ai')
-        )
-        
-        print(f"📧 From: {msg.sender}")
-        print(f"📧 Thread started...")
-        
-        # Send in background
-        Thread(target=send_async_email, args=(app, msg)).start()
-        print(f"📧 Email thread started for {recipients}")
+        print(f"📧 Recipients: {recipients_list}")
+        print(f"📧 From: {sender_email}")
+
+        Thread(
+            target=send_async_email,
+            args=(app, subject, recipients_list, html_body, sender_email)
+        ).start()
+
+        print(f"📧 Email thread started for {recipients_list}")
         return True
     except Exception as e:
         print(f"❌ Failed to prepare email: {e}")
@@ -67,9 +82,9 @@ def send_email(subject, recipients, html_body, text_body=None, sender=None):
 
 def send_verification_email(email, token, fullname):
     """Send email verification link to new user"""
-    from flask import url_for
-    
-    verification_url = url_for('auth.verify_email', token=token, _external=True)
+    # Get base URL from config
+    base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
+    verification_url = f"{base_url}/auth/verify/{token}"
     
     subject = "✅ Verify Your Email - TalentForge AI"
     
@@ -144,6 +159,8 @@ def send_verification_email(email, token, fullname):
 
 def send_welcome_email(user):
     """Send welcome email to new user"""
+    base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
+    
     subject = "Welcome to TalentForge AI! 🚀"
     
     html = f"""
@@ -182,10 +199,10 @@ def send_welcome_email(user):
                 </div>
                 
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="http://localhost:5000/dashboard" class="btn">Go to Dashboard</a>
+                    <a href="{base_url}/dashboard" class="btn">Go to Dashboard</a>
                 </div>
                 
-                <p style="color: #555; font-size: 14px;">Need help? Reply to this email or visit our <a href="http://localhost:5000" style="color: #6366f1;">support page</a>.</p>
+                <p style="color: #555; font-size: 14px;">Need help? Reply to this email or visit our <a href="{base_url}" style="color: #6366f1;">support page</a>.</p>
             </div>
             <div class="footer">
                 <p>© 2026 TalentForge AI. All rights reserved.</p>
@@ -202,6 +219,7 @@ def send_welcome_email(user):
 def send_verification_approved_email(recruiter):
     """Send verification approved email to recruiter"""
     from models import User
+    base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
     user = User.query.get(recruiter.user_id)
     
     subject = "✅ Your Recruiter Account Has Been Verified!"
@@ -247,7 +265,7 @@ def send_verification_approved_email(recruiter):
                 </div>
                 
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="http://localhost:5000/recruiter/dashboard" class="btn">Go to Recruiter Dashboard</a>
+                    <a href="{base_url}/recruiter/dashboard" class="btn">Go to Recruiter Dashboard</a>
                 </div>
             </div>
             <div class="footer">
@@ -264,6 +282,7 @@ def send_verification_approved_email(recruiter):
 def send_verification_rejected_email(recruiter):
     """Send verification rejected email to recruiter"""
     from models import User
+    base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
     user = User.query.get(recruiter.user_id)
     
     subject = "❌ Recruiter Verification Update"
@@ -314,7 +333,7 @@ def send_verification_rejected_email(recruiter):
                 </div>
                 
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="http://localhost:5000/recruiter/verification" class="btn">Submit New Request</a>
+                    <a href="{base_url}/recruiter/verification" class="btn">Submit New Request</a>
                 </div>
             </div>
             <div class="footer">
@@ -331,6 +350,7 @@ def send_verification_rejected_email(recruiter):
 def send_new_application_email(application, job):
     """Send new application notification to recruiter"""
     from models import RecruiterProfile, User
+    base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
     recruiter = RecruiterProfile.query.get(job.recruiter_id)
     user = User.query.get(recruiter.user_id)
     
@@ -375,7 +395,7 @@ def send_new_application_email(application, job):
                 </div>
                 
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="http://localhost:5000/jobs/recruiter/applications" class="btn">View All Applications</a>
+                    <a href="{base_url}/jobs/recruiter/applications" class="btn">View All Applications</a>
                 </div>
             </div>
             <div class="footer">
@@ -392,6 +412,7 @@ def send_new_application_email(application, job):
 def send_application_status_update_email(application):
     """Send application status update to candidate"""
     from models import RecruiterProfile, User
+    base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
     
     subject = f"📋 Application Status Update - {application.job.title}"
     
@@ -456,7 +477,7 @@ def send_application_status_update_email(application):
                 </div>
                 
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="http://localhost:5000/jobs/{application.job_id}" class="btn">View Job Details</a>
+                    <a href="{base_url}/jobs/{application.job_id}" class="btn">View Job Details</a>
                 </div>
             </div>
             <div class="footer">
@@ -473,6 +494,7 @@ def send_application_status_update_email(application):
 def send_job_published_email(job):
     """Send job published confirmation to recruiter"""
     from models import RecruiterProfile, User
+    base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
     recruiter = RecruiterProfile.query.get(job.recruiter_id)
     user = User.query.get(recruiter.user_id)
     
@@ -518,9 +540,9 @@ def send_job_published_email(job):
                 </div>
                 
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="http://localhost:5000/jobs/{job.id}" class="btn">View Your Job</a>
+                    <a href="{base_url}/jobs/{job.id}" class="btn">View Your Job</a>
                     <br><br>
-                    <a href="http://localhost:5000/recruiter/jobs/{job.id}/edit" style="color: #666; font-size: 14px;">Edit Job Posting</a>
+                    <a href="{base_url}/recruiter/jobs/{job.id}/edit" style="color: #666; font-size: 14px;">Edit Job Posting</a>
                 </div>
             </div>
             <div class="footer">
@@ -537,6 +559,7 @@ def send_job_published_email(job):
 def send_candidate_match_email(recruiter, candidate, job=None):
     """Send candidate match alert to recruiter"""
     from models import User
+    base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
     user = User.query.get(recruiter.user_id)
     
     subject = "🎯 New Candidate Match Found!"
@@ -579,7 +602,7 @@ def send_candidate_match_email(recruiter, candidate, job=None):
                 </div>
                 
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="http://localhost:5000/recruiter/candidates/{candidate.id}" class="btn">View Candidate Profile</a>
+                    <a href="{base_url}/recruiter/candidates/{candidate.id}" class="btn">View Candidate Profile</a>
                 </div>
             </div>
             <div class="footer">
@@ -605,7 +628,7 @@ def send_password_reset_email(user, token):
     
     subject = "🔐 Reset Your Password - TalentForge AI"
     
-    # Get base URL from config or use default
+    # Get base URL from config
     base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
     reset_url = f"{base_url}/auth/reset-password/{token}"
     
