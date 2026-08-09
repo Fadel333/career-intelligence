@@ -779,3 +779,77 @@ def send_test_email(email):
     """
     
     return send_email(subject, email, html)
+
+
+# ============================================
+# JOB ALERT TEST EMAIL (no matches)
+# ============================================
+
+def send_alert_test_no_matches_email(user, alert):
+    """Send a confirmation email when a job-alert test finds no current matches.
+
+    Ensures clicking "Test" on a job alert always results in an email,
+    even when there are zero matching jobs posted in the lookback window.
+    """
+    base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
+
+    subject = f"✅ Alert Test: '{alert.keywords}' — No Matches Yet"
+
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: 'Inter', Arial, sans-serif; background: #f8f6f0; color: #2c3e50; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }}
+            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #6366f1; }}
+            .logo {{ font-size: 28px; font-weight: 800; color: #2c3e50; }}
+            .logo span {{ color: #6366f1; }}
+            .tagline {{ color: #10b981; font-size: 14px; font-weight: 500; }}
+            .content {{ padding: 30px 0; }}
+            .success-box {{ background: #f0fdf4; padding: 20px; border-radius: 12px; border-left: 4px solid #10b981; }}
+            .alert-info {{ background: #f8fafc; padding: 16px; border-radius: 12px; margin: 20px 0; }}
+            .btn {{ display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #6366f1, #10b981); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; }}
+            .footer {{ text-align: center; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <div class="logo">TalentForge <span>AI</span></div>
+                <p class="tagline">Africa's Talent Intelligence Platform</p>
+            </div>
+            <div class="content">
+                <h2 style="color: #1a1a2e;">✅ Your Alert Test Worked!</h2>
+                <p style="color: #4b5563;">This confirms your email notifications are set up correctly for job alerts.</p>
+
+                <div class="success-box">
+                    <p style="margin: 0; color: #065f46; font-weight: 600;">📬 Email delivery is working!</p>
+                    <p style="margin: 4px 0; color: #065f46; font-size: 14px;">There just aren't any matching jobs posted in the last 7 days right now.</p>
+                </div>
+
+                <div class="alert-info">
+                    <p style="margin: 0; font-weight: 600; color: #1a1a2e;">📋 Alert Details</p>
+                    <p style="margin: 4px 0; color: #6b7280; font-size: 14px;">Keywords: {alert.keywords}</p>
+                    <p style="margin: 4px 0; color: #6b7280; font-size: 14px;">Location: {alert.location or 'Any'}</p>
+                    <p style="margin: 4px 0; color: #6b7280; font-size: 14px;">Frequency: {alert.frequency.title() if alert.frequency else 'Daily'}</p>
+                </div>
+
+                <p style="color: #6b7280; font-size: 14px;">
+                    You'll automatically get a real notification as soon as a matching job is posted.
+                </p>
+
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{base_url}/job-alerts" class="btn">Manage Your Alerts</a>
+                </div>
+            </div>
+            <div class="footer">
+                <p>© 2026 TalentForge AI. All rights reserved.</p>
+                <p>Ghana · West Africa</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    return send_email(subject, user.email, html)

@@ -577,15 +577,18 @@ def test_alert_check():
 @login_required
 def test_single_alert(alert_id):
     """
-    Test a single job alert - sends email via SendGrid
-    
-    This endpoint allows users to test their job alerts by sending
-    a test email with matching jobs from the last 7 days.
+    Test a single job alert - always sends an email via SendGrid.
+
+    If there are matching jobs from the last 7 days, sends the normal
+    job-listing alert email. If there are no matches, sends a lightweight
+    confirmation email so the person still receives something in their
+    inbox proving the notification pipeline works.
     """
     print(f"🔍 TEST ALERT CALLED: alert_id={alert_id}, user={current_user.email}")
     
     from models import JobAlert
     from app.utils.job_alert_checker import find_matching_jobs, send_job_alert_notification
+    from app.utils.email import send_alert_test_no_matches_email
     
     # Get the alert
     alert = JobAlert.query.get_or_404(alert_id)
@@ -601,8 +604,8 @@ def test_single_alert(alert_id):
     matching_jobs = find_matching_jobs(alert, datetime.utcnow() - timedelta(days=7))
     print(f"📊 Found {len(matching_jobs)} matching jobs")
     
-    if matching_jobs:
-        try:
+    try:
+        if matching_jobs:
             print(f"📧 Attempting to send email to {current_user.email}")
             result = send_job_alert_notification(alert, matching_jobs)
             print(f"📧 Send result: {result}")
@@ -619,20 +622,33 @@ def test_single_alert(alert_id):
                     'success': False,
                     'error': 'Failed to send email. Check server logs.'
                 }), 500
-        except Exception as e:
-            print(f"❌ Exception in test_single_alert: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            return jsonify({
-                'success': False,
-                'error': str(e)
-            }), 500
-    else:
+        else:
+            # No matches — still send a confirmation email so the test proves
+            # the email pipeline actually works, not just the matching logic.
+            print(f"📧 No matches — sending confirmation email to {current_user.email}")
+            result = send_alert_test_no_matches_email(current_user, alert)
+            print(f"📧 Send result: {result}")
+
+            if result:
+                return jsonify({
+                    'success': True,
+                    'message': f'✅ Test email sent to {current_user.email}. No matching jobs in the last 7 days.',
+                    'jobs_found': 0,
+                    'email': current_user.email
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to send confirmation email. Check server logs.'
+                }), 500
+    except Exception as e:
+        print(f"❌ Exception in test_single_alert: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
-            'success': True,
-            'message': 'No matching jobs found in the last 7 days.',
-            'jobs_found': 0
-        })
+            'success': False,
+            'error': str(e)
+        }), 500
 
 
 @jobs_bp.route('/alert/<int:alert_id>/jobs', methods=['GET'])
