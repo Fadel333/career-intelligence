@@ -30,6 +30,7 @@ from models import User, Profile, RecruiterProfile, Candidate, Job, Placement, J
 from app.recruiter import recruiter_bp 
 from app.admin.routes import admin_bp 
 from app.jobs.routes import jobs_bp 
+from app.cli import register_commands
 
 # Initialize Flask-Mail ONCE
 mail = Mail()
@@ -2217,6 +2218,9 @@ def create_app():
     register_blueprints(app)
     
     register_routes(app)
+    
+    # ✅ Register CLI commands
+    register_commands(app)
     
     app.register_blueprint(recruiter_bp)
     app.register_blueprint(admin_bp) 

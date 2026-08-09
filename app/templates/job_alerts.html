@@ -1,133 +1,221 @@
 {% extends "base.html" %}
 
+{% block title %}Job Alerts - TalentForge AI{% endblock %}
+
 {% block content %}
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<section class="max-w-7xl mx-auto px-6 py-12">
+    <!-- Header -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-            <h1 class="h2 mb-1">🔔 Job Alerts</h1>
-            <p class="text-muted">Get notified when new jobs match your preferences</p>
+            <h1 class="text-3xl md:text-4xl font-bold text-white flex items-center gap-3">
+                <span class="text-3xl">🔔</span> Job Alerts
+            </h1>
+            <p class="text-[#c4b5d4] mt-1">Get notified when new jobs match your preferences</p>
         </div>
-        <a href="{{ url_for('create_job_alert') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle"></i> Create Alert
+        <a href="{{ url_for('create_job_alert') }}" class="btn-primary px-6 py-3 rounded-full text-white font-semibold transition inline-flex items-center gap-2">
+            <i class="fas fa-plus-circle"></i> Create Alert
         </a>
     </div>
 
+    <!-- Alerts Grid -->
     {% if alerts %}
-        <div class="row">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {% for alert in alerts %}
-                <div class="col-md-6 col-lg-4 mb-4">
-                    <div class="card shadow-sm h-100">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div class="d-flex align-items-center">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" 
-                                               {% if alert.is_active %}checked{% endif %}
-                                               onchange="toggleAlert({{ alert.id }})">
-                                    </div>
-                                    <span class="badge {% if alert.is_active %}bg-success{% else %}bg-secondary{% endif %} ms-2">
-                                        {% if alert.is_active %}Active{% else %}Inactive{% endif %}
+                <div class="glass-card p-6 hover:border-indigo-500/30 transition-all duration-200 flex flex-col">
+                    <!-- Header: Status & Frequency -->
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center gap-3">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" class="sr-only peer" 
+                                       {% if alert.is_active %}checked{% endif %}
+                                       onchange="toggleAlert({{ alert.id }})">
+                                <div class="w-10 h-6 bg-white/10 rounded-full peer peer-checked:bg-indigo-500 transition-all duration-200 peer-focus:ring-2 peer-focus:ring-indigo-400/50">
+                                    <div class="absolute left-0.5 top-0.5 w-5 h-5 bg-white rounded-full transition-all duration-200 peer-checked:translate-x-4"></div>
+                                </div>
+                            </label>
+                            <span class="text-sm font-medium px-3 py-1 rounded-full {% if alert.is_active %}bg-emerald-500/20 text-emerald-400 border border-emerald-500/20{% else %}bg-white/10 text-white/40 border border-white/5{% endif %}">
+                                {% if alert.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </div>
+                        <span class="text-xs font-medium px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-400 border border-indigo-500/20">
+                            {{ alert.frequency|title }}
+                        </span>
+                    </div>
+
+                    <!-- Keywords -->
+                    {% if alert.keywords %}
+                        <div class="mb-3">
+                            <p class="text-xs text-white/40 font-medium uppercase tracking-wider mb-1.5">Keywords</p>
+                            <div class="flex flex-wrap gap-1.5">
+                                {% for keyword in alert.keywords.split(',') %}
+                                    <span class="px-2.5 py-1 text-xs rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                                        {{ keyword.strip() }}
                                     </span>
-                                </div>
-                                <span class="badge bg-info">{{ alert.frequency }}</span>
-                            </div>
-                            
-                            <div class="mt-3">
-                                {% if alert.keywords %}
-                                    <div class="mb-2">
-                                        <small class="text-muted">Keywords:</small>
-                                        <div class="d-flex flex-wrap gap-1 mt-1">
-                                            {% for keyword in alert.keywords.split(',') %}
-                                                <span class="badge bg-primary bg-opacity-10 text-primary">{{ keyword.strip() }}</span>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                {% endif %}
-                                
-                                <div class="row g-1 small text-muted">
-                                    {% if alert.location %}
-                                        <div class="col-6">📍 {{ alert.location }}</div>
-                                    {% endif %}
-                                    {% if alert.job_type %}
-                                        <div class="col-6">💼 {{ alert.job_type.replace('_', ' ').title() }}</div>
-                                    {% endif %}
-                                    {% if alert.salary_min or alert.salary_max %}
-                                        <div class="col-12">💰 ${{ alert.salary_min or '0' }} - ${{ alert.salary_max or '∞' }}</div>
-                                    {% endif %}
-                                    {% if alert.experience_level %}
-                                        <div class="col-6">📊 {{ alert.experience_level.title() }}</div>
-                                    {% endif %}
-                                    {% if alert.category %}
-                                        <div class="col-6">📂 {{ alert.category }}</div>
-                                    {% endif %}
-                                </div>
-                                
-                                {% if alert.last_sent_at %}
-                                    <div class="mt-2 small text-muted">
-                                        Last sent: {{ alert.last_sent_at.strftime('%b %d, %Y') }}
-                                    </div>
-                                {% endif %}
+                                {% endfor %}
                             </div>
                         </div>
-                        
-                        <div class="card-footer bg-transparent">
-                            <div class="btn-group w-100" role="group">
-                                <a href="{{ url_for('edit_job_alert', alert_id=alert.id) }}" class="btn btn-sm btn-outline-primary">
-                                    <i class="bi bi-pencil"></i> Edit
-                                </a>
-                                <button class="btn btn-sm btn-outline-info" onclick="testAlert({{ alert.id }})">
-                                    <i class="bi bi-envelope"></i> Test
-                                </button>
-                                <form action="{{ url_for('delete_job_alert', alert_id=alert.id) }}" method="POST" class="d-inline">
-                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete this alert?')">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
+                    {% endif %}
+
+                    <!-- Details Grid -->
+                    <div class="grid grid-cols-2 gap-1.5 text-sm text-[#c4b5d4] mb-3 flex-1">
+                        {% if alert.location %}
+                            <div class="flex items-center gap-1.5">
+                                <i class="fas fa-map-marker-alt text-indigo-400 text-xs w-4"></i>
+                                <span>{{ alert.location }}</span>
                             </div>
+                        {% endif %}
+                        {% if alert.job_type %}
+                            <div class="flex items-center gap-1.5">
+                                <i class="fas fa-briefcase text-indigo-400 text-xs w-4"></i>
+                                <span>{{ alert.job_type.replace('_', ' ').title() }}</span>
+                            </div>
+                        {% endif %}
+                        {% if alert.salary_min or alert.salary_max %}
+                            <div class="flex items-center gap-1.5 col-span-2">
+                                <i class="fas fa-money-bill-wave text-indigo-400 text-xs w-4"></i>
+                                <span>${{ alert.salary_min or '0' }} — ${{ alert.salary_max or '∞' }}</span>
+                            </div>
+                        {% endif %}
+                        {% if alert.experience_level %}
+                            <div class="flex items-center gap-1.5">
+                                <i class="fas fa-chart-line text-indigo-400 text-xs w-4"></i>
+                                <span>{{ alert.experience_level.title() }}</span>
+                            </div>
+                        {% endif %}
+                        {% if alert.category %}
+                            <div class="flex items-center gap-1.5">
+                                <i class="fas fa-folder text-indigo-400 text-xs w-4"></i>
+                                <span>{{ alert.category }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Last Sent -->
+                    {% if alert.last_sent_at %}
+                        <div class="text-xs text-white/30 mt-2 pt-2 border-t border-white/5">
+                            <i class="far fa-clock mr-1"></i>
+                            Last sent: {{ alert.last_sent_at.strftime('%b %d, %Y') }}
                         </div>
+                    {% endif %}
+
+                    <!-- Actions -->
+                    <div class="flex items-center gap-2 mt-4 pt-3 border-t border-white/10">
+                        <a href="{{ url_for('edit_job_alert', alert_id=alert.id) }}" 
+                           class="flex-1 text-center text-sm font-medium px-4 py-2 rounded-xl bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition border border-indigo-500/20">
+                            <i class="fas fa-pen mr-1.5"></i> Edit
+                        </a>
+                        <!-- FIXED: Use the correct URL from jobs blueprint -->
+                        <button onclick="testAlert('{{ url_for('jobs.test_single_alert', alert_id=alert.id) }}')" 
+                                class="flex-1 text-center text-sm font-medium px-4 py-2 rounded-xl bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition border border-emerald-500/20">
+                            <i class="fas fa-envelope mr-1.5"></i> Test
+                        </button>
+                        <form action="{{ url_for('delete_job_alert', alert_id=alert.id) }}" method="POST" class="inline">
+                            <button type="submit" onclick="return confirm('Delete this alert?')"
+                                    class="px-4 py-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 transition border border-red-500/20">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </form>
                     </div>
                 </div>
             {% endfor %}
         </div>
+
+        <!-- Pagination (if needed) -->
+        {% if alerts|length > 12 %}
+            <div class="flex justify-center gap-2 mt-8">
+                <button class="px-4 py-2 rounded-xl bg-white/5 text-white/60 hover:bg-white/10 transition">Previous</button>
+                <span class="px-4 py-2 rounded-xl bg-indigo-500 text-white">1</span>
+                <button class="px-4 py-2 rounded-xl bg-white/5 text-white/60 hover:bg-white/10 transition">2</button>
+                <button class="px-4 py-2 rounded-xl bg-white/5 text-white/60 hover:bg-white/10 transition">3</button>
+                <button class="px-4 py-2 rounded-xl bg-white/5 text-white/60 hover:bg-white/10 transition">Next</button>
+            </div>
+        {% endif %}
+
     {% else %}
-        <div class="text-center py-5">
-            <div class="display-1 mb-3">🔔</div>
-            <h3>No Job Alerts Yet</h3>
-            <p class="text-muted">Create your first job alert to get notified about new opportunities.</p>
-            <a href="{{ url_for('create_job_alert') }}" class="btn btn-primary mt-3">
-                <i class="bi bi-plus-circle"></i> Create Your First Alert
+        <!-- Empty State -->
+        <div class="glass-card p-16 text-center">
+            <div class="text-6xl mb-4">🔔</div>
+            <h3 class="text-2xl font-bold text-white mb-2">No Job Alerts Yet</h3>
+            <p class="text-[#c4b5d4] max-w-md mx-auto mb-6">
+                Create your first job alert to get notified about new opportunities that match your skills and preferences.
+            </p>
+            <a href="{{ url_for('create_job_alert') }}" class="btn-primary px-8 py-3 rounded-full text-white font-semibold transition inline-flex items-center gap-2">
+                <i class="fas fa-plus-circle"></i> Create Your First Alert
             </a>
         </div>
     {% endif %}
-</div>
+</section>
 
 <script>
 function toggleAlert(alertId) {
+    const toggle = document.querySelector(`input[onchange="toggleAlert(${alertId})"]`);
+    const card = toggle.closest('.glass-card');
+    
+    // Optimistic UI update
+    const statusBadge = card.querySelector('span.text-sm.font-medium');
+    const isActive = toggle.checked;
+    
+    statusBadge.textContent = isActive ? 'Active' : 'Inactive';
+    statusBadge.className = `text-sm font-medium px-3 py-1 rounded-full border ${isActive ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20' : 'bg-white/10 text-white/40 border-white/5'}`;
+    
     fetch(`/job-alerts/${alertId}/toggle`, {
         method: 'POST',
         headers: {
-            'X-CSRFToken': '{{ csrf_token() if csrf_token else "" }}'
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            // Revert on error
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        location.reload();
+    });
+}
+
+// FIXED: Accept URL parameter instead of alertId
+function testAlert(url) {
+    if (!confirm('Send a test email for this alert?')) return;
+    
+    const button = event?.target?.closest('button') || document.activeElement;
+    const originalText = button?.innerHTML || '<i class="fas fa-envelope mr-1.5"></i> Test';
+    
+    if (button) {
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i> Sending...';
+        button.disabled = true;
+    }
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
         }
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            location.reload();
+            alert('✅ ' + data.message);
         } else {
-            alert('Error: ' + data.message);
+            alert('❌ Error: ' + (data.error || data.message || 'Unknown error'));
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error toggling alert');
+        alert('❌ Error sending test email');
+    })
+    .finally(() => {
+        if (button) {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
     });
-}
-
-function testAlert(alertId) {
-    if (!confirm('Send a test email for this alert?')) return;
-    
-    alert('📧 Test email feature coming soon!');
-    // You can implement the actual test email endpoint here
 }
 </script>
 {% endblock %}

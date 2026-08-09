@@ -35,27 +35,22 @@ def allowed_cv_file(filename):
 
 def is_valid_cv_file(file):
     """Check if file is a valid CV (PDF or DOCX)"""
-    # Check 1: File exists
     if not file:
         return False, "No file selected."
     
-    # Check 2: Filename exists
     if not file.filename:
         return False, "No file selected."
     
-    # Check 3: File extension
     file_ext = file.filename.rsplit('.', 1)[1].lower() if '.' in file.filename else ''
     if file_ext not in ['pdf', 'docx']:
         return False, "Please upload a PDF or DOCX file."
     
-    # Check 4: MIME type
     if file.mimetype not in ALLOWED_CV_MIME_TYPES:
         return False, "Invalid file type. Please upload a PDF or DOCX."
     
-    # Check 5: File size
-    file.seek(0, 2)  # Go to end of file
+    file.seek(0, 2)
     size = file.tell()
-    file.seek(0)  # Reset to beginning
+    file.seek(0)
     
     if size > MAX_CV_FILE_SIZE:
         return False, f"File too large. Maximum size is {MAX_CV_FILE_SIZE // (1024 * 1024)}MB."
@@ -72,10 +67,8 @@ def get_cv_file_path(application):
     if not application.cv_filename and not application.cv_filepath:
         return None
     
-    # Get the project root directory (go up from app/jobs/routes.py)
     project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     
-    # Get just the filename
     if application.cv_filename:
         filename = application.cv_filename
     else:
@@ -84,27 +77,19 @@ def get_cv_file_path(application):
     print(f"🔍 Looking for CV file: {filename}")
     print(f"📁 Project root: {project_root}")
     
-    # Check possible locations in order with absolute paths
     possible_paths = [
-        # Check in static/applications from project root
         os.path.join(project_root, 'static', 'applications', filename),
-        # Check in app/static/applications
         os.path.join(project_root, 'app', 'static', 'applications', filename),
-        # Check in the uploads folder
         os.path.join(project_root, 'uploads', filename),
-        # Check in static/applications from current directory (if relative)
         os.path.join(os.getcwd(), 'static', 'applications', filename),
-        # Original stored path - convert to absolute if relative
         os.path.join(project_root, application.cv_filepath) if application.cv_filepath else None,
-        # Just the filename in static/applications
         os.path.join('static', 'applications', filename),
     ]
     
-    # Also check without the timestamp prefix
     if '_' in filename:
         parts = filename.split('_', 2)
         if len(parts) >= 3:
-            clean_filename = parts[2]  # Remove timestamp and user_id
+            clean_filename = parts[2]
             possible_paths.extend([
                 os.path.join(project_root, 'static', 'applications', clean_filename),
                 os.path.join(project_root, 'app', 'static', 'applications', clean_filename),
@@ -112,17 +97,14 @@ def get_cv_file_path(application):
                 os.path.join('static', 'applications', clean_filename),
             ])
     
-    # Filter out None values and normalize paths
     for path in possible_paths:
         if path:
-            # Convert to absolute path
             abs_path = os.path.abspath(path)
             print(f"🔍 Checking: {abs_path}")
             if os.path.exists(abs_path):
                 print(f"✅ Found CV at: {abs_path}")
                 return abs_path
     
-    # If still not found, search the static/applications directory recursively
     static_dir = os.path.join(project_root, 'static', 'applications')
     if os.path.exists(static_dir):
         for root, dirs, files in os.walk(static_dir):
@@ -146,7 +128,6 @@ def job_board():
     page = request.args.get('page', 1, type=int)
     per_page = 10
     
-    # FIX: Use string comparison instead of enum for status
     query = Job.query.filter_by(status='published')
     
     if search:
@@ -172,7 +153,6 @@ def job_board():
     query = query.order_by(desc(Job.posted_at))
     jobs = query.paginate(page=page, per_page=per_page, error_out=False)
     
-    # FIX: Use string comparison for filters too
     locations = db.session.query(Job.location).filter_by(status='published').distinct().all()
     locations = [loc[0] for loc in locations if loc[0]]
     
@@ -194,7 +174,6 @@ def job_detail(job_id):
     """View job details - redirects if job is closed or filled"""
     job = Job.query.filter_by(id=job_id).first_or_404()
     
-    # If job is not published, redirect to job board with message
     if job.status != 'published':
         if job.status == 'closed':
             flash('This job posting has been closed by the employer.', 'info')
@@ -204,7 +183,6 @@ def job_detail(job_id):
             flash('This job is not yet published.', 'warning')
         return redirect(url_for('jobs.job_board'))
     
-    # Increment view count
     job.views_count = (job.views_count or 0) + 1
     db.session.commit()
     
@@ -228,7 +206,6 @@ def apply(job_id):
     """Apply to a job - redirects if job is closed or filled"""
     job = Job.query.filter_by(id=job_id).first_or_404()
     
-    # If job is not published, redirect to job board with message
     if job.status != 'published':
         if job.status == 'closed':
             flash('This job posting has been closed by the employer and is no longer accepting applications.', 'info')
@@ -261,18 +238,15 @@ def apply(job_id):
         cv_filename = None
         cv_filepath = None
         
-        # ========== VALIDATE CV FILE ==========
         if cv_file and cv_file.filename:
             is_valid, error_message = is_valid_cv_file(cv_file)
             if not is_valid:
                 flash(error_message, 'error')
                 return redirect(url_for('jobs.apply', job_id=job_id))
             
-            # Get project root and create upload folder
             project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             upload_folder = os.path.join(project_root, 'static', 'applications')
             
-            # Create upload folder if it doesn't exist
             os.makedirs(upload_folder, exist_ok=True)
             
             timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
@@ -295,7 +269,7 @@ def apply(job_id):
             cv_filename=cv_filename,
             cv_filepath=cv_filepath,
             status='pending',
-            expires_at=datetime.utcnow() + timedelta(days=30)  # Auto-expire after 30 days
+            expires_at=datetime.utcnow() + timedelta(days=30)
         )
         
         db.session.add(application)
@@ -322,26 +296,21 @@ def recruiter_applications():
         flash('Please complete your recruiter profile first.', 'warning')
         return redirect(url_for('recruiter.setup_profile'))
     
-    # Get recruiter's job IDs
     job_ids = [job.id for job in Job.query.filter_by(recruiter_id=recruiter.id).all()]
     
-    # Base query - only non-deleted applications
     query = JobApplication.query.filter(
         JobApplication.job_id.in_(job_ids),
         JobApplication.is_deleted == False
     )
     
-    # Get all applications
     applications = query.order_by(desc(JobApplication.applied_at)).all()
     
-    # Calculate expired count
     expired_count = JobApplication.query.filter(
         JobApplication.job_id.in_(job_ids),
         JobApplication.is_deleted == False,
         JobApplication.expires_at <= datetime.utcnow()
     ).count()
     
-    # Get status counts
     status_counts = db.session.query(
         JobApplication.status,
         db.func.count(JobApplication.id)
@@ -350,13 +319,11 @@ def recruiter_applications():
         JobApplication.is_deleted == False
     ).group_by(JobApplication.status).all()
     
-    # Get filters from request
     status_filter = request.args.get('status', '')
     search_query = request.args.get('search', '')
     sort_by = request.args.get('sort', 'applied_at')
     sort_order = request.args.get('order', 'desc')
     
-    # Apply filters if present
     if status_filter:
         applications = [app for app in applications if app.status == status_filter]
     
@@ -365,7 +332,6 @@ def recruiter_applications():
                        if search_query.lower() in app.applicant_name.lower() 
                        or search_query.lower() in app.applicant_email.lower()]
     
-    # Apply sorting
     if sort_by == 'applied_at':
         applications.sort(key=lambda x: x.applied_at, reverse=(sort_order == 'desc'))
     elif sort_by == 'applicant_name':
@@ -400,10 +366,7 @@ def application_detail(application_id):
         flash('You do not have permission to view this application.', 'error')
         return redirect(url_for('recruiter.dashboard'))
     
-    # Get the CV file path for preview
     cv_file_path = get_cv_file_path(application)
-    
-    # Check if file exists
     cv_exists = cv_file_path and os.path.exists(cv_file_path)
     
     return render_template('recruiter/application_detail.html',
@@ -422,7 +385,6 @@ def download_cv(application_id):
     """Download candidate's CV"""
     application = JobApplication.query.get_or_404(application_id)
     
-    # Check permission
     recruiter = RecruiterProfile.query.filter_by(user_id=current_user.id).first()
     job = Job.query.get(application.job_id)
     
@@ -434,13 +396,10 @@ def download_cv(application_id):
         flash('No CV uploaded for this application.', 'warning')
         return redirect(url_for('jobs.application_detail', application_id=application.id))
     
-    # Get the correct file path using our helper - returns absolute path
     file_path = get_cv_file_path(application)
     
     if not file_path or not os.path.exists(file_path):
-        # Try looking in the absolute path from the stored cv_filepath
         if application.cv_filepath:
-            # Try to resolve it from project root
             project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
             abs_path = os.path.join(project_root, application.cv_filepath)
             if os.path.exists(abs_path):
@@ -450,12 +409,10 @@ def download_cv(application_id):
             flash('CV file not found. Please contact support.', 'error')
             return redirect(url_for('jobs.application_detail', application_id=application.id))
     
-    # Ensure the file exists one more time before sending
     if not os.path.exists(file_path):
         flash('CV file not found. Please contact support.', 'error')
         return redirect(url_for('jobs.application_detail', application_id=application.id))
     
-    # Use the filename from the application or extract from path
     download_name = application.cv_filename or os.path.basename(file_path)
     
     print(f"📄 Sending file: {file_path}")
@@ -492,9 +449,6 @@ def update_application_status(application_id):
             application.reviewed_at = datetime.utcnow()
         
         db.session.commit()
-
-        # Uncomment when email is ready
-        # send_application_status_update_email(application)
         
         flash(f'✅ Application status updated to {new_status}', 'success')
     else:
@@ -502,19 +456,18 @@ def update_application_status(application_id):
     
     return redirect(url_for('jobs.recruiter_applications'))
 
+
 # ========== APPLICANT APPLICATION TRACKER ==========
 
 @jobs_bp.route('/my-applications')
 @login_required
 def my_applications():
     """View all applications submitted by the current user"""
-    # Get all applications for the current user
     applications = JobApplication.query.filter_by(
         user_id=current_user.id,
         is_deleted=False
     ).order_by(desc(JobApplication.applied_at)).all()
     
-    # Get status counts
     status_counts = db.session.query(
         JobApplication.status,
         db.func.count(JobApplication.id)
@@ -555,12 +508,10 @@ def withdraw_application(application_id):
         user_id=current_user.id
     ).first_or_404()
     
-    # Only allow withdrawal if status is pending or reviewed
     if application.status not in ['pending', 'reviewed']:
         flash('You cannot withdraw this application at this stage.', 'error')
         return redirect(url_for('jobs.my_applications'))
     
-    # Soft delete the application
     application.is_deleted = True
     application.updated_at = datetime.utcnow()
     db.session.commit()
@@ -590,6 +541,99 @@ def api_application_status_counts():
         'shortlisted': result.get('shortlisted', 0),
         'hired': result.get('hired', 0),
         'rejected': result.get('rejected', 0)
+    })
+
+
+# ========== JOB ALERT ENDPOINTS ==========
+
+@jobs_bp.route('/alerts/test', methods=['POST'])
+@login_required
+def test_alert_check():
+    """Manually trigger job alert check (admin only)"""
+    if not current_user.is_admin():
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    try:
+        from app.utils.job_alert_checker import check_job_alerts
+        sent, errors = check_job_alerts()
+        
+        return jsonify({
+            'success': True,
+            'sent': sent,
+            'errors': errors,
+            'message': f'Checked alerts: {sent} sent, {errors} errors'
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+
+@jobs_bp.route('/alert/<int:alert_id>/test', methods=['POST'])
+@login_required
+def test_single_alert(alert_id):
+    """Test a single job alert"""
+    from models import JobAlert
+    from app.utils.job_alert_checker import find_matching_jobs, send_job_alert_notification
+    
+    alert = JobAlert.query.get_or_404(alert_id)
+    
+    if alert.user_id != current_user.id and not current_user.is_admin():
+        return jsonify({'error': 'Access denied'}), 403
+    
+    # Find matching jobs (last 7 days)
+    matching_jobs = find_matching_jobs(alert, datetime.utcnow() - timedelta(days=7))
+    
+    if matching_jobs:
+        try:
+            send_job_alert_notification(alert, matching_jobs)
+            return jsonify({
+                'success': True,
+                'message': f'Test email sent with {len(matching_jobs)} matching jobs!'
+            })
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+    else:
+        return jsonify({
+            'success': True,
+            'message': 'No matching jobs found in the last 7 days.',
+            'jobs_found': 0
+        })
+
+
+@jobs_bp.route('/alert/<int:alert_id>/jobs', methods=['GET'])
+@login_required
+def get_alert_matching_jobs(alert_id):
+    """Get jobs matching a specific alert"""
+    from models import JobAlert
+    from app.utils.job_alert_checker import find_matching_jobs
+    
+    alert = JobAlert.query.get_or_404(alert_id)
+    
+    if alert.user_id != current_user.id and not current_user.is_admin():
+        return jsonify({'error': 'Access denied'}), 403
+    
+    matching_jobs = find_matching_jobs(alert, datetime.utcnow() - timedelta(days=7))
+    
+    jobs_data = []
+    for job in matching_jobs:
+        jobs_data.append({
+            'id': job.id,
+            'title': job.title,
+            'company': job.recruiter.company_name if job.recruiter else None,
+            'location': job.location,
+            'posted_at': job.posted_at.isoformat(),
+            'url': url_for('jobs.job_detail', job_id=job.id, _external=True)
+        })
+    
+    return jsonify({
+        'success': True,
+        'jobs': jobs_data,
+        'count': len(jobs_data)
     })
 
 

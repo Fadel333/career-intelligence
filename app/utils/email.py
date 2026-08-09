@@ -5,6 +5,7 @@ from threading import Thread
 import os
 import logging
 import requests
+from datetime import datetime
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -82,7 +83,6 @@ def send_email(subject, recipients, html_body, text_body=None, sender=None):
 
 def send_verification_email(email, token, fullname):
     """Send email verification link to new user"""
-    # Get base URL from config
     base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
     verification_url = f"{base_url}/auth/verify/{token}"
     
@@ -426,7 +426,6 @@ def send_application_status_update_email(application):
     
     color = status_colors.get(application.status, '#666')
     
-    # Get company name safely
     company_name = 'N/A'
     if application.job:
         if hasattr(application.job, 'recruiter') and application.job.recruiter:
@@ -628,7 +627,6 @@ def send_password_reset_email(user, token):
     
     subject = "🔐 Reset Your Password - TalentForge AI"
     
-    # Get base URL from config
     base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
     reset_url = f"{base_url}/auth/reset-password/{token}"
     
@@ -712,3 +710,72 @@ def send_password_reset_email(user, token):
     result = send_email(subject, user.email, html)
     print(f"📧 Send result: {result}")
     return result
+
+
+# ============================================
+# TEST EMAIL
+# ============================================
+
+def send_test_email(email):
+    """Send a test email to verify email configuration."""
+    base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
+    
+    subject = "✅ Test Email - TalentForge AI"
+    
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{ font-family: 'Inter', Arial, sans-serif; background: #f8f6f0; color: #2c3e50; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }}
+            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #6366f1; }}
+            .logo {{ font-size: 28px; font-weight: 800; color: #2c3e50; }}
+            .logo span {{ color: #6366f1; }}
+            .tagline {{ color: #10b981; font-size: 14px; font-weight: 500; }}
+            .content {{ padding: 30px 0; }}
+            .success-box {{ background: #f0fdf4; padding: 20px; border-radius: 12px; border-left: 4px solid #10b981; }}
+            .btn {{ display: inline-block; padding: 12px 30px; background: linear-gradient(135deg, #6366f1, #10b981); color: white; text-decoration: none; border-radius: 50px; font-weight: 600; }}
+            .footer {{ text-align: center; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <div class="logo">TalentForge <span>AI</span></div>
+                <p class="tagline">Africa's Talent Intelligence Platform</p>
+            </div>
+            <div class="content">
+                <h2 style="color: #1a1a2e;">✅ Test Email</h2>
+                <p style="color: #4b5563;">This is a test email to verify that your email configuration is working correctly.</p>
+                
+                <div class="success-box">
+                    <p style="margin: 0; color: #065f46; font-weight: 600;">✅ Your email configuration is working!</p>
+                    <p style="margin: 4px 0; color: #065f46; font-size: 14px;">📧 Sent from: {base_url}</p>
+                    <p style="margin: 4px 0; color: #065f46; font-size: 14px;">📅 Sent at: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC</p>
+                </div>
+                
+                <div style="background: #f8fafc; padding: 16px; border-radius: 12px; margin: 20px 0;">
+                    <p style="margin: 0; font-weight: 600; color: #1a1a2e;">📋 Email Details</p>
+                    <p style="margin: 4px 0; color: #6b7280; font-size: 14px;">📬 To: {email}</p>
+                    <p style="margin: 4px 0; color: #6b7280; font-size: 14px;">📌 Subject: {subject}</p>
+                    <p style="margin: 4px 0; color: #6b7280; font-size: 14px;">🏷️ From: TalentForge AI</p>
+                </div>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="{base_url}" class="btn">Visit TalentForge AI</a>
+                </div>
+            </div>
+            <div class="footer">
+                <p>© 2026 TalentForge AI. All rights reserved.</p>
+                <p>Ghana · West Africa</p>
+                <p style="margin-top: 4px;">
+                    <a href="{base_url}" style="color: #6366f1; text-decoration: none;">Visit our website</a>
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    
+    return send_email(subject, email, html)

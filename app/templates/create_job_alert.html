@@ -1,98 +1,442 @@
 {% extends "base.html" %}
 
+{% block title %}Create Job Alert{% endblock %}
+
 {% block content %}
 <div class="container py-4">
     <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-sm">
-                <div class="card-header">
-                    <h4 class="mb-0"><i class="bi bi-bell"></i> Create Job Alert</h4>
+        <div class="col-lg-8">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('job_alerts') }}">Job Alerts</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Create Alert</li>
+                </ol>
+            </nav>
+
+            <!-- Main Card -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-gradient-success text-white py-3">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-bell fa-2x me-3"></i>
+                        <div>
+                            <h4 class="mb-0">Create Job Alert</h4>
+                            <small class="text-white-50">Get notified when matching jobs are posted</small>
+                        </div>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <form method="POST">
-                        <!-- Keywords -->
-                        <div class="mb-3">
-                            <label class="form-label">Keywords</label>
-                            <input type="text" class="form-control" name="keywords" 
-                                   placeholder="e.g. Python, Django, Machine Learning">
-                            <small class="text-muted">Comma-separated keywords to match in job descriptions</small>
+                
+                <div class="card-body p-4">
+                    <form method="POST" id="createAlertForm">
+                        <!-- Quick Tips Banner -->
+                        <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+                            <i class="fas fa-lightbulb me-2"></i>
+                            <strong>Tip:</strong> Use specific keywords for better matches. 
+                            For example, "Python Developer" instead of just "Developer".
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                         </div>
-                        
-                        <!-- Job Type -->
-                        <div class="mb-3">
-                            <label class="form-label">Job Type</label>
-                            <select class="form-select" name="job_type">
-                                <option value="">Any</option>
-                                <option value="full_time">Full-Time</option>
-                                <option value="part_time">Part-Time</option>
-                                <option value="contract">Contract</option>
-                                <option value="internship">Internship</option>
-                                <option value="remote">Remote</option>
-                            </select>
-                        </div>
-                        
-                        <!-- Location -->
-                        <div class="mb-3">
-                            <label class="form-label">Location</label>
-                            <input type="text" class="form-control" name="location" 
-                                   placeholder="e.g. New York, Remote, San Francisco">
-                        </div>
-                        
-                        <!-- Salary Range -->
-                        <div class="row mb-3">
+
+                        <!-- Two Column Layout -->
+                        <div class="row">
                             <div class="col-md-6">
-                                <label class="form-label">Min Salary ($)</label>
-                                <input type="number" class="form-control" name="salary_min" 
-                                       placeholder="e.g. 50000">
+                                <!-- Basic Information -->
+                                <h6 class="text-muted mb-3">
+                                    <i class="fas fa-info-circle me-2"></i>Basic Information
+                                </h6>
+                                
+                                <div class="mb-3">
+                                    <label for="keywords" class="form-label fw-semibold">
+                                        Keywords <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" class="form-control form-control-lg" 
+                                           id="keywords" name="keywords" 
+                                           placeholder="e.g., Python, Django, React, AWS"
+                                           required>
+                                    <small class="text-muted">Comma-separated keywords to match job descriptions</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="location" class="form-label fw-semibold">Location</label>
+                                    <input type="text" class="form-control" id="location" name="location" 
+                                           placeholder="e.g., London, Remote, New York">
+                                    <small class="text-muted">Optional: City, country, or 'Remote'</small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="category" class="form-label fw-semibold">Category</label>
+                                    <select class="form-select" id="category" name="category">
+                                        <option value="">All Categories</option>
+                                        {% for category in categories %}
+                                            <option value="{{ category }}">{{ category }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
                             </div>
+
                             <div class="col-md-6">
-                                <label class="form-label">Max Salary ($)</label>
-                                <input type="number" class="form-control" name="salary_max" 
-                                       placeholder="e.g. 100000">
+                                <!-- Job Details -->
+                                <h6 class="text-muted mb-3">
+                                    <i class="fas fa-briefcase me-2"></i>Job Details
+                                </h6>
+
+                                <div class="mb-3">
+                                    <label for="job_type" class="form-label fw-semibold">Job Type</label>
+                                    <select class="form-select" id="job_type" name="job_type">
+                                        <option value="">Any</option>
+                                        <option value="full-time">Full-time</option>
+                                        <option value="part-time">Part-time</option>
+                                        <option value="contract">Contract</option>
+                                        <option value="internship">Internship</option>
+                                        <option value="remote">Remote</option>
+                                        <option value="freelance">Freelance</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="experience_level" class="form-label fw-semibold">Experience Level</label>
+                                    <select class="form-select" id="experience_level" name="experience_level">
+                                        <option value="">Any</option>
+                                        <option value="entry">🎯 Entry Level (0-2 years)</option>
+                                        <option value="mid">📈 Mid Level (3-5 years)</option>
+                                        <option value="senior">🏆 Senior Level (5+ years)</option>
+                                        <option value="executive">👔 Executive</option>
+                                    </select>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="salary_min" class="form-label fw-semibold">Min Salary</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" class="form-control" id="salary_min" name="salary_min" 
+                                                       placeholder="0" min="0">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="salary_max" class="form-label fw-semibold">Max Salary</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" class="form-control" id="salary_max" name="salary_max" 
+                                                       placeholder="0" min="0">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        
-                        <!-- Category -->
-                        <div class="mb-3">
-                            <label class="form-label">Category</label>
-                            <select class="form-select" name="category">
-                                <option value="">Any</option>
-                                {% for category in categories %}
-                                    <option value="{{ category }}">{{ category }}</option>
-                                {% endfor %}
-                            </select>
+
+                        <hr class="my-4">
+
+                        <!-- Notification Settings -->
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h6 class="text-muted mb-3">
+                                    <i class="fas fa-bell me-2"></i>Notification Settings
+                                </h6>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold">Frequency</label>
+                                    <div class="d-flex gap-3 flex-wrap">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="frequency" id="daily" 
+                                                   value="daily" checked>
+                                            <label class="form-check-label" for="daily">
+                                                <i class="fas fa-sun me-1"></i> Daily
+                                                <small class="text-muted d-block">Receive daily digest</small>
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="frequency" id="weekly" 
+                                                   value="weekly">
+                                            <label class="form-check-label" for="weekly">
+                                                <i class="fas fa-calendar-week me-1"></i> Weekly
+                                                <small class="text-muted d-block">Receive weekly summary</small>
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="frequency" id="immediate" 
+                                                   value="immediate">
+                                            <label class="form-check-label" for="immediate">
+                                                <i class="fas fa-bolt me-1"></i> Immediate
+                                                <small class="text-muted d-block">Get notified instantly</small>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <h6 class="text-muted mb-3">
+                                    <i class="fas fa-toggle-on me-2"></i>Status
+                                </h6>
+                                
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                                    <label class="form-check-label fw-semibold" for="is_active">
+                                        Active
+                                    </label>
+                                </div>
+                                <small class="text-muted d-block mt-2">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Your alert will be active immediately
+                                </small>
+                            </div>
                         </div>
-                        
-                        <!-- Experience Level -->
-                        <div class="mb-3">
-                            <label class="form-label">Experience Level</label>
-                            <select class="form-select" name="experience_level">
-                                <option value="">Any</option>
-                                <option value="entry">Entry Level</option>
-                                <option value="mid">Mid Level</option>
-                                <option value="senior">Senior Level</option>
-                                <option value="executive">Executive</option>
-                            </select>
+
+                        <hr class="my-4">
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
+                            <a href="{{ url_for('job_alerts') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="fas fa-bell me-2"></i> Create Alert
+                            </button>
                         </div>
-                        
-                        <!-- Frequency -->
-                        <div class="mb-3">
-                            <label class="form-label">Frequency</label>
-                            <select class="form-select" name="frequency">
-                                <option value="daily">Daily</option>
-                                <option value="weekly">Weekly</option>
-                                <option value="instant">Instant</option>
-                            </select>
-                            <small class="text-muted">How often you want to receive notifications</small>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-bell"></i> Create Alert
-                        </button>
                     </form>
+                </div>
+            </div>
+
+            <!-- Help Card -->
+            <div class="card bg-light border-0 mt-3">
+                <div class="card-body py-3">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <i class="fas fa-search text-primary fa-2x mb-2"></i>
+                            <h6 class="mb-1">Smart Matching</h6>
+                            <small class="text-muted">AI-powered job matching based on your skills</small>
+                        </div>
+                        <div class="col-md-4">
+                            <i class="fas fa-bell text-primary fa-2x mb-2"></i>
+                            <h6 class="mb-1">Real-time Alerts</h6>
+                            <small class="text-muted">Get notified as soon as jobs are posted</small>
+                        </div>
+                        <div class="col-md-4">
+                            <i class="fas fa-sliders-h text-primary fa-2x mb-2"></i>
+                            <h6 class="mb-1">Custom Filters</h6>
+                            <small class="text-muted">Fine-tune your job preferences</small>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('createAlertForm');
+    const keywordsInput = document.getElementById('keywords');
+    const salaryMin = document.getElementById('salary_min');
+    const salaryMax = document.getElementById('salary_max');
+    const activeSwitch = document.getElementById('is_active');
+    const statusLabel = document.querySelector('label[for="is_active"]');
+
+    // Form validation
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            // Check keywords
+            if (!keywordsInput.value.trim()) {
+                e.preventDefault();
+                keywordsInput.classList.add('is-invalid');
+                keywordsInput.focus();
+                showAlert('Please enter at least one keyword for your job alert.', 'warning');
+                return false;
+            }
+            keywordsInput.classList.remove('is-invalid');
+
+            // Validate salary range
+            if (salaryMin.value && salaryMax.value) {
+                if (parseFloat(salaryMin.value) > parseFloat(salaryMax.value)) {
+                    e.preventDefault();
+                    salaryMax.classList.add('is-invalid');
+                    showAlert('Minimum salary cannot be greater than maximum salary.', 'danger');
+                    return false;
+                }
+                salaryMax.classList.remove('is-invalid');
+            }
+
+            return true;
+        });
+    }
+
+    // Keywords input enhancement - auto-format
+    if (keywordsInput) {
+        keywordsInput.addEventListener('blur', function() {
+            // Clean up keywords (remove extra spaces, commas)
+            let value = this.value.trim();
+            value = value.replace(/\s*,\s*/g, ', '); // Format spaces after commas
+            value = value.replace(/,\s*,/g, ','); // Remove duplicate commas
+            this.value = value;
+        });
+    }
+
+    // Toggle active status text
+    if (activeSwitch && statusLabel) {
+        activeSwitch.addEventListener('change', function() {
+            if (this.checked) {
+                statusLabel.textContent = 'Active';
+                statusLabel.classList.remove('text-muted');
+            } else {
+                statusLabel.textContent = 'Inactive';
+                statusLabel.classList.add('text-muted');
+            }
+        });
+    }
+
+    // Salary validation
+    function validateSalary() {
+        if (salaryMin.value && salaryMax.value) {
+            if (parseFloat(salaryMin.value) > parseFloat(salaryMax.value)) {
+                salaryMax.classList.add('is-invalid');
+                return false;
+            } else {
+                salaryMax.classList.remove('is-invalid');
+            }
+        }
+        return true;
+    }
+
+    if (salaryMin && salaryMax) {
+        salaryMin.addEventListener('change', validateSalary);
+        salaryMax.addEventListener('change', validateSalary);
+    }
+
+    // Add some common keyword suggestions
+    const keywordSuggestions = [
+        'Python', 'JavaScript', 'React', 'Node.js', 'AWS', 'Docker', 
+        'Machine Learning', 'Data Science', 'DevOps', 'Full Stack',
+        'Frontend', 'Backend', 'UX/UI', 'Product Manager', 'Agile'
+    ];
+
+    // Optional: Add keyword suggestions chip
+    const formGroup = keywordsInput?.closest('.mb-3');
+    if (formGroup && keywordSuggestions.length > 0) {
+        const suggestionsDiv = document.createElement('div');
+        suggestionsDiv.className = 'mt-2';
+        suggestionsDiv.innerHTML = '<small class="text-muted">Popular keywords: </small>';
+        
+        const chipsContainer = document.createElement('span');
+        chipsContainer.className = 'd-flex flex-wrap gap-1 mt-1';
+        
+        keywordSuggestions.slice(0, 6).forEach(skill => {
+            const chip = document.createElement('span');
+            chip.className = 'badge bg-light text-dark border cursor-pointer';
+            chip.style.cursor = 'pointer';
+            chip.textContent = skill;
+            chip.addEventListener('click', function() {
+                const currentVal = keywordsInput.value.trim();
+                if (currentVal) {
+                    keywordsInput.value = currentVal + ', ' + skill;
+                } else {
+                    keywordsInput.value = skill;
+                }
+                keywordsInput.focus();
+            });
+            chipsContainer.appendChild(chip);
+        });
+        
+        suggestionsDiv.appendChild(chipsContainer);
+        formGroup.appendChild(suggestionsDiv);
+    }
+
+    // Helper function to show alerts
+    function showAlert(message, type = 'warning') {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show mt-3`;
+        alertDiv.role = 'alert';
+        alertDiv.innerHTML = `
+            <i class="fas fa-exclamation-circle me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        
+        const container = document.querySelector('.card-body');
+        if (container) {
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                alertDiv.style.transition = 'opacity 0.5s ease';
+                alertDiv.style.opacity = '0';
+                setTimeout(() => alertDiv.remove(), 500);
+            }, 5000);
+        }
+    }
+
+    // Auto-dismiss existing alerts
+    document.querySelectorAll('.alert.alert-dismissible').forEach(alert => {
+        setTimeout(() => {
+            alert.style.transition = 'opacity 0.5s ease';
+            alert.style.opacity = '0';
+            setTimeout(() => alert.remove(), 500);
+        }, 8000);
+    });
+});
+
+// Geolocation support (optional)
+if (navigator.geolocation) {
+    const locationInput = document.getElementById('location');
+    if (locationInput && !locationInput.value) {
+        // Optional: Get user's city using reverse geocoding
+        // This would require a geocoding API
+    }
+}
+</script>
+
+<style>
+/* Additional styles for better UX */
+.cursor-pointer {
+    cursor: pointer;
+}
+
+.badge.bg-light {
+    background-color: #f8f9fa !important;
+    border: 1px solid #dee2e6;
+    padding: 0.4rem 0.8rem;
+    transition: all 0.2s;
+}
+
+.badge.bg-light:hover {
+    background-color: #e9ecef !important;
+    border-color: #0d6efd;
+    color: #0d6efd !important;
+    transform: scale(1.05);
+}
+
+.bg-gradient-success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.form-control-lg {
+    font-size: 1.1rem;
+}
+
+/* Radio button cards style */
+.form-check {
+    padding-left: 0;
+}
+
+.form-check .form-check-input {
+    margin-right: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .form-check {
+        margin-bottom: 0.5rem;
+    }
+    
+    .d-flex.gap-3 {
+        flex-direction: column;
+        gap: 0.5rem !important;
+    }
+}
+</style>
 {% endblock %}
