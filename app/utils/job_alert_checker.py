@@ -119,11 +119,15 @@ def find_matching_jobs(alert, since=None):
     if since is None:
         since = datetime.utcnow() - timedelta(days=7)
     
+    print(f"🔍 find_matching_jobs: Looking for jobs since {since}")
+    
     # Get jobs published after the given date
     new_jobs = Job.query.filter(
         Job.status == 'published',
         Job.posted_at > since
     ).all()
+    
+    print(f"📊 Found {len(new_jobs)} published jobs since {since}")
     
     # Filter matching jobs
     matching_jobs = []
@@ -132,10 +136,12 @@ def find_matching_jobs(alert, since=None):
             score = calculate_match_score(alert, job)
             job.match_score = score
             matching_jobs.append(job)
+            print(f"✅ Job '{job.title}' matches with score {score}%")
     
     # Sort by match score (highest first)
     matching_jobs.sort(key=lambda x: getattr(x, 'match_score', 0), reverse=True)
     
+    print(f"📊 Found {len(matching_jobs)} matching jobs")
     return matching_jobs
 
 
@@ -150,13 +156,21 @@ def send_job_alert_notification(alert, jobs):
     Returns:
         bool: True if successful, False otherwise
     """
+    print(f"📧 send_job_alert_notification called with {len(jobs)} jobs")
+    
     if not jobs:
-        logger.info(f"No matching jobs found for alert {alert.id}")
+        print("❌ No jobs to send")
         return False
     
     user = User.query.get(alert.user_id)
-    if not user or not user.email:
-        logger.error(f"User {alert.user_id} has no email address")
+    if not user:
+        print(f"❌ User {alert.user_id} not found")
+        return False
+    
+    print(f"📧 User found: {user.email}, receive_notifications={user.receive_notifications}")
+    
+    if not user.email:
+        print(f"❌ User {user.id} has no email address")
         return False
     
     try:
@@ -177,124 +191,26 @@ def send_job_alert_notification(alert, jobs):
             })
         
         # Create HTML email content
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-                body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa; }}
-                .container {{ background: white; border-radius: 12px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
-                .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center; margin: -30px -30px 30px -30px; }}
-                .header h1 {{ margin: 0; font-size: 24px; font-weight: 700; }}
-                .header p {{ margin: 10px 0 0; opacity: 0.9; }}
-                .job-card {{ border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 15px 0; background: white; transition: box-shadow 0.2s; }}
-                .job-card:hover {{ box-shadow: 0 4px 12px rgba(0,0,0,0.1); }}
-                .job-title {{ font-size: 18px; font-weight: 600; color: #1f2937; margin-bottom: 5px; }}
-                .job-company {{ color: #6b7280; font-weight: 500; }}
-                .match-score {{ display: inline-block; background: #10b981; color: white; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }}
-                .job-details {{ margin: 10px 0; color: #6b7280; font-size: 14px; }}
-                .job-details span {{ margin-right: 15px; }}
-                .view-link {{ display: inline-block; background: #667eea; color: white; padding: 10px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; margin-top: 10px; }}
-                .view-link:hover {{ background: #5a67d8; }}
-                .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 13px; text-align: center; }}
-                .footer a {{ color: #667eea; text-decoration: none; }}
-                .alert-info {{ background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea; }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1>🎯 New Job Matches Found!</h1>
-                    <p>We found {len(jobs)} new jobs matching your alert: <strong>"{alert.keywords}"</strong></p>
-                </div>
-                
-                <div class="alert-info">
-                    <strong>📋 Alert Summary</strong><br>
-                    Keywords: {alert.keywords}<br>
-                    Location: {alert.location or 'Any'}<br>
-                    Frequency: {alert.frequency.title()}
-                </div>
-                
-                <h3 style="margin: 25px 0 15px; color: #1f2937;">📋 Matching Jobs</h3>
-                
-                {''.join(f'''
-                <div class="job-card">
-                    <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap;">
-                        <div>
-                            <div class="job-title">{job['title']}</div>
-                            <div class="job-company">🏢 {job['company']}</div>
-                        </div>
-                        <span class="match-score">{job['match_score']}% Match</span>
-                    </div>
-                    <div class="job-details">
-                        <span>📍 {job['location']}</span>
-                        <span>💰 {job['salary']}</span>
-                        <span>📅 {job['posted_at']}</span>
-                    </div>
-                    <a href="{job['url']}" class="view-link" target="_blank">View Job Details →</a>
-                </div>
-                ''' for job in job_listings)}
-                
-                {f'<p style="color: #6b7280; text-align: center; margin: 10px 0;">... and {len(jobs) - 10} more jobs</p>' if len(jobs) > 10 else ''}
-                
-                <div class="footer">
-                    <p style="margin: 5px 0;">
-                        <strong>Manage your alerts:</strong>
-                        <a href="https://career-intelligence-3.onrender.com/job-alerts">https://career-intelligence-3.onrender.com/job-alerts</a>
-                    </p>
-                    <p style="margin: 5px 0;">
-                        You're receiving this because you have an active job alert on Career Intelligence.
-                    </p>
-                    <p style="margin: 5px 0;">
-                        <a href="https://career-intelligence-3.onrender.com/job-alerts">Manage Alerts</a> | 
-                        <a href="https://career-intelligence-3.onrender.com/profile">Update Preferences</a>
-                    </p>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-        
-        # Plain text version
-        plain_text = f"""
-        🎯 New Job Matches Found!
-        
-        We found {len(jobs)} new jobs matching your alert: "{alert.keywords}"
-        
-        📋 Alert Summary:
-        Keywords: {alert.keywords}
-        Location: {alert.location or 'Any'}
-        Frequency: {alert.frequency.title()}
-        
-        📋 Matching Jobs:
-        {''.join(f'''
-        {job['title']}
-        Company: {job['company']}
-        Location: {job['location']}
-        Salary: {job['salary']}
-        Match: {job['match_score']}%
-        Posted: {job['posted_at']}
-        View: {job['url']}
-        {'-' * 50}
-        ''' for job in job_listings)}
-        
-        {'... and ' + str(len(jobs) - 10) + ' more jobs' if len(jobs) > 10 else ''}
-        
-        Manage your alerts:
-        https://career-intelligence-3.onrender.com/job-alerts
-        """
+        html_content = build_job_alert_html(alert, job_listings, len(jobs))
+        plain_text = build_job_alert_text(alert, job_listings, len(jobs))
         
         # Send email using SendGrid via your email.py
         subject = f"🎯 {len(jobs)} New Job{'s' if len(jobs) > 1 else ''} Matching '{alert.keywords}'"
         
-        send_email(
+        print(f"📧 Calling send_email with subject: {subject}, to: {user.email}")
+        
+        result = send_email(
             subject=subject,
             recipients=user.email,
             html_body=html_content,
             text_body=plain_text
         )
+        
+        print(f"📧 send_email returned: {result}")
+        
+        if not result:
+            print(f"❌ send_email returned False")
+            return False
         
         # Log the notification
         log = JobAlertLog(
@@ -308,34 +224,120 @@ def send_job_alert_notification(alert, jobs):
             error_message=None
         )
         db.session.add(log)
-        
-        # Update last sent time
-        alert.last_sent_at = datetime.utcnow()
         db.session.commit()
         
-        logger.info(f"✅ Email sent to {user.email} with {len(jobs)} jobs")
+        print(f"✅ Email sent to {user.email} with {len(jobs)} jobs")
         return True
         
     except Exception as e:
-        logger.error(f"Error sending email: {str(e)}")
+        print(f"❌ Error sending email: {str(e)}")
         import traceback
         traceback.print_exc()
-        
-        # Log the error
-        try:
-            log = JobAlertLog(
-                alert_id=alert.id,
-                user_id=user.id,
-                jobs_found=len(jobs) if jobs else 0,
-                sent_at=datetime.utcnow(),
-                status='failed',
-                email_sent=False,
-                sms_sent=False,
-                error_message=str(e)
-            )
-            db.session.add(log)
-            db.session.commit()
-        except:
-            pass
-        
         return False
+
+
+def build_job_alert_html(alert, job_listings, total_jobs):
+    """Build HTML email content for job alert"""
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f8f9fa; }}
+            .container {{ background: white; border-radius: 12px; padding: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }}
+            .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px 12px 0 0; text-align: center; margin: -30px -30px 30px -30px; }}
+            .header h1 {{ margin: 0; font-size: 24px; font-weight: 700; }}
+            .header p {{ margin: 10px 0 0; opacity: 0.9; }}
+            .job-card {{ border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 15px 0; background: white; }}
+            .job-title {{ font-size: 18px; font-weight: 600; color: #1f2937; margin-bottom: 5px; }}
+            .job-company {{ color: #6b7280; font-weight: 500; }}
+            .match-score {{ display: inline-block; background: #10b981; color: white; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }}
+            .job-details {{ margin: 10px 0; color: #6b7280; font-size: 14px; }}
+            .job-details span {{ margin-right: 15px; }}
+            .view-link {{ display: inline-block; background: #667eea; color: white; padding: 10px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; margin-top: 10px; }}
+            .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 13px; text-align: center; }}
+            .alert-info {{ background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #667eea; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🎯 New Job Matches Found!</h1>
+                <p>We found {total_jobs} new jobs matching your alert: <strong>"{alert.keywords}"</strong></p>
+            </div>
+            
+            <div class="alert-info">
+                <strong>📋 Alert Summary</strong><br>
+                Keywords: {alert.keywords}<br>
+                Location: {alert.location or 'Any'}<br>
+                Frequency: {alert.frequency.title()}
+            </div>
+            
+            <h3 style="margin: 25px 0 15px; color: #1f2937;">📋 Matching Jobs</h3>
+            
+            {''.join(f'''
+            <div class="job-card">
+                <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap;">
+                    <div>
+                        <div class="job-title">{job['title']}</div>
+                        <div class="job-company">🏢 {job['company']}</div>
+                    </div>
+                    <span class="match-score">{job['match_score']}% Match</span>
+                </div>
+                <div class="job-details">
+                    <span>📍 {job['location']}</span>
+                    <span>💰 {job['salary']}</span>
+                    <span>📅 {job['posted_at']}</span>
+                </div>
+                <a href="{job['url']}" class="view-link" target="_blank">View Job Details →</a>
+            </div>
+            ''' for job in job_listings)}
+            
+            {f'<p style="color: #6b7280; text-align: center; margin: 10px 0;">... and {total_jobs - 10} more jobs</p>' if total_jobs > 10 else ''}
+            
+            <div class="footer">
+                <p style="margin: 5px 0;">
+                    <strong>Manage your alerts:</strong>
+                    <a href="https://career-intelligence-3.onrender.com/job-alerts">https://career-intelligence-3.onrender.com/job-alerts</a>
+                </p>
+                <p style="margin: 5px 0;">
+                    You're receiving this because you have an active job alert on Career Intelligence.
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+
+def build_job_alert_text(alert, job_listings, total_jobs):
+    """Build plain text email content for job alert"""
+    return f"""
+    🎯 New Job Matches Found!
+    
+    We found {total_jobs} new jobs matching your alert: "{alert.keywords}"
+    
+    📋 Alert Summary:
+    Keywords: {alert.keywords}
+    Location: {alert.location or 'Any'}
+    Frequency: {alert.frequency.title()}
+    
+    📋 Matching Jobs:
+    {''.join(f'''
+    {job['title']}
+    Company: {job['company']}
+    Location: {job['location']}
+    Salary: {job['salary']}
+    Match: {job['match_score']}%
+    Posted: {job['posted_at']}
+    View: {job['url']}
+    {'-' * 50}
+    ''' for job in job_listings)}
+    
+    {'... and ' + str(total_jobs - 10) + ' more jobs' if total_jobs > 10 else ''}
+    
+    Manage your alerts:
+    https://career-intelligence-3.onrender.com/job-alerts
+    """

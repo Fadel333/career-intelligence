@@ -564,6 +564,9 @@ def test_alert_check():
             'message': f'Checked alerts: {sent} sent, {errors} errors'
         })
     except Exception as e:
+        print(f"❌ Error in test_alert_check: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False,
             'error': str(e)
@@ -573,26 +576,53 @@ def test_alert_check():
 @jobs_bp.route('/alert/<int:alert_id>/test', methods=['POST'])
 @login_required
 def test_single_alert(alert_id):
-    """Test a single job alert"""
+    """
+    Test a single job alert - sends email via SendGrid
+    
+    This endpoint allows users to test their job alerts by sending
+    a test email with matching jobs from the last 7 days.
+    """
+    print(f"🔍 TEST ALERT CALLED: alert_id={alert_id}, user={current_user.email}")
+    
     from models import JobAlert
     from app.utils.job_alert_checker import find_matching_jobs, send_job_alert_notification
     
+    # Get the alert
     alert = JobAlert.query.get_or_404(alert_id)
+    print(f"📋 Alert found: {alert.keywords}, user_id={alert.user_id}")
     
+    # Check permissions
     if alert.user_id != current_user.id and not current_user.is_admin():
+        print(f"❌ Access denied for user {current_user.id} on alert {alert.user_id}")
         return jsonify({'error': 'Access denied'}), 403
     
-    # Find matching jobs (last 7 days)
+    # Find matching jobs from the last 7 days
+    print(f"🔍 Finding matching jobs for alert {alert_id}...")
     matching_jobs = find_matching_jobs(alert, datetime.utcnow() - timedelta(days=7))
+    print(f"📊 Found {len(matching_jobs)} matching jobs")
     
     if matching_jobs:
         try:
-            send_job_alert_notification(alert, matching_jobs)
-            return jsonify({
-                'success': True,
-                'message': f'Test email sent with {len(matching_jobs)} matching jobs!'
-            })
+            print(f"📧 Attempting to send email to {current_user.email}")
+            result = send_job_alert_notification(alert, matching_jobs)
+            print(f"📧 Send result: {result}")
+            
+            if result:
+                return jsonify({
+                    'success': True,
+                    'message': f'✅ Test email sent to {current_user.email} with {len(matching_jobs)} matching jobs!',
+                    'jobs_found': len(matching_jobs),
+                    'email': current_user.email
+                })
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to send email. Check server logs.'
+                }), 500
         except Exception as e:
+            print(f"❌ Exception in test_single_alert: {str(e)}")
+            import traceback
+            traceback.print_exc()
             return jsonify({
                 'success': False,
                 'error': str(e)
@@ -608,7 +638,7 @@ def test_single_alert(alert_id):
 @jobs_bp.route('/alert/<int:alert_id>/jobs', methods=['GET'])
 @login_required
 def get_alert_matching_jobs(alert_id):
-    """Get jobs matching a specific alert"""
+    """Get jobs matching a specific alert (API endpoint)"""
     from models import JobAlert
     from app.utils.job_alert_checker import find_matching_jobs
     
@@ -621,13 +651,15 @@ def get_alert_matching_jobs(alert_id):
     
     jobs_data = []
     for job in matching_jobs:
+        company_name = job.recruiter.company_name if job.recruiter else None
         jobs_data.append({
             'id': job.id,
             'title': job.title,
-            'company': job.recruiter.company_name if job.recruiter else None,
+            'company': company_name,
             'location': job.location,
             'posted_at': job.posted_at.isoformat(),
-            'url': url_for('jobs.job_detail', job_id=job.id, _external=True)
+            'url': url_for('jobs.job_detail', job_id=job.id, _external=True),
+            'match_score': getattr(job, 'match_score', 0)
         })
     
     return jsonify({
@@ -635,6 +667,87 @@ def get_alert_matching_jobs(alert_id):
         'jobs': jobs_data,
         'count': len(jobs_data)
     })
+
+
+@jobs_bp.route('/test-email', methods=['GET'])
+@login_required
+def test_email():
+    """
+    Simple endpoint to test if SendGrid email sending is working.
+    Visit /jobs/test-email to test.
+    """
+    from app.utils.email import send_email
+    
+    print(f"📧 Testing email to: {current_user.email}")
+    
+    try:
+        html_content = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; }
+                .success { background: #10b981; color: white; padding: 15px; border-radius: 8px; text-align: center; margin: 20px 0; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>📧 Test Email</h1>
+                <p>Career Intelligence - Email Test</p>
+            </div>
+            <div class="success">
+                ✅ Email sent successfully!
+            </div>
+            <p>If you're seeing this email, your SendGrid configuration is working correctly.</p>
+            <p><strong>Sent to:</strong> {email}</p>
+            <p><strong>Sent at:</strong> {timestamp}</p>
+        </body>
+        </html>
+        """.format(
+            email=current_user.email,
+            timestamp=datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
+        )
+        
+        text_body = f"""
+        Test Email from Career Intelligence
+        
+        If you're seeing this email, your SendGrid configuration is working correctly.
+        
+        Sent to: {current_user.email}
+        Sent at: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}
+        """
+        
+        result = send_email(
+            subject="📧 Test Email from Career Intelligence",
+            recipients=current_user.email,
+            html_body=html_content,
+            text_body=text_body
+        )
+        
+        print(f"📧 Test email result: {result}")
+        
+        if result:
+            return jsonify({
+                'success': True,
+                'email': current_user.email,
+                'message': '✅ Test email sent successfully! Check your inbox (and spam folder).'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'email': current_user.email,
+                'error': 'Email sending failed. Check server logs for details.'
+            }), 500
+            
+    except Exception as e:
+        print(f"❌ Test email error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 
 # ========== JOB ALERT TRIGGER ==========
