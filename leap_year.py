@@ -1,9 +1,14 @@
-def course(course_name):
-    return course_name.lower() == "discrete math"
+first_name = input("Enter your first name: ")
 
-course_name = input("Enter your course name: ")
+second_name = input("Enter your second name: ")
 
-if course(course_name):
-    print("You entered Discrete Math.")
-else:
-    print("W’akyi gu hɔ bro.")
+full_name = first_name + " " + second_name
+
+age = input("Enter your age: ")
+
+print("Your full name is:", full_name, "you little shit!")
+print("You are", age, "years old.")
+
+print("Your name has", len(full_name), "characters in it.")
+print("Your name has", full_name.count(" "), "spaces in it.")
+print("Your age is", len(age), "characters long.")
