@@ -462,11 +462,33 @@
             .topbar-left .breadcrumb .hide-mobile {
                 display: none;
             }
+            
+            /* Footer mobile fixes */
+            footer {
+                margin-left: 0 !important;
+                padding: 0.5rem 0 !important;
+            }
+            footer .grid {
+                gap: 0.5rem !important;
+            }
+            footer .grid > div {
+                padding: 0.25rem 0;
+            }
+            footer .border-t {
+                margin-top: 0.25rem !important;
+                padding-top: 0.25rem !important;
+            }
+            footer ul li {
+                line-height: 1.3;
+            }
         }
         
         @media (max-width: 480px) {
             .stat-number {
                 font-size: 1.25rem;
+            }
+            .main-content-inner {
+                padding: 0 0.75rem 0.75rem 0.75rem;
             }
         }
         
@@ -976,45 +998,55 @@
     </main>
 
     <!-- ============================================
-         FOOTER — Overleaf-style
+         FOOTER — Slim Mobile-Friendly
          ============================================ -->
-    <footer class="border-t border-[#30363d] py-6" style="margin-left: 240px;">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="grid md:grid-cols-4 gap-6 mb-4">
-                <div>
-                    <div class="flex items-center gap-2 mb-2">
-                        <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="TalentForge AI" class="w-6 h-6 rounded-md bg-white p-0.5">
-                        <span class="text-white font-semibold text-sm">TalentForge AI</span>
+    <footer class="border-t border-[#30363d]">
+        <div class="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-6">
+            <!-- Grid - Compact on mobile -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-6">
+                <!-- Brand -->
+                <div class="col-span-2 md:col-span-1">
+                    <div class="flex items-center gap-2 mb-1 md:mb-2">
+                        <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="TalentForge AI" class="w-5 h-5 md:w-6 md:h-6 rounded-md bg-white p-0.5">
+                        <span class="text-white font-semibold text-xs md:text-sm">TalentForge AI</span>
                     </div>
-                    <p class="text-gray-500 text-xs">Africa's Talent Intelligence Platform — building the infrastructure for workforce intelligence.</p>
+                    <p class="text-gray-500 text-[10px] md:text-xs leading-tight hidden sm:block">Africa's Talent Intelligence Platform</p>
                 </div>
+                
+                <!-- Platform -->
                 <div>
-                    <h4 class="text-white font-medium text-xs mb-2">Platform</h4>
-                    <ul class="space-y-1 text-xs">
-                        <li><a href="{{ url_for('privacy_policy') }}" class="text-gray-500 hover:text-gray-300 transition">Privacy Policy</a></li>
-                        <li><a href="{{ url_for('terms_of_use') }}" class="text-gray-500 hover:text-gray-300 transition">Terms of Use</a></li>
+                    <h4 class="text-white font-medium text-[10px] md:text-xs mb-0.5 md:mb-2">Platform</h4>
+                    <ul class="space-y-0.5 md:space-y-1 text-[10px] md:text-xs">
+                        <li><a href="{{ url_for('privacy_policy') }}" class="text-gray-500 hover:text-gray-300 transition">Privacy</a></li>
+                        <li><a href="{{ url_for('terms_of_use') }}" class="text-gray-500 hover:text-gray-300 transition">Terms</a></li>
                         <li><a href="{{ url_for('methodology') }}" class="text-gray-500 hover:text-gray-300 transition">Methodology</a></li>
                     </ul>
                 </div>
+                
+                <!-- Partners -->
                 <div>
-                    <h4 class="text-white font-medium text-xs mb-2">Partners</h4>
-                    <ul class="space-y-1 text-xs">
+                    <h4 class="text-white font-medium text-[10px] md:text-xs mb-0.5 md:mb-2">Partners</h4>
+                    <ul class="space-y-0.5 md:space-y-1 text-[10px] md:text-xs">
                         <li><a href="{{ url_for('university_dashboard') }}" class="text-gray-500 hover:text-gray-300 transition">Universities</a></li>
                         <li><a href="recruiter/dashboard" class="text-gray-500 hover:text-gray-300 transition">Employers</a></li>
                         <li><a href="#partnership" class="text-gray-500 hover:text-gray-300 transition">Investors</a></li>
                     </ul>
                 </div>
-                <div>
-                    <h4 class="text-white font-medium text-xs mb-2">Connect</h4>
-                    <ul class="space-y-1 text-xs text-gray-500">
-                        <li><i class="fas fa-envelope text-[#58a6ff] mr-1.5"></i> fadiliddrisu24@gmail.com</li>
-                        <li><i class="fas fa-map-marker-alt text-[#58a6ff] mr-1.5"></i> Ghana · West Africa</li>
-                        <li><i class="fab fa-linkedin text-[#58a6ff] mr-1.5"></i> TalentForge AI</li>
+                
+                <!-- Connect -->
+                <div class="col-span-2 md:col-span-1">
+                    <h4 class="text-white font-medium text-[10px] md:text-xs mb-0.5 md:mb-2">Connect</h4>
+                    <ul class="space-y-0.5 md:space-y-1 text-[10px] md:text-xs text-gray-500">
+                        <li class="truncate"><i class="fas fa-envelope text-[#58a6ff] mr-1 md:mr-1.5 text-[10px]"></i> fadiliddrisu24@gmail.com</li>
+                        <li class="hidden sm:block"><i class="fas fa-map-marker-alt text-[#58a6ff] mr-1 md:mr-1.5 text-[10px]"></i> Ghana · West Africa</li>
+                        <li><i class="fab fa-linkedin text-[#58a6ff] mr-1 md:mr-1.5 text-[10px]"></i> TalentForge AI</li>
                     </ul>
                 </div>
             </div>
-            <div class="border-t border-[#30363d] pt-3 text-center text-gray-500 text-[10px]">
-                <p>© 2026 TalentForge AI — Africa's Talent Intelligence Platform. All rights reserved.</p>
+            
+            <!-- Copyright -->
+            <div class="border-t border-[#30363d] pt-1.5 md:pt-3 mt-1.5 md:mt-3 text-center text-gray-500 text-[9px] md:text-[10px]">
+                <p>© 2026 TalentForge AI — All rights reserved.</p>
             </div>
         </div>
     </footer>
