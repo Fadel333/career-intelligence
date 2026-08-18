@@ -3,272 +3,283 @@
 {% block title %}Edit Job Alert - {{ alert.keywords }}{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <!-- Breadcrumb -->
-            <nav aria-label="breadcrumb" class="mb-4">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="{{ url_for('job_alerts') }}">Job Alerts</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Edit Alert</li>
-                </ol>
-            </nav>
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-sm text-gray-500 mb-6">
+        <a href="{{ url_for('dashboard') }}" class="text-gray-400 hover:text-indigo-400 transition">Dashboard</a>
+        <span class="text-gray-600">/</span>
+        <a href="{{ url_for('job_alerts') }}" class="text-gray-400 hover:text-indigo-400 transition">Job Alerts</a>
+        <span class="text-gray-600">/</span>
+        <span class="text-indigo-400">Edit Alert</span>
+    </nav>
 
-            <!-- Main Card -->
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-gradient-primary text-white py-3">
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-edit fa-2x me-3"></i>
-                        <div>
-                            <h4 class="mb-0">Edit Job Alert</h4>
-                            <small class="text-white-50">Update your job alert preferences</small>
-                        </div>
-                    </div>
+    <!-- Main Card -->
+    <div class="card">
+        <!-- Header -->
+        <div class="border-b border-[#2d2d3f] px-6 py-4">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-edit text-2xl text-indigo-400"></i>
                 </div>
-                
-                <div class="card-body p-4">
-                    <form method="POST" action="{{ url_for('edit_job_alert', alert_id=alert.id) }}" id="editAlertForm">
-                        <!-- Alert Status Banner -->
-                        <div class="alert {% if alert.is_active %}alert-success{% else %}alert-secondary{% endif %} mb-4">
-                            <div class="d-flex align-items-center">
-                                <i class="fas {% if alert.is_active %}fa-check-circle{% else %}fa-pause-circle{% endif %} me-2"></i>
-                                <span>
-                                    This alert is currently <strong>{% if alert.is_active %}Active{% else %}Inactive{% endif %}</strong>
-                                    {% if alert.is_active %}
-                                        and will send you notifications when matching jobs are posted.
-                                    {% else %}
-                                        - you won't receive notifications until you activate it.
-                                    {% endif %}
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- Two Column Layout -->
-                        <div class="row">
-                            <div class="col-md-6">
-                                <!-- Basic Information -->
-                                <h6 class="text-muted mb-3"><i class="fas fa-info-circle me-2"></i>Basic Information</h6>
-                                
-                                <div class="mb-3">
-                                    <label for="keywords" class="form-label fw-semibold">
-                                        Keywords <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" class="form-control form-control-lg" id="keywords" name="keywords" 
-                                           value="{{ alert.keywords or '' }}" 
-                                           placeholder="e.g., Python, Django, React"
-                                           required>
-                                    <small class="text-muted">Comma-separated keywords to match job descriptions</small>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label for="location" class="form-label fw-semibold">Location</label>
-                                    <input type="text" class="form-control" id="location" name="location" 
-                                           value="{{ alert.location or '' }}"
-                                           placeholder="e.g., London, Remote, New York">
-                                    <small class="text-muted">Optional: City, country, or 'Remote'</small>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label for="category" class="form-label fw-semibold">Category</label>
-                                    <select class="form-select" id="category" name="category">
-                                        <option value="">All Categories</option>
-                                        {% for cat in categories %}
-                                        <option value="{{ cat }}" {% if alert.category == cat %}selected{% endif %}>
-                                            {{ cat }}
-                                        </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <!-- Job Details -->
-                                <h6 class="text-muted mb-3"><i class="fas fa-briefcase me-2"></i>Job Details</h6>
-
-                                <div class="mb-3">
-                                    <label for="job_type" class="form-label fw-semibold">Job Type</label>
-                                    <select class="form-select" id="job_type" name="job_type">
-                                        <option value="">Any</option>
-                                        <option value="full-time" {% if alert.job_type == 'full-time' %}selected{% endif %}>Full-time</option>
-                                        <option value="part-time" {% if alert.job_type == 'part-time' %}selected{% endif %}>Part-time</option>
-                                        <option value="contract" {% if alert.job_type == 'contract' %}selected{% endif %}>Contract</option>
-                                        <option value="internship" {% if alert.job_type == 'internship' %}selected{% endif %}>Internship</option>
-                                        <option value="remote" {% if alert.job_type == 'remote' %}selected{% endif %}>Remote</option>
-                                    </select>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label for="experience_level" class="form-label fw-semibold">Experience Level</label>
-                                    <select class="form-select" id="experience_level" name="experience_level">
-                                        <option value="">Any</option>
-                                        <option value="entry" {% if alert.experience_level == 'entry' %}selected{% endif %}>Entry Level (0-2 years)</option>
-                                        <option value="mid" {% if alert.experience_level == 'mid' %}selected{% endif %}>Mid Level (3-5 years)</option>
-                                        <option value="senior" {% if alert.experience_level == 'senior' %}selected{% endif %}>Senior Level (5+ years)</option>
-                                    </select>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="salary_min" class="form-label fw-semibold">Min Salary</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">$</span>
-                                                <input type="number" class="form-control" id="salary_min" name="salary_min" 
-                                                       value="{{ alert.salary_min or '' }}" 
-                                                       placeholder="0" min="0">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="salary_max" class="form-label fw-semibold">Max Salary</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">$</span>
-                                                <input type="number" class="form-control" id="salary_max" name="salary_max" 
-                                                       value="{{ alert.salary_max or '' }}" 
-                                                       placeholder="0" min="0">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <hr class="my-4">
-
-                        <!-- Notification Settings -->
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6 class="text-muted mb-3"><i class="fas fa-bell me-2"></i>Notification Settings</h6>
-                                
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Frequency</label>
-                                    <div class="d-flex gap-3 flex-wrap">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="frequency" id="daily" 
-                                                   value="daily" {% if alert.frequency == 'daily' %}checked{% endif %}>
-                                            <label class="form-check-label" for="daily">
-                                                <i class="fas fa-sun me-1"></i> Daily
-                                            </label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="frequency" id="weekly" 
-                                                   value="weekly" {% if alert.frequency == 'weekly' %}checked{% endif %}>
-                                            <label class="form-check-label" for="weekly">
-                                                <i class="fas fa-calendar-week me-1"></i> Weekly
-                                            </label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="frequency" id="immediate" 
-                                                   value="immediate" {% if alert.frequency == 'immediate' %}checked{% endif %}>
-                                            <label class="form-check-label" for="immediate">
-                                                <i class="fas fa-bolt me-1"></i> Immediate
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <small class="text-muted">How often you want to receive job notifications</small>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <h6 class="text-muted mb-3"><i class="fas fa-toggle-on me-2"></i>Status</h6>
-                                
-                                <div class="form-check form-switch mb-2">
-                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
-                                           {% if alert.is_active %}checked{% endif %}>
-                                    <label class="form-check-label fw-semibold" for="is_active">
-                                        {% if alert.is_active %}Active{% else %}Inactive{% endif %}
-                                    </label>
-                                </div>
-                                <small class="text-muted d-block">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    When active, you'll receive email notifications for matching jobs
-                                </small>
-
-                                <!-- Last Sent Info -->
-                                {% if alert.last_sent_at %}
-                                <div class="mt-3 p-2 bg-light rounded">
-                                    <small class="text-muted">
-                                        <i class="fas fa-clock me-1"></i>
-                                        Last notification sent: {{ alert.last_sent_at.strftime('%B %d, %Y at %I:%M %p') }}
-                                    </small>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <hr class="my-4">
-
-                        <!-- Action Buttons -->
-                        <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
-                            <div>
-                                <a href="{{ url_for('job_alerts') }}" class="btn btn-outline-secondary">
-                                    <i class="fas fa-arrow-left me-1"></i> Cancel
-                                </a>
-                            </div>
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-save me-2"></i> Update Alert
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Danger Zone -->
-            <div class="card border-danger shadow-sm mt-4">
-                <div class="card-header bg-danger text-white py-2">
-                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Danger Zone</h5>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex flex-wrap align-items-center justify-content-between">
-                        <div>
-                            <h6 class="mb-1">Delete this alert</h6>
-                            <small class="text-muted">This action cannot be undone. You will stop receiving notifications from this alert.</small>
-                        </div>
-                        <form method="POST" action="{{ url_for('delete_job_alert', alert_id=alert.id) }}" 
-                              onsubmit="return confirm('⚠️ Are you sure you want to permanently delete this job alert? This action cannot be undone.');">
-                            <button type="submit" class="btn btn-danger">
-                                <i class="fas fa-trash-alt me-1"></i> Delete Alert
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Help Card -->
-            <div class="card bg-light border-0 mt-3">
-                <div class="card-body py-2">
-                    <small class="text-muted">
-                        <i class="fas fa-lightbulb me-1"></i>
-                        <strong>Tip:</strong> Use specific keywords to get more relevant job matches. 
-                        For example, instead of "developer", try "Python Developer" or "Full Stack Developer".
-                    </small>
+                <div>
+                    <h4 class="text-xl font-bold text-white">Edit Job Alert</h4>
+                    <p class="text-gray-400 text-sm">Update your job alert preferences</p>
                 </div>
             </div>
         </div>
+        
+        <div class="p-6">
+            <form method="POST" action="{{ url_for('edit_job_alert', alert_id=alert.id) }}" id="editAlertForm">
+                <!-- Alert Status Banner -->
+                <div class="p-4 rounded-xl mb-6 border {% if alert.is_active %}bg-emerald-950/20 border-emerald-500/30{% else %}bg-[#1a1a2e] border-[#2d2d3f]{% endif %}">
+                    <div class="flex items-center gap-2">
+                        <i class="fas {% if alert.is_active %}fa-check-circle text-emerald-400{% else %}fa-pause-circle text-gray-400{% endif %}"></i>
+                        <span class="text-gray-300">
+                            This alert is currently <strong class="{% if alert.is_active %}text-emerald-400{% else %}text-gray-400{% endif %}">{% if alert.is_active %}Active{% else %}Inactive{% endif %}</strong>
+                            {% if alert.is_active %}
+                                and will send you notifications when matching jobs are posted.
+                            {% else %}
+                                - you won't receive notifications until you activate it.
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Two Column Layout -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <!-- Basic Information -->
+                        <h6 class="text-gray-400 font-semibold mb-3 text-sm uppercase tracking-wider">
+                            <i class="fas fa-info-circle text-indigo-400 mr-2"></i>Basic Information
+                        </h6>
+                        
+                        <div class="mb-4">
+                            <label for="keywords" class="block text-gray-300 font-medium text-sm mb-1.5">
+                                Keywords <span class="text-red-400">*</span>
+                            </label>
+                            <input type="text" class="w-full bg-[#1a1a2e] border border-[#2d2d3f] rounded-xl px-4 py-3 text-gray-200 placeholder-gray-500 focus:border-indigo-500 focus:outline-none transition text-lg" 
+                                   id="keywords" name="keywords" 
+                                   value="{{ alert.keywords or '' }}" 
+                                   placeholder="e.g., Python, Django, React"
+                                   required>
+                            <p class="text-gray-500 text-xs mt-1">Comma-separated keywords to match job descriptions</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="location" class="block text-gray-300 font-medium text-sm mb-1.5">Location</label>
+                            <input type="text" class="w-full bg-[#1a1a2e] border border-[#2d2d3f] rounded-xl px-4 py-2.5 text-gray-200 placeholder-gray-500 focus:border-indigo-500 focus:outline-none transition" 
+                                   id="location" name="location" 
+                                   value="{{ alert.location or '' }}"
+                                   placeholder="e.g., London, Remote, New York">
+                            <p class="text-gray-500 text-xs mt-1">Optional: City, country, or 'Remote'</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="category" class="block text-gray-300 font-medium text-sm mb-1.5">Category</label>
+                            <select class="w-full bg-[#1a1a2e] border border-[#2d2d3f] rounded-xl px-4 py-2.5 text-gray-200 focus:border-indigo-500 focus:outline-none transition" 
+                                    id="category" name="category">
+                                <option value="">All Categories</option>
+                                {% for cat in categories %}
+                                <option value="{{ cat }}" {% if alert.category == cat %}selected{% endif %}>
+                                    {{ cat }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <!-- Job Details -->
+                        <h6 class="text-gray-400 font-semibold mb-3 text-sm uppercase tracking-wider">
+                            <i class="fas fa-briefcase text-indigo-400 mr-2"></i>Job Details
+                        </h6>
+
+                        <div class="mb-4">
+                            <label for="job_type" class="block text-gray-300 font-medium text-sm mb-1.5">Job Type</label>
+                            <select class="w-full bg-[#1a1a2e] border border-[#2d2d3f] rounded-xl px-4 py-2.5 text-gray-200 focus:border-indigo-500 focus:outline-none transition" 
+                                    id="job_type" name="job_type">
+                                <option value="">Any</option>
+                                <option value="full-time" {% if alert.job_type == 'full-time' %}selected{% endif %}>Full-time</option>
+                                <option value="part-time" {% if alert.job_type == 'part-time' %}selected{% endif %}>Part-time</option>
+                                <option value="contract" {% if alert.job_type == 'contract' %}selected{% endif %}>Contract</option>
+                                <option value="internship" {% if alert.job_type == 'internship' %}selected{% endif %}>Internship</option>
+                                <option value="remote" {% if alert.job_type == 'remote' %}selected{% endif %}>Remote</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="experience_level" class="block text-gray-300 font-medium text-sm mb-1.5">Experience Level</label>
+                            <select class="w-full bg-[#1a1a2e] border border-[#2d2d3f] rounded-xl px-4 py-2.5 text-gray-200 focus:border-indigo-500 focus:outline-none transition" 
+                                    id="experience_level" name="experience_level">
+                                <option value="">Any</option>
+                                <option value="entry" {% if alert.experience_level == 'entry' %}selected{% endif %}>Entry Level (0-2 years)</option>
+                                <option value="mid" {% if alert.experience_level == 'mid' %}selected{% endif %}>Mid Level (3-5 years)</option>
+                                <option value="senior" {% if alert.experience_level == 'senior' %}selected{% endif %}>Senior Level (5+ years)</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label for="salary_min" class="block text-gray-300 font-medium text-sm mb-1.5">Min Salary</label>
+                                <div class="flex">
+                                    <span class="inline-flex items-center px-3 bg-[#1a1a2e] border border-r-0 border-[#2d2d3f] rounded-l-xl text-gray-400">$</span>
+                                    <input type="number" class="w-full bg-[#1a1a2e] border border-[#2d2d3f] rounded-r-xl px-4 py-2.5 text-gray-200 placeholder-gray-500 focus:border-indigo-500 focus:outline-none transition" 
+                                           id="salary_min" name="salary_min" 
+                                           value="{{ alert.salary_min or '' }}" 
+                                           placeholder="0" min="0">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="salary_max" class="block text-gray-300 font-medium text-sm mb-1.5">Max Salary</label>
+                                <div class="flex">
+                                    <span class="inline-flex items-center px-3 bg-[#1a1a2e] border border-r-0 border-[#2d2d3f] rounded-l-xl text-gray-400">$</span>
+                                    <input type="number" class="w-full bg-[#1a1a2e] border border-[#2d2d3f] rounded-r-xl px-4 py-2.5 text-gray-200 placeholder-gray-500 focus:border-indigo-500 focus:outline-none transition" 
+                                           id="salary_max" name="salary_max" 
+                                           value="{{ alert.salary_max or '' }}" 
+                                           placeholder="0" min="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="border-[#2d2d3f] my-6">
+
+                <!-- Notification Settings -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h6 class="text-gray-400 font-semibold mb-3 text-sm uppercase tracking-wider">
+                            <i class="fas fa-bell text-indigo-400 mr-2"></i>Notification Settings
+                        </h6>
+                        
+                        <div class="mb-3">
+                            <label class="block text-gray-300 font-medium text-sm mb-2">Frequency</label>
+                            <div class="space-y-2">
+                                <label class="flex items-start gap-3 p-3 bg-[#1a1a2e] rounded-xl border border-[#2d2d3f] cursor-pointer hover:border-indigo-500/50 transition">
+                                    <input type="radio" name="frequency" value="daily" {% if alert.frequency == 'daily' %}checked{% endif %} class="mt-0.5 accent-indigo-500">
+                                    <div>
+                                        <span class="text-gray-200 font-medium"><i class="fas fa-sun text-indigo-400 mr-1"></i> Daily</span>
+                                        <p class="text-gray-500 text-xs">Receive daily digest</p>
+                                    </div>
+                                </label>
+                                <label class="flex items-start gap-3 p-3 bg-[#1a1a2e] rounded-xl border border-[#2d2d3f] cursor-pointer hover:border-indigo-500/50 transition">
+                                    <input type="radio" name="frequency" value="weekly" {% if alert.frequency == 'weekly' %}checked{% endif %} class="mt-0.5 accent-indigo-500">
+                                    <div>
+                                        <span class="text-gray-200 font-medium"><i class="fas fa-calendar-week text-indigo-400 mr-1"></i> Weekly</span>
+                                        <p class="text-gray-500 text-xs">Receive weekly summary</p>
+                                    </div>
+                                </label>
+                                <label class="flex items-start gap-3 p-3 bg-[#1a1a2e] rounded-xl border border-[#2d2d3f] cursor-pointer hover:border-indigo-500/50 transition">
+                                    <input type="radio" name="frequency" value="immediate" {% if alert.frequency == 'immediate' %}checked{% endif %} class="mt-0.5 accent-indigo-500">
+                                    <div>
+                                        <span class="text-gray-200 font-medium"><i class="fas fa-bolt text-indigo-400 mr-1"></i> Immediate</span>
+                                        <p class="text-gray-500 text-xs">Get notified instantly</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h6 class="text-gray-400 font-semibold mb-3 text-sm uppercase tracking-wider">
+                            <i class="fas fa-toggle-on text-indigo-400 mr-2"></i>Status
+                        </h6>
+                        
+                        <div class="flex items-center gap-3 p-4 bg-[#1a1a2e] rounded-xl border border-[#2d2d3f]">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="is_active" name="is_active" 
+                                       {% if alert.is_active %}checked{% endif %} class="sr-only peer">
+                                <div class="w-11 h-6 bg-[#2d2d3f] rounded-full peer peer-checked:bg-indigo-500 transition-all duration-200 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                            </label>
+                            <div>
+                                <span class="text-gray-200 font-medium" id="statusLabel">{% if alert.is_active %}Active{% else %}Inactive{% endif %}</span>
+                                <p class="text-gray-500 text-xs">When active, you'll receive email notifications for matching jobs</p>
+                            </div>
+                        </div>
+
+                        <!-- Last Sent Info -->
+                        {% if alert.last_sent_at %}
+                        <div class="mt-3 p-3 bg-[#1a1a2e] rounded-xl border border-[#2d2d3f]">
+                            <p class="text-gray-500 text-sm">
+                                <i class="fas fa-clock text-indigo-400 mr-1"></i>
+                                Last notification sent: {{ alert.last_sent_at.strftime('%B %d, %Y at %I:%M %p') }}
+                            </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <hr class="border-[#2d2d3f] my-6">
+
+                <!-- Action Buttons -->
+                <div class="flex flex-wrap gap-3 justify-between items-center">
+                    <a href="{{ url_for('job_alerts') }}" class="btn-secondary px-6 py-2.5 rounded-xl text-gray-300 font-semibold transition inline-flex items-center gap-2">
+                        <i class="fas fa-arrow-left"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn-primary px-8 py-3 rounded-xl text-white font-semibold text-lg transition inline-flex items-center gap-2">
+                        <i class="fas fa-save"></i> Update Alert
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="card border-red-500/30 mt-6">
+        <div class="border-b border-red-500/30 px-6 py-3">
+            <h5 class="text-red-400 font-semibold flex items-center gap-2">
+                <i class="fas fa-exclamation-triangle"></i> Danger Zone
+            </h5>
+        </div>
+        <div class="p-6">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                    <h6 class="text-white font-semibold mb-1">Delete this alert</h6>
+                    <p class="text-gray-500 text-sm">This action cannot be undone. You will stop receiving notifications from this alert.</p>
+                </div>
+                <form method="POST" action="{{ url_for('delete_job_alert', alert_id=alert.id) }}" 
+                      onsubmit="return confirm('⚠️ Are you sure you want to permanently delete this job alert? This action cannot be undone.');">
+                    <button type="submit" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-6 py-2.5 rounded-xl font-semibold transition border border-red-500/20 inline-flex items-center gap-2">
+                        <i class="fas fa-trash-alt"></i> Delete Alert
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Card -->
+    <div class="card border-[#2d2d3f] mt-4">
+        <div class="p-4">
+            <p class="text-gray-500 text-sm flex items-center gap-2">
+                <i class="fas fa-lightbulb text-indigo-400"></i>
+                <strong>Tip:</strong> Use specific keywords to get more relevant job matches. 
+                For example, instead of "developer", try "Python Developer" or "Full Stack Developer".
+            </p>
+        </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
+<style>
+.card {
+    background: #14141e;
+    border-radius: 16px;
+    border: 1px solid #2d2d3f;
+    transition: all 0.2s;
+}
+.card:hover {
+    border-color: #4a4a6a;
+}
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Toggle active status text
     const activeSwitch = document.getElementById('is_active');
-    const statusLabel = document.querySelector('label[for="is_active"]');
+    const statusLabel = document.getElementById('statusLabel');
     
     if (activeSwitch && statusLabel) {
         activeSwitch.addEventListener('change', function() {
-            if (this.checked) {
-                statusLabel.textContent = 'Active';
-                statusLabel.classList.remove('text-muted');
-            } else {
-                statusLabel.textContent = 'Inactive';
-                statusLabel.classList.add('text-muted');
-            }
+            statusLabel.textContent = this.checked ? 'Active' : 'Inactive';
         });
     }
 
@@ -279,19 +290,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const keywords = document.getElementById('keywords');
             if (!keywords.value.trim()) {
                 e.preventDefault();
-                keywords.classList.add('is-invalid');
+                keywords.classList.add('border-red-500');
                 alert('Please enter at least one keyword for your job alert.');
                 keywords.focus();
                 return false;
             }
+            keywords.classList.remove('border-red-500');
         });
-    }
-
-    // Auto-fill location with current user's city if available
-    const locationInput = document.getElementById('location');
-    if (locationInput && !locationInput.value && navigator.geolocation) {
-        // Optional: Use geolocation API to get user's city
-        // This is just a placeholder - you'd need a reverse geocoding API
     }
 
     // Salary validation
@@ -301,10 +306,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function validateSalary() {
         if (salaryMin.value && salaryMax.value) {
             if (parseFloat(salaryMin.value) > parseFloat(salaryMax.value)) {
-                salaryMax.classList.add('is-invalid');
+                salaryMax.classList.add('border-red-500');
                 return false;
             } else {
-                salaryMax.classList.remove('is-invalid');
+                salaryMax.classList.remove('border-red-500');
             }
         }
         return true;
@@ -314,23 +319,13 @@ document.addEventListener('DOMContentLoaded', function() {
         salaryMin.addEventListener('change', validateSalary);
         salaryMax.addEventListener('change', validateSalary);
     }
-
-    // Auto-dismiss alerts after 5 seconds
-    const alerts = document.querySelectorAll('.alert:not(.alert-banner)');
-    alerts.forEach(alert => {
-        setTimeout(() => {
-            alert.style.transition = 'opacity 0.5s ease';
-            alert.style.opacity = '0';
-            setTimeout(() => alert.remove(), 500);
-        }, 5000);
-    });
 });
 
-// Test alert function (optional)
+// Test alert function
 function testAlert(alertId) {
     if (!confirm('Send a test notification for this alert?')) return;
     
-    fetch(`/job-alerts/${alertId}/test`, {
+    fetch(`/jobs/alert/${alertId}/test`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

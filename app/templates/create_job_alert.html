@@ -1,235 +1,241 @@
 {% extends "base.html" %}
 
-{% block title %}Create Job Alert{% endblock %}
+{% block title %}Create Job Alert - TalentForge AI{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <!-- Breadcrumb -->
-            <nav aria-label="breadcrumb" class="mb-4">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item"><a href="{{ url_for('job_alerts') }}">Job Alerts</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Create Alert</li>
-                </ol>
-            </nav>
+<div class="max-w-4xl mx-auto px-4 py-8">
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-sm text-gray-500 mb-6">
+        <a href="{{ url_for('dashboard') }}" class="text-gray-400 hover:text-indigo-400 transition">Dashboard</a>
+        <span class="text-gray-600">/</span>
+        <a href="{{ url_for('job_alerts') }}" class="text-gray-400 hover:text-indigo-400 transition">Job Alerts</a>
+        <span class="text-gray-600">/</span>
+        <span class="text-indigo-400">Create Alert</span>
+    </nav>
 
-            <!-- Main Card -->
-            <div class="card shadow-sm border-0">
-                <div class="card-header bg-gradient-success text-white py-3">
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-bell fa-2x me-3"></i>
-                        <div>
-                            <h4 class="mb-0">Create Job Alert</h4>
-                            <small class="text-white-50">Get notified when matching jobs are posted</small>
-                        </div>
-                    </div>
+    <!-- Main Card -->
+    <div class="card">
+        <!-- Header -->
+        <div class="border-b border-[#2d2d3f] px-6 py-4">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-indigo-500/20 rounded-xl flex items-center justify-center">
+                    <i class="fas fa-bell text-2xl text-indigo-400"></i>
                 </div>
-                
-                <div class="card-body p-4">
-                    <form method="POST" id="createAlertForm">
-                        <!-- Quick Tips Banner -->
-                        <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
-                            <i class="fas fa-lightbulb me-2"></i>
-                            <strong>Tip:</strong> Use specific keywords for better matches. 
-                            For example, "Python Developer" instead of just "Developer".
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-
-                        <!-- Two Column Layout -->
-                        <div class="row">
-                            <div class="col-md-6">
-                                <!-- Basic Information -->
-                                <h6 class="text-muted mb-3">
-                                    <i class="fas fa-info-circle me-2"></i>Basic Information
-                                </h6>
-                                
-                                <div class="mb-3">
-                                    <label for="keywords" class="form-label fw-semibold">
-                                        Keywords <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" class="form-control form-control-lg" 
-                                           id="keywords" name="keywords" 
-                                           placeholder="e.g., Python, Django, React, AWS"
-                                           required>
-                                    <small class="text-muted">Comma-separated keywords to match job descriptions</small>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label for="location" class="form-label fw-semibold">Location</label>
-                                    <input type="text" class="form-control" id="location" name="location" 
-                                           placeholder="e.g., London, Remote, New York">
-                                    <small class="text-muted">Optional: City, country, or 'Remote'</small>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label for="category" class="form-label fw-semibold">Category</label>
-                                    <select class="form-select" id="category" name="category">
-                                        <option value="">All Categories</option>
-                                        {% for category in categories %}
-                                            <option value="{{ category }}">{{ category }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <!-- Job Details -->
-                                <h6 class="text-muted mb-3">
-                                    <i class="fas fa-briefcase me-2"></i>Job Details
-                                </h6>
-
-                                <div class="mb-3">
-                                    <label for="job_type" class="form-label fw-semibold">Job Type</label>
-                                    <select class="form-select" id="job_type" name="job_type">
-                                        <option value="">Any</option>
-                                        <option value="full-time">Full-time</option>
-                                        <option value="part-time">Part-time</option>
-                                        <option value="contract">Contract</option>
-                                        <option value="internship">Internship</option>
-                                        <option value="remote">Remote</option>
-                                        <option value="freelance">Freelance</option>
-                                    </select>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label for="experience_level" class="form-label fw-semibold">Experience Level</label>
-                                    <select class="form-select" id="experience_level" name="experience_level">
-                                        <option value="">Any</option>
-                                        <option value="entry">🎯 Entry Level (0-2 years)</option>
-                                        <option value="mid">📈 Mid Level (3-5 years)</option>
-                                        <option value="senior">🏆 Senior Level (5+ years)</option>
-                                        <option value="executive">👔 Executive</option>
-                                    </select>
-                                </div>
-
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="salary_min" class="form-label fw-semibold">Min Salary</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">$</span>
-                                                <input type="number" class="form-control" id="salary_min" name="salary_min" 
-                                                       placeholder="0" min="0">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label for="salary_max" class="form-label fw-semibold">Max Salary</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">$</span>
-                                                <input type="number" class="form-control" id="salary_max" name="salary_max" 
-                                                       placeholder="0" min="0">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <hr class="my-4">
-
-                        <!-- Notification Settings -->
-                        <div class="row">
-                            <div class="col-md-8">
-                                <h6 class="text-muted mb-3">
-                                    <i class="fas fa-bell me-2"></i>Notification Settings
-                                </h6>
-                                
-                                <div class="mb-3">
-                                    <label class="form-label fw-semibold">Frequency</label>
-                                    <div class="d-flex gap-3 flex-wrap">
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="frequency" id="daily" 
-                                                   value="daily" checked>
-                                            <label class="form-check-label" for="daily">
-                                                <i class="fas fa-sun me-1"></i> Daily
-                                                <small class="text-muted d-block">Receive daily digest</small>
-                                            </label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="frequency" id="weekly" 
-                                                   value="weekly">
-                                            <label class="form-check-label" for="weekly">
-                                                <i class="fas fa-calendar-week me-1"></i> Weekly
-                                                <small class="text-muted d-block">Receive weekly summary</small>
-                                            </label>
-                                        </div>
-                                        <div class="form-check">
-                                            <input class="form-check-input" type="radio" name="frequency" id="immediate" 
-                                                   value="immediate">
-                                            <label class="form-check-label" for="immediate">
-                                                <i class="fas fa-bolt me-1"></i> Immediate
-                                                <small class="text-muted d-block">Get notified instantly</small>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-4">
-                                <h6 class="text-muted mb-3">
-                                    <i class="fas fa-toggle-on me-2"></i>Status
-                                </h6>
-                                
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
-                                    <label class="form-check-label fw-semibold" for="is_active">
-                                        Active
-                                    </label>
-                                </div>
-                                <small class="text-muted d-block mt-2">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    Your alert will be active immediately
-                                </small>
-                            </div>
-                        </div>
-
-                        <hr class="my-4">
-
-                        <!-- Action Buttons -->
-                        <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center">
-                            <a href="{{ url_for('job_alerts') }}" class="btn btn-outline-secondary">
-                                <i class="fas fa-arrow-left me-1"></i> Cancel
-                            </a>
-                            <button type="submit" class="btn btn-success btn-lg">
-                                <i class="fas fa-bell me-2"></i> Create Alert
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Help Card -->
-            <div class="card bg-light border-0 mt-3">
-                <div class="card-body py-3">
-                    <div class="row text-center">
-                        <div class="col-md-4">
-                            <i class="fas fa-search text-primary fa-2x mb-2"></i>
-                            <h6 class="mb-1">Smart Matching</h6>
-                            <small class="text-muted">AI-powered job matching based on your skills</small>
-                        </div>
-                        <div class="col-md-4">
-                            <i class="fas fa-bell text-primary fa-2x mb-2"></i>
-                            <h6 class="mb-1">Real-time Alerts</h6>
-                            <small class="text-muted">Get notified as soon as jobs are posted</small>
-                        </div>
-                        <div class="col-md-4">
-                            <i class="fas fa-sliders-h text-primary fa-2x mb-2"></i>
-                            <h6 class="mb-1">Custom Filters</h6>
-                            <small class="text-muted">Fine-tune your job preferences</small>
-                        </div>
-                    </div>
+                <div>
+                    <h4 class="text-xl font-bold text-white">Create Job Alert</h4>
+                    <p class="text-gray-400 text-sm">Get notified when matching jobs are posted</p>
                 </div>
             </div>
         </div>
+        
+        <div class="p-6">
+            <form method="POST" id="createAlertForm">
+                <!-- Quick Tips Banner -->
+                <div class="bg-indigo-950/30 border border-indigo-800/30 rounded-xl p-4 mb-6 flex items-start gap-3">
+                    <i class="fas fa-lightbulb text-indigo-400 mt-0.5"></i>
+                    <div>
+                        <strong class="text-indigo-300">Tip:</strong>
+                        <span class="text-gray-300">Use specific keywords for better matches. For example, "Python Developer" instead of just "Developer".</span>
+                    </div>
+                    <button type="button" onclick="this.parentElement.remove()" class="text-gray-500 hover:text-gray-300 transition ml-auto">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- Two Column Layout -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <!-- Basic Information -->
+                        <h6 class="text-gray-400 font-semibold mb-3 text-sm uppercase tracking-wider">
+                            <i class="fas fa-info-circle text-indigo-400 mr-2"></i>Basic Information
+                        </h6>
+                        
+                        <div class="mb-4">
+                            <label for="keywords" class="block text-gray-300 font-medium text-sm mb-1.5">
+                                Keywords <span class="text-red-400">*</span>
+                            </label>
+                            <input type="text" class="w-full bg-[#1a1a2e] border border-[#2d2d3f] rounded-xl px-4 py-3 text-gray-200 placeholder-gray-500 focus:border-indigo-500 focus:outline-none transition text-lg" 
+                                   id="keywords" name="keywords" 
+                                   placeholder="e.g., Python, Django, React, AWS"
+                                   required>
+                            <p class="text-gray-500 text-xs mt-1">Comma-separated keywords to match job descriptions</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="location" class="block text-gray-300 font-medium text-sm mb-1.5">Location</label>
+                            <input type="text" class="w-full bg-[#1a1a2e] border border-[#2d2d3f] rounded-xl px-4 py-2.5 text-gray-200 placeholder-gray-500 focus:border-indigo-500 focus:outline-none transition" 
+                                   id="location" name="location" 
+                                   placeholder="e.g., London, Remote, New York">
+                            <p class="text-gray-500 text-xs mt-1">Optional: City, country, or 'Remote'</p>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="category" class="block text-gray-300 font-medium text-sm mb-1.5">Category</label>
+                            <select class="w-full bg-[#1a1a2e] border border-[#2d2d3f] rounded-xl px-4 py-2.5 text-gray-200 focus:border-indigo-500 focus:outline-none transition" 
+                                    id="category" name="category">
+                                <option value="">All Categories</option>
+                                {% for category in categories %}
+                                    <option value="{{ category }}">{{ category }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <!-- Job Details -->
+                        <h6 class="text-gray-400 font-semibold mb-3 text-sm uppercase tracking-wider">
+                            <i class="fas fa-briefcase text-indigo-400 mr-2"></i>Job Details
+                        </h6>
+
+                        <div class="mb-4">
+                            <label for="job_type" class="block text-gray-300 font-medium text-sm mb-1.5">Job Type</label>
+                            <select class="w-full bg-[#1a1a2e] border border-[#2d2d3f] rounded-xl px-4 py-2.5 text-gray-200 focus:border-indigo-500 focus:outline-none transition" 
+                                    id="job_type" name="job_type">
+                                <option value="">Any</option>
+                                <option value="full-time">Full-time</option>
+                                <option value="part-time">Part-time</option>
+                                <option value="contract">Contract</option>
+                                <option value="internship">Internship</option>
+                                <option value="remote">Remote</option>
+                                <option value="freelance">Freelance</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="experience_level" class="block text-gray-300 font-medium text-sm mb-1.5">Experience Level</label>
+                            <select class="w-full bg-[#1a1a2e] border border-[#2d2d3f] rounded-xl px-4 py-2.5 text-gray-200 focus:border-indigo-500 focus:outline-none transition" 
+                                    id="experience_level" name="experience_level">
+                                <option value="">Any</option>
+                                <option value="entry">🎯 Entry Level (0-2 years)</option>
+                                <option value="mid">📈 Mid Level (3-5 years)</option>
+                                <option value="senior">🏆 Senior Level (5+ years)</option>
+                                <option value="executive">👔 Executive</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label for="salary_min" class="block text-gray-300 font-medium text-sm mb-1.5">Min Salary</label>
+                                <div class="flex">
+                                    <span class="inline-flex items-center px-3 bg-[#1a1a2e] border border-r-0 border-[#2d2d3f] rounded-l-xl text-gray-400">$</span>
+                                    <input type="number" class="w-full bg-[#1a1a2e] border border-[#2d2d3f] rounded-r-xl px-4 py-2.5 text-gray-200 placeholder-gray-500 focus:border-indigo-500 focus:outline-none transition" 
+                                           id="salary_min" name="salary_min" placeholder="0" min="0">
+                                </div>
+                            </div>
+                            <div>
+                                <label for="salary_max" class="block text-gray-300 font-medium text-sm mb-1.5">Max Salary</label>
+                                <div class="flex">
+                                    <span class="inline-flex items-center px-3 bg-[#1a1a2e] border border-r-0 border-[#2d2d3f] rounded-l-xl text-gray-400">$</span>
+                                    <input type="number" class="w-full bg-[#1a1a2e] border border-[#2d2d3f] rounded-r-xl px-4 py-2.5 text-gray-200 placeholder-gray-500 focus:border-indigo-500 focus:outline-none transition" 
+                                           id="salary_max" name="salary_max" placeholder="0" min="0">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="border-[#2d2d3f] my-6">
+
+                <!-- Notification Settings -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h6 class="text-gray-400 font-semibold mb-3 text-sm uppercase tracking-wider">
+                            <i class="fas fa-bell text-indigo-400 mr-2"></i>Notification Settings
+                        </h6>
+                        
+                        <div class="mb-3">
+                            <label class="block text-gray-300 font-medium text-sm mb-2">Frequency</label>
+                            <div class="space-y-2">
+                                <label class="flex items-start gap-3 p-3 bg-[#1a1a2e] rounded-xl border border-[#2d2d3f] cursor-pointer hover:border-indigo-500/50 transition">
+                                    <input type="radio" name="frequency" value="daily" checked class="mt-0.5 accent-indigo-500">
+                                    <div>
+                                        <span class="text-gray-200 font-medium"><i class="fas fa-sun text-indigo-400 mr-1"></i> Daily</span>
+                                        <p class="text-gray-500 text-xs">Receive daily digest</p>
+                                    </div>
+                                </label>
+                                <label class="flex items-start gap-3 p-3 bg-[#1a1a2e] rounded-xl border border-[#2d2d3f] cursor-pointer hover:border-indigo-500/50 transition">
+                                    <input type="radio" name="frequency" value="weekly" class="mt-0.5 accent-indigo-500">
+                                    <div>
+                                        <span class="text-gray-200 font-medium"><i class="fas fa-calendar-week text-indigo-400 mr-1"></i> Weekly</span>
+                                        <p class="text-gray-500 text-xs">Receive weekly summary</p>
+                                    </div>
+                                </label>
+                                <label class="flex items-start gap-3 p-3 bg-[#1a1a2e] rounded-xl border border-[#2d2d3f] cursor-pointer hover:border-indigo-500/50 transition">
+                                    <input type="radio" name="frequency" value="immediate" class="mt-0.5 accent-indigo-500">
+                                    <div>
+                                        <span class="text-gray-200 font-medium"><i class="fas fa-bolt text-indigo-400 mr-1"></i> Immediate</span>
+                                        <p class="text-gray-500 text-xs">Get notified instantly</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h6 class="text-gray-400 font-semibold mb-3 text-sm uppercase tracking-wider">
+                            <i class="fas fa-toggle-on text-indigo-400 mr-2"></i>Status
+                        </h6>
+                        
+                        <div class="flex items-center gap-3 p-4 bg-[#1a1a2e] rounded-xl border border-[#2d2d3f]">
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="is_active" name="is_active" checked class="sr-only peer">
+                                <div class="w-11 h-6 bg-[#2d2d3f] rounded-full peer peer-checked:bg-indigo-500 transition-all duration-200 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                            </label>
+                            <div>
+                                <span class="text-gray-200 font-medium" id="statusLabel">Active</span>
+                                <p class="text-gray-500 text-xs">Your alert will be active immediately</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="border-[#2d2d3f] my-6">
+
+                <!-- Action Buttons -->
+                <div class="flex flex-wrap gap-3 justify-between items-center">
+                    <a href="{{ url_for('job_alerts') }}" class="btn-secondary px-6 py-2.5 rounded-xl text-gray-300 font-semibold transition inline-flex items-center gap-2">
+                        <i class="fas fa-arrow-left"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn-primary px-8 py-3 rounded-xl text-white font-semibold text-lg transition inline-flex items-center gap-2">
+                        <i class="fas fa-bell"></i> Create Alert
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Help Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+        <div class="card p-4 text-center">
+            <i class="fas fa-search text-3xl text-indigo-400 mb-2"></i>
+            <h6 class="text-white font-semibold mb-1">Smart Matching</h6>
+            <p class="text-gray-500 text-sm">AI-powered job matching based on your skills</p>
+        </div>
+        <div class="card p-4 text-center">
+            <i class="fas fa-bell text-3xl text-indigo-400 mb-2"></i>
+            <h6 class="text-white font-semibold mb-1">Real-time Alerts</h6>
+            <p class="text-gray-500 text-sm">Get notified as soon as jobs are posted</p>
+        </div>
+        <div class="card p-4 text-center">
+            <i class="fas fa-sliders-h text-3xl text-indigo-400 mb-2"></i>
+            <h6 class="text-white font-semibold mb-1">Custom Filters</h6>
+            <p class="text-gray-500 text-sm">Fine-tune your job preferences</p>
+        </div>
     </div>
 </div>
-{% endblock %}
 
-{% block extra_js %}
+<style>
+.card {
+    background: #14141e;
+    border-radius: 16px;
+    border: 1px solid #2d2d3f;
+    transition: all 0.2s;
+}
+.card:hover {
+    border-color: #4a4a6a;
+}
+</style>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.getElementById('createAlertForm');
@@ -237,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const salaryMin = document.getElementById('salary_min');
     const salaryMax = document.getElementById('salary_max');
     const activeSwitch = document.getElementById('is_active');
-    const statusLabel = document.querySelector('label[for="is_active"]');
+    const statusLabel = document.getElementById('statusLabel');
 
     // Form validation
     if (form) {
@@ -245,22 +251,22 @@ document.addEventListener('DOMContentLoaded', function() {
             // Check keywords
             if (!keywordsInput.value.trim()) {
                 e.preventDefault();
-                keywordsInput.classList.add('is-invalid');
+                keywordsInput.classList.add('border-red-500');
                 keywordsInput.focus();
                 showAlert('Please enter at least one keyword for your job alert.', 'warning');
                 return false;
             }
-            keywordsInput.classList.remove('is-invalid');
+            keywordsInput.classList.remove('border-red-500');
 
             // Validate salary range
             if (salaryMin.value && salaryMax.value) {
                 if (parseFloat(salaryMin.value) > parseFloat(salaryMax.value)) {
                     e.preventDefault();
-                    salaryMax.classList.add('is-invalid');
+                    salaryMax.classList.add('border-red-500');
                     showAlert('Minimum salary cannot be greater than maximum salary.', 'danger');
                     return false;
                 }
-                salaryMax.classList.remove('is-invalid');
+                salaryMax.classList.remove('border-red-500');
             }
 
             return true;
@@ -270,10 +276,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Keywords input enhancement - auto-format
     if (keywordsInput) {
         keywordsInput.addEventListener('blur', function() {
-            // Clean up keywords (remove extra spaces, commas)
             let value = this.value.trim();
-            value = value.replace(/\s*,\s*/g, ', '); // Format spaces after commas
-            value = value.replace(/,\s*,/g, ','); // Remove duplicate commas
+            value = value.replace(/\s*,\s*/g, ', ');
+            value = value.replace(/,\s*,/g, ',');
             this.value = value;
         });
     }
@@ -281,13 +286,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Toggle active status text
     if (activeSwitch && statusLabel) {
         activeSwitch.addEventListener('change', function() {
-            if (this.checked) {
-                statusLabel.textContent = 'Active';
-                statusLabel.classList.remove('text-muted');
-            } else {
-                statusLabel.textContent = 'Inactive';
-                statusLabel.classList.add('text-muted');
-            }
+            statusLabel.textContent = this.checked ? 'Active' : 'Inactive';
         });
     }
 
@@ -295,10 +294,10 @@ document.addEventListener('DOMContentLoaded', function() {
     function validateSalary() {
         if (salaryMin.value && salaryMax.value) {
             if (parseFloat(salaryMin.value) > parseFloat(salaryMax.value)) {
-                salaryMax.classList.add('is-invalid');
+                salaryMax.classList.add('border-red-500');
                 return false;
             } else {
-                salaryMax.classList.remove('is-invalid');
+                salaryMax.classList.remove('border-red-500');
             }
         }
         return true;
@@ -309,27 +308,25 @@ document.addEventListener('DOMContentLoaded', function() {
         salaryMax.addEventListener('change', validateSalary);
     }
 
-    // Add some common keyword suggestions
+    // Keyword suggestions
     const keywordSuggestions = [
         'Python', 'JavaScript', 'React', 'Node.js', 'AWS', 'Docker', 
         'Machine Learning', 'Data Science', 'DevOps', 'Full Stack',
         'Frontend', 'Backend', 'UX/UI', 'Product Manager', 'Agile'
     ];
 
-    // Optional: Add keyword suggestions chip
-    const formGroup = keywordsInput?.closest('.mb-3');
+    const formGroup = keywordsInput?.closest('.mb-4');
     if (formGroup && keywordSuggestions.length > 0) {
         const suggestionsDiv = document.createElement('div');
         suggestionsDiv.className = 'mt-2';
-        suggestionsDiv.innerHTML = '<small class="text-muted">Popular keywords: </small>';
+        suggestionsDiv.innerHTML = '<span class="text-gray-500 text-xs">Popular keywords: </span>';
         
-        const chipsContainer = document.createElement('span');
-        chipsContainer.className = 'd-flex flex-wrap gap-1 mt-1';
+        const chipsContainer = document.createElement('div');
+        chipsContainer.className = 'flex flex-wrap gap-1 mt-1';
         
         keywordSuggestions.slice(0, 6).forEach(skill => {
             const chip = document.createElement('span');
-            chip.className = 'badge bg-light text-dark border cursor-pointer';
-            chip.style.cursor = 'pointer';
+            chip.className = 'bg-[#1a1a2e] hover:bg-[#2d2d3f] text-gray-300 text-xs px-3 py-1 rounded-full border border-[#2d2d3f] cursor-pointer transition';
             chip.textContent = skill;
             chip.addEventListener('click', function() {
                 const currentVal = keywordsInput.value.trim();
@@ -350,19 +347,22 @@ document.addEventListener('DOMContentLoaded', function() {
     // Helper function to show alerts
     function showAlert(message, type = 'warning') {
         const alertDiv = document.createElement('div');
-        alertDiv.className = `alert alert-${type} alert-dismissible fade show mt-3`;
-        alertDiv.role = 'alert';
+        const colors = {
+            warning: 'bg-yellow-500/20 border-yellow-500/30 text-yellow-300',
+            danger: 'bg-red-500/20 border-red-500/30 text-red-300'
+        };
+        alertDiv.className = `p-4 rounded-xl border ${colors[type] || colors.warning} flex items-start gap-3 mb-4`;
         alertDiv.innerHTML = `
-            <i class="fas fa-exclamation-circle me-2"></i>
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <i class="fas fa-exclamation-circle mt-0.5"></i>
+            <span class="flex-1">${message}</span>
+            <button onclick="this.parentElement.remove()" class="text-gray-500 hover:text-gray-300 transition">
+                <i class="fas fa-times"></i>
+            </button>
         `;
         
-        const container = document.querySelector('.card-body');
+        const container = document.querySelector('.card .p-6');
         if (container) {
             container.insertBefore(alertDiv, container.firstChild);
-            
-            // Auto-dismiss after 5 seconds
             setTimeout(() => {
                 alertDiv.style.transition = 'opacity 0.5s ease';
                 alertDiv.style.opacity = '0';
@@ -370,73 +370,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 5000);
         }
     }
-
-    // Auto-dismiss existing alerts
-    document.querySelectorAll('.alert.alert-dismissible').forEach(alert => {
-        setTimeout(() => {
-            alert.style.transition = 'opacity 0.5s ease';
-            alert.style.opacity = '0';
-            setTimeout(() => alert.remove(), 500);
-        }, 8000);
-    });
 });
-
-// Geolocation support (optional)
-if (navigator.geolocation) {
-    const locationInput = document.getElementById('location');
-    if (locationInput && !locationInput.value) {
-        // Optional: Get user's city using reverse geocoding
-        // This would require a geocoding API
-    }
-}
 </script>
-
-<style>
-/* Additional styles for better UX */
-.cursor-pointer {
-    cursor: pointer;
-}
-
-.badge.bg-light {
-    background-color: #f8f9fa !important;
-    border: 1px solid #dee2e6;
-    padding: 0.4rem 0.8rem;
-    transition: all 0.2s;
-}
-
-.badge.bg-light:hover {
-    background-color: #e9ecef !important;
-    border-color: #0d6efd;
-    color: #0d6efd !important;
-    transform: scale(1.05);
-}
-
-.bg-gradient-success {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-}
-
-.form-control-lg {
-    font-size: 1.1rem;
-}
-
-/* Radio button cards style */
-.form-check {
-    padding-left: 0;
-}
-
-.form-check .form-check-input {
-    margin-right: 0.5rem;
-}
-
-@media (max-width: 768px) {
-    .form-check {
-        margin-bottom: 0.5rem;
-    }
-    
-    .d-flex.gap-3 {
-        flex-direction: column;
-        gap: 0.5rem !important;
-    }
-}
-</style>
 {% endblock %}

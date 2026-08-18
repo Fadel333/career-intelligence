@@ -1,36 +1,36 @@
-{% extends "base.html" %}
+ {% extends "base.html" %}
 
 {% block title %}Dashboard - TalentForge AI{% endblock %}
 
 {% block content %}
 <!-- Dashboard Header -->
-<section class="relative overflow-hidden">
+<section class="section-dark">
     <div class="max-w-7xl mx-auto px-6 py-8">
         <!-- Welcome Banner -->
-        <div class="bg-gradient-to-r from-teal-500/20 to-purple-600/20 backdrop-blur-sm rounded-2xl p-8 mb-8 border border-white/10" data-aos="fade-up">
+        <div class="bg-gradient-to-r from-indigo-900/40 to-emerald-900/40 rounded-2xl p-8 mb-8 border border-indigo-800/30">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">
                         Welcome back, {{ current_user.fullname }}! 👋
                     </h1>
-                    <p class="text-white/70">Track your career progress, discover skill gaps, and get personalized recommendations.</p>
+                    <p class="text-gray-400">Track your career progress, discover skill gaps, and get personalized recommendations.</p>
                 </div>
                 <div class="flex gap-3 flex-wrap">
                     <a href="{{ url_for('upload_cv') }}" class="btn-primary px-6 py-3 rounded-full text-white font-semibold inline-flex items-center gap-2">
                         <i class="fas fa-upload"></i> Upload CV
                     </a>
-                    <a href="{{ url_for('skill_analysis') }}" class="btn-outline px-6 py-3 rounded-full text-white font-semibold inline-flex items-center gap-2">
+                    <a href="{{ url_for('skill_analysis') }}" class="btn-secondary px-6 py-3 rounded-full text-gray-200 font-semibold inline-flex items-center gap-2">
                         <i class="fas fa-chart-line"></i> Analyze Skills
                     </a>
                 </div>
             </div>
         </div>
 
-        <!-- Stats Grid - REAL DATA -->
+        <!-- Stats Grid -->
         <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <!-- Employability Score -->
-            <div class="glass-card p-6 text-center" data-aos="fade-up" data-aos-delay="0">
-                <div class="w-12 h-12 bg-gradient-to-br from-teal-400 to-teal-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+            <div class="card p-6 text-center">
+                <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-3">
                     <i class="fas fa-chart-simple text-white text-xl"></i>
                 </div>
                 <div class="text-2xl font-bold text-white">
@@ -40,9 +40,9 @@
                         N/A
                     {% endif %}
                 </div>
-                <p class="text-white/60 text-sm">Employability Score</p>
-                <div class="mt-2 h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div class="h-full bg-gradient-to-r from-teal-400 to-purple-600 rounded-full" 
+                <p class="text-gray-400 text-sm">Employability Score</p>
+                <div class="mt-2 h-2 bg-[#2d2d3f] rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-indigo-500 to-emerald-500 rounded-full" 
                          style="width: {{ stats.employability_score|default(0) }}%"></div>
                 </div>
                 {% if stats.employability_score < 50 %}
@@ -50,48 +50,48 @@
                 {% elif stats.employability_score < 70 %}
                     <p class="text-blue-400 text-xs mt-1">📈 Good progress!</p>
                 {% else %}
-                    <p class="text-green-400 text-xs mt-1">🌟 Excellent!</p>
+                    <p class="text-emerald-400 text-xs mt-1">🌟 Excellent!</p>
                 {% endif %}
             </div>
 
-     <!-- Skills Identified -->
-<div class="glass-card p-6 text-center" data-aos="fade-up" data-aos-delay="100">
-    <div class="w-12 h-12 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-3">
-        <i class="fas fa-code text-white text-xl"></i>
-    </div>
-    <div class="text-2xl font-bold text-white">{{ stats.skills_identified or 0 }}</div>
-    <p class="text-white/60 text-sm">Skills Identified</p>
-    <div class="flex justify-center gap-1 mt-2 flex-wrap">
-        {% if stats.skill_categories is mapping %}
-            {% for category, count in stats.skill_categories|dictsort(by='value', reverse=True) %}
-                {% if loop.index <= 3 %}
-                <span class="px-2 py-0.5 bg-white/10 rounded-full text-white/60 text-xs">{{ category|truncate(8, True) }}:{{ count }}</span>
-                {% endif %}
-            {% endfor %}
-        {% else %}
-            <span class="text-white/40 text-xs">No skills detected</span>
-        {% endif %}
-    </div>
-</div>
+            <!-- Skills Identified -->
+            <div class="card p-6 text-center">
+                <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-code text-white text-xl"></i>
+                </div>
+                <div class="text-2xl font-bold text-white">{{ stats.skills_identified or 0 }}</div>
+                <p class="text-gray-400 text-sm">Skills Identified</p>
+                <div class="flex justify-center gap-1 mt-2 flex-wrap">
+                    {% if stats.skill_categories is mapping %}
+                        {% for category, count in stats.skill_categories|dictsort(by='value', reverse=True) %}
+                            {% if loop.index <= 3 %}
+                            <span class="px-2 py-0.5 bg-[#1a1a2e] rounded-full text-gray-400 text-xs border border-[#2d2d3f]">{{ category|truncate(8, True) }}:{{ count }}</span>
+                            {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <span class="text-gray-500 text-xs">No skills detected</span>
+                    {% endif %}
+                </div>
+            </div>
 
             <!-- Courses Recommended -->
-            <div class="glass-card p-6 text-center" data-aos="fade-up" data-aos-delay="200">
-                <div class="w-12 h-12 bg-gradient-to-br from-pink-400 to-pink-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+            <div class="card p-6 text-center">
+                <div class="w-12 h-12 bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl flex items-center justify-center mx-auto mb-3">
                     <i class="fas fa-graduation-cap text-white text-xl"></i>
                 </div>
                 <div class="text-2xl font-bold text-white">{{ stats.courses_recommended }}</div>
-                <p class="text-white/60 text-sm">Courses Recommended</p>
-                <p class="text-white/40 text-xs mt-1">Based on your skill gaps</p>
+                <p class="text-gray-400 text-sm">Courses Recommended</p>
+                <p class="text-gray-500 text-xs mt-1">Based on your skill gaps</p>
             </div>
 
             <!-- Job Matches -->
-            <div class="glass-card p-6 text-center" data-aos="fade-up" data-aos-delay="300">
-                <div class="w-12 h-12 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center mx-auto mb-3">
+            <div class="card p-6 text-center">
+                <div class="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center mx-auto mb-3">
                     <i class="fas fa-briefcase text-white text-xl"></i>
                 </div>
                 <div class="text-2xl font-bold text-white">{{ stats.job_matches_count }}</div>
-                <p class="text-white/60 text-sm">Job Matches</p>
-                <p class="text-white/40 text-xs mt-1">Skills-verified opportunities</p>
+                <p class="text-gray-400 text-sm">Job Matches</p>
+                <p class="text-gray-500 text-xs mt-1">Skills-verified opportunities</p>
             </div>
         </div>
 
@@ -102,24 +102,24 @@
                 <!-- Quick Actions Cards -->
                 <div class="grid md:grid-cols-2 gap-6">
                     <!-- Upload CV Card -->
-                    <a href="{{ url_for('upload_cv') }}" class="glass-card p-6 hover:transform hover:scale-105 transition-all cursor-pointer block" data-aos="fade-right">
-                        <div class="w-14 h-14 bg-gradient-to-br from-teal-400 to-teal-600 rounded-2xl flex items-center justify-center mb-4">
+                    <a href="{{ url_for('upload_cv') }}" class="card p-6 hover:border-indigo-500/50 transition-all cursor-pointer block">
+                        <div class="w-14 h-14 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center mb-4">
                             <i class="fas fa-cloud-upload-alt text-2xl text-white"></i>
                         </div>
                         <h3 class="text-lg font-bold text-white mb-2">Upload CV</h3>
-                        <p class="text-white/60 text-sm">Let AI extract your skills and analyze your career potential</p>
-                        <div class="mt-4 text-teal-400 text-sm flex items-center gap-1">
+                        <p class="text-gray-400 text-sm">Let AI extract your skills and analyze your career potential</p>
+                        <div class="mt-4 text-indigo-400 text-sm flex items-center gap-1">
                             Get Started <i class="fas fa-arrow-right"></i>
                         </div>
                     </a>
 
                     <!-- My Applications Card -->
-                    <a href="{{ url_for('jobs.my_applications') }}" class="glass-card p-6 hover:transform hover:scale-105 transition-all cursor-pointer block" data-aos="fade-right" data-aos-delay="50">
-                        <div class="w-14 h-14 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center mb-4">
+                    <a href="{{ url_for('jobs.my_applications') }}" class="card p-6 hover:border-indigo-500/50 transition-all cursor-pointer block">
+                        <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center mb-4">
                             <i class="fas fa-list-check text-2xl text-white"></i>
                         </div>
                         <h3 class="text-lg font-bold text-white mb-2">My Applications</h3>
-                        <p class="text-white/60 text-sm">Track your job applications and their status</p>
+                        <p class="text-gray-400 text-sm">Track your job applications and their status</p>
                         <div class="mt-4 flex items-center gap-2">
                             <span class="text-blue-400 text-sm flex items-center gap-1">
                                 View All <i class="fas fa-arrow-right"></i>
@@ -134,12 +134,12 @@
                     </a>
 
                     <!-- Interview Practice Card -->
-                    <a href="{{ url_for('interview_practice_hub') }}" class="glass-card p-6 hover:transform hover:scale-105 transition-all cursor-pointer block" data-aos="fade-right" data-aos-delay="75">
-                        <div class="w-14 h-14 bg-gradient-to-br from-red-400 to-red-600 rounded-2xl flex items-center justify-center mb-4">
+                    <a href="{{ url_for('interview_practice_hub') }}" class="card p-6 hover:border-indigo-500/50 transition-all cursor-pointer block">
+                        <div class="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl flex items-center justify-center mb-4">
                             <i class="fas fa-microphone text-2xl text-white"></i>
                         </div>
                         <h3 class="text-lg font-bold text-white mb-2">Interview Practice</h3>
-                        <p class="text-white/60 text-sm">Practice interviews with AI-powered feedback and tips</p>
+                        <p class="text-gray-400 text-sm">Practice interviews with AI-powered feedback and tips</p>
                         <div class="mt-4 flex items-center gap-2">
                             <span class="text-red-400 text-sm flex items-center gap-1">
                                 Start Practice <i class="fas fa-arrow-right"></i>
@@ -154,83 +154,83 @@
                     </a>
 
                     <!-- Profile Card -->
-                    <a href="{{ url_for('profile') }}" class="glass-card p-6 hover:transform hover:scale-105 transition-all cursor-pointer block" data-aos="fade-right" data-aos-delay="100">
-                        <div class="w-14 h-14 bg-gradient-to-br from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center mb-4">
+                    <a href="{{ url_for('profile') }}" class="card p-6 hover:border-indigo-500/50 transition-all cursor-pointer block">
+                        <div class="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mb-4">
                             <i class="fas fa-user-circle text-2xl text-white"></i>
                         </div>
                         <h3 class="text-lg font-bold text-white mb-2">Complete Profile</h3>
-                        <p class="text-white/60 text-sm">Update your information and career preferences</p>
+                        <p class="text-gray-400 text-sm">Update your information and career preferences</p>
                         <div class="mt-4 text-purple-400 text-sm flex items-center gap-1">
                             Update Now <i class="fas fa-arrow-right"></i>
                         </div>
                     </a>
 
                     <!-- Job Matches Card -->
-                    <a href="{{ url_for('job_matches') }}" class="glass-card p-6 hover:transform hover:scale-105 transition-all cursor-pointer block" data-aos="fade-right" data-aos-delay="150">
-                        <div class="w-14 h-14 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl flex items-center justify-center mb-4">
+                    <a href="{{ url_for('job_matches') }}" class="card p-6 hover:border-indigo-500/50 transition-all cursor-pointer block">
+                        <div class="w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center mb-4">
                             <i class="fas fa-briefcase text-2xl text-white"></i>
                         </div>
                         <h3 class="text-lg font-bold text-white mb-2">Job Matches</h3>
-                        <p class="text-white/60 text-sm">Find your perfect job based on your skills</p>
+                        <p class="text-gray-400 text-sm">Find your perfect job based on your skills</p>
                         <div class="mt-4 text-orange-400 text-sm flex items-center gap-1">
                             Browse Jobs <i class="fas fa-arrow-right"></i>
                         </div>
                     </a>
                 </div>
 
-                <!-- Skill Gap Analysis Section - REAL DATA -->
-                <div id="skill-analysis" class="glass-card p-6" data-aos="fade-right" data-aos-delay="200">
+                <!-- Skill Gap Analysis Section -->
+                <div id="skill-analysis" class="card p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-bold text-white">
-                            <i class="fas fa-chart-line text-teal-400 mr-2"></i> Skill Gap Analysis
+                            <i class="fas fa-chart-line text-indigo-400 mr-2"></i> Skill Gap Analysis
                         </h2>
-                        <a href="{{ url_for('skill_analysis') }}" class="text-teal-400 hover:text-teal-300 text-sm">View Details →</a>
+                        <a href="{{ url_for('skill_analysis') }}" class="text-indigo-400 hover:text-indigo-300 text-sm">View Details →</a>
                     </div>
                     
                     {% if gaps and gaps|length > 0 %}
                         <div class="space-y-4">
                             {% for gap in gaps[:4] %}
                                 <div>
-                                    <div class="flex justify-between text-white/80 text-sm mb-1">
+                                    <div class="flex justify-between text-gray-300 text-sm mb-1">
                                         <span>{{ gap.skill }}</span>
                                         <span>Demand: {{ gap.demand }}%</span>
                                     </div>
-                                    <div class="h-2 bg-white/10 rounded-full overflow-hidden">
-                                        <div class="h-full bg-gradient-to-r from-red-400 to-orange-400 rounded-full" 
+                                    <div class="h-2 bg-[#2d2d3f] rounded-full overflow-hidden">
+                                        <div class="h-full bg-gradient-to-r from-red-500 to-orange-500 rounded-full" 
                                              style="width: {{ gap.demand }}%"></div>
                                     </div>
-                                    <p class="text-white/50 text-xs mt-1">
+                                    <p class="text-gray-500 text-xs mt-1">
                                         Priority: {{ gap.priority }} • Growth: {{ gap.growth }}
                                     </p>
                                 </div>
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-white/60 text-center py-4">No skill gaps identified yet. Upload your CV to get started!</p>
+                        <p class="text-gray-400 text-center py-4">No skill gaps identified yet. Upload your CV to get started!</p>
                     {% endif %}
                 </div>
 
-                <!-- Personalized Learning Roadmap - REAL DATA -->
-                <div class="glass-card p-6" data-aos="fade-right" data-aos-delay="300">
+                <!-- Personalized Learning Roadmap -->
+                <div class="card p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-bold text-white">
-                            <i class="fas fa-road text-teal-400 mr-2"></i> Your Learning Roadmap
+                            <i class="fas fa-road text-indigo-400 mr-2"></i> Your Learning Roadmap
                         </h2>
-                        <a href="{{ url_for('learning_roadmap') }}" class="text-teal-400 hover:text-teal-300 text-sm">View All →</a>
+                        <a href="{{ url_for('learning_roadmap') }}" class="text-indigo-400 hover:text-indigo-300 text-sm">View All →</a>
                     </div>
                     
                     {% if roadmap and roadmap.immediate %}
                         <div class="space-y-4">
                             {% for item in roadmap.immediate[:3] %}
-                                <div class="flex items-start gap-3 p-3 bg-white/5 rounded-xl">
-                                    <div class="w-8 h-8 bg-gradient-to-br from-teal-400 to-teal-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
+                                <div class="flex items-start gap-3 p-3 bg-[#1a1a2e] rounded-xl border border-[#2d2d3f]">
+                                    <div class="w-8 h-8 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
                                         <span class="text-white text-xs font-bold">{{ loop.index }}</span>
                                     </div>
                                     <div>
                                         <h3 class="text-white font-semibold">{{ item.title or 'Learn ' + item.skill }}</h3>
-                                        <p class="text-white/60 text-sm">{{ item.provider or 'Recommended' }} • {{ item.duration or 'Self-paced' }}</p>
+                                        <p class="text-gray-400 text-sm">{{ item.provider or 'Recommended' }} • {{ item.duration or 'Self-paced' }}</p>
                                         <div class="flex gap-2 mt-2 flex-wrap">
-                                            <span class="bg-teal-500/20 text-teal-300 text-xs px-2 py-1 rounded-full">Priority: {{ item.priority or 'High' }}</span>
+                                            <span class="bg-indigo-500/20 text-indigo-300 text-xs px-2 py-1 rounded-full">Priority: {{ item.priority or 'High' }}</span>
                                             {% if item.certificate %}
                                                 <span class="bg-purple-500/20 text-purple-300 text-xs px-2 py-1 rounded-full">Certificate Included</span>
                                             {% endif %}
@@ -240,69 +240,69 @@
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-white/60 text-center py-4">No learning recommendations yet. Upload your CV to get personalized suggestions!</p>
+                        <p class="text-gray-400 text-center py-4">No learning recommendations yet. Upload your CV to get personalized suggestions!</p>
                     {% endif %}
                 </div>
             </div>
 
             <!-- Right Column -->
             <div class="space-y-8">
-                <!-- Job Market Intelligence - REAL DATA -->
-                <div class="glass-card p-6" data-aos="fade-left">
+                <!-- Job Market Intelligence -->
+                <div class="card p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-bold text-white">
-                            <i class="fas fa-chart-line text-teal-400 mr-2"></i> Market Intelligence
+                            <i class="fas fa-chart-line text-indigo-400 mr-2"></i> Market Intelligence
                         </h2>
-                        <a href="{{ url_for('job_matches') }}" class="text-teal-400 hover:text-teal-300 text-sm">View All →</a>
+                        <a href="{{ url_for('job_matches') }}" class="text-indigo-400 hover:text-indigo-300 text-sm">View All →</a>
                     </div>
                     
                     {% if stats.job_matches and stats.job_matches|length > 0 %}
                         <div class="space-y-4">
                             {% for match in stats.job_matches[:4] %}
-                                <div class="border-b border-white/10 pb-3 {% if loop.last %}border-0{% endif %}">
+                                <div class="border-b border-[#2d2d3f] pb-3 {% if loop.last %}border-0{% endif %}">
                                     <div class="flex justify-between items-center mb-2">
                                         <span class="text-white font-medium">{{ match.job.title }}</span>
-                                        <span class="text-teal-400 text-sm">{{ match.score|int }}% match</span>
+                                        <span class="text-indigo-400 text-sm">{{ match.score|int }}% match</span>
                                     </div>
-                                    <p class="text-white/60 text-sm">{{ match.job.company }} • {{ match.job.location or 'Remote' }}</p>
+                                    <p class="text-gray-400 text-sm">{{ match.job.company }} • {{ match.job.location or 'Remote' }}</p>
                                 </div>
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-white/60 text-center py-4">No job matches yet. Upload your CV to get matched!</p>
+                        <p class="text-gray-400 text-center py-4">No job matches yet. Upload your CV to get matched!</p>
                     {% endif %}
                     
-                    <a href="{{ url_for('job_matches') }}" class="w-full mt-4 btn-outline px-4 py-2 rounded-full text-white font-semibold text-sm inline-block text-center">
+                    <a href="{{ url_for('job_matches') }}" class="w-full mt-4 btn-secondary px-4 py-2 rounded-full text-gray-200 font-semibold text-sm inline-block text-center">
                         View All Job Matches →
                     </a>
                 </div>
 
                 <!-- AI Career Assistant -->
-                <div class="glass-card p-6" data-aos="fade-left" data-aos-delay="100">
+                <div class="card p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-bold text-white">
-                            <i class="fas fa-robot text-teal-400 mr-2"></i> AI Career Assistant
+                            <i class="fas fa-robot text-indigo-400 mr-2"></i> AI Career Assistant
                         </h2>
-                        <a href="{{ url_for('career_assistant') }}" class="text-teal-400 hover:text-teal-300 text-sm">Open Chat →</a>
+                        <a href="{{ url_for('career_assistant') }}" class="text-indigo-400 hover:text-indigo-300 text-sm">Open Chat →</a>
                     </div>
-                    <p class="text-white/60 text-sm mb-4">Ask me anything about your career path, skills, or job market trends.</p>
+                    <p class="text-gray-400 text-sm mb-4">Ask me anything about your career path, skills, or job market trends.</p>
                     
-                    <div class="bg-white/5 rounded-xl p-4 mb-4 max-h-32 overflow-y-auto">
-                        <div class="text-teal-400 text-sm mb-2">
+                    <div class="bg-[#1a1a2e] rounded-xl p-4 mb-4 max-h-32 overflow-y-auto border border-[#2d2d3f]">
+                        <div class="text-indigo-400 text-sm mb-2">
                             <i class="fas fa-robot mr-2"></i> AI: Hi! How can I help you today?
                         </div>
                         {% if stats.all_skills and stats.all_skills|length > 0 %}
-                            <div class="text-white/70 text-sm">
+                            <div class="text-gray-300 text-sm">
                                 <i class="fas fa-user mr-2"></i> You: What skills should I focus on?
                             </div>
-                            <div class="text-teal-400 text-sm mt-2">
+                            <div class="text-indigo-400 text-sm mt-2">
                                 <i class="fas fa-robot mr-2"></i> AI: Based on your profile, focus on {{ stats.all_skills[:3]|join(', ') }}.
                             </div>
                         {% else %}
-                            <div class="text-white/70 text-sm">
+                            <div class="text-gray-300 text-sm">
                                 <i class="fas fa-user mr-2"></i> You: How can I improve my employability?
                             </div>
-                            <div class="text-teal-400 text-sm mt-2">
+                            <div class="text-indigo-400 text-sm mt-2">
                                 <i class="fas fa-robot mr-2"></i> AI: Start by uploading your CV to get personalized insights!
                             </div>
                         {% endif %}
@@ -313,23 +313,23 @@
                     </a>
                 </div>
 
-                <!-- Recent Activity - REAL DATA -->
-                <div class="glass-card p-6" data-aos="fade-left" data-aos-delay="200">
+                <!-- Recent Activity -->
+                <div class="card p-6">
                     <h2 class="text-xl font-bold text-white mb-4">
-                        <i class="fas fa-history text-teal-400 mr-2"></i> Recent Activity
+                        <i class="fas fa-history text-indigo-400 mr-2"></i> Recent Activity
                     </h2>
                     
                     {% if stats.recent_activity and stats.recent_activity|length > 0 %}
                         <div class="space-y-3">
                             {% for activity in stats.recent_activity[:4] %}
                                 <div class="flex items-start gap-3">
-                                    <div class="w-8 h-8 {{ activity.color }}/20 rounded-lg flex items-center justify-center">
+                                    <div class="w-8 h-8 bg-[#1a1a2e] rounded-lg flex items-center justify-center border border-[#2d2d3f]">
                                         <i class="{{ activity.icon }} {{ activity.color }} text-sm"></i>
                                     </div>
                                     <div>
                                         <p class="text-white text-sm">{{ activity.action }}</p>
-                                        <p class="text-white/40 text-xs">{{ activity.description }}</p>
-                                        <p class="text-white/40 text-xs mt-0.5">
+                                        <p class="text-gray-500 text-xs">{{ activity.description }}</p>
+                                        <p class="text-gray-600 text-xs mt-0.5">
                                             {{ activity.time.strftime('%d %b %Y at %H:%M') if activity.time else 'Just now' }}
                                         </p>
                                     </div>
@@ -337,28 +337,28 @@
                             {% endfor %}
                         </div>
                     {% else %}
-                        <p class="text-white/60 text-center py-4">No recent activity. Start by uploading your CV!</p>
+                        <p class="text-gray-400 text-center py-4">No recent activity. Start by uploading your CV!</p>
                     {% endif %}
                 </div>
 
-                <!-- Trending Skills - REAL DATA -->
-                <div class="glass-card p-6" data-aos="fade-left" data-aos-delay="300">
+                <!-- Trending Skills -->
+                <div class="card p-6">
                     <h2 class="text-xl font-bold text-white mb-4">
-                        <i class="fas fa-fire text-teal-400 mr-2"></i> Trending Skills
+                        <i class="fas fa-fire text-indigo-400 mr-2"></i> Trending Skills
                     </h2>
                     
                     {% if stats.trending_skills and stats.trending_skills|length > 0 %}
                         <div class="flex flex-wrap gap-2">
                             {% for skill in stats.trending_skills %}
-                                <span class="bg-white/10 px-3 py-1 rounded-full text-white/80 text-sm hover:bg-white/20 transition cursor-default">
+                                <span class="bg-[#1a1a2e] px-3 py-1 rounded-full text-gray-300 text-sm hover:bg-[#2d2d3f] transition cursor-default border border-[#2d2d3f]">
                                     {{ skill.skill }}
-                                    <span class="text-teal-400 text-xs ml-1">{{ skill.growth }}</span>
+                                    <span class="text-indigo-400 text-xs ml-1">{{ skill.growth }}</span>
                                 </span>
                             {% endfor %}
                         </div>
-                        <p class="text-white/40 text-xs mt-3">Based on current job market demand</p>
+                        <p class="text-gray-500 text-xs mt-3">Based on current job market demand</p>
                     {% else %}
-                        <p class="text-white/60 text-center py-4">No trending skills available yet.</p>
+                        <p class="text-gray-400 text-center py-4">No trending skills available yet.</p>
                     {% endif %}
                 </div>
             </div>

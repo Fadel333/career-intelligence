@@ -4,25 +4,26 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 py-8">
+    <!-- Header -->
     <div class="flex items-center gap-4 mb-8">
-        <a href="{{ url_for('recruiter.dashboard') }}" class="text-[#0f172a] hover:text-[#ef4444] transition">
-            <i class="fas fa-arrow-left"></i>
+        <a href="{{ url_for('recruiter.dashboard') }}" class="text-gray-400 hover:text-indigo-400 transition">
+            <i class="fas fa-arrow-left text-xl"></i>
         </a>
         <div class="flex-1">
-            <h1 class="text-3xl font-bold text-[#0f172a]">📋 Applications</h1>
-            <p class="text-[#475569]">Manage applications for your jobs</p>
+            <h1 class="text-3xl font-bold text-white">📋 Applications</h1>
+            <p class="text-gray-400">Manage applications for your jobs</p>
         </div>
         <div class="flex gap-2">
             {% if expired_count is defined and expired_count > 0 %}
                 <form action="{{ url_for('recruiter.cleanup_expired_applications') }}" method="POST" class="d-inline">
-                    <button type="submit" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition" 
+                    <button type="submit" class="bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 px-4 py-2 rounded-xl text-sm font-semibold transition border border-yellow-500/20" 
                             onclick="return confirm('Delete all expired applications?')">
                         <i class="fas fa-trash mr-2"></i> Cleanup ({{ expired_count }})
                     </button>
                 </form>
             {% endif %}
             <a href="{{ url_for('recruiter.application_settings') }}" 
-               class="bg-[#f1f5f9] hover:bg-[#e2e8f0] px-4 py-2 rounded-xl text-[#0f172a] text-sm font-semibold transition">
+               class="bg-[#1a1a2e] hover:bg-[#2d2d3f] px-4 py-2 rounded-xl text-gray-300 text-sm font-semibold transition border border-[#2d2d3f]">
                 <i class="fas fa-gear mr-2"></i> Settings
             </a>
         </div>
@@ -31,36 +32,36 @@
     <!-- Summary Stats -->
     <div class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
         <div class="card p-3 text-center">
-            <p class="text-[#475569] text-xs">Total</p>
-            <p class="text-[#0f172a] font-bold text-lg">{{ pagination.total if pagination else applications|length if applications else 0 }}</p>
+            <p class="text-gray-400 text-xs">Total</p>
+            <p class="text-white font-bold text-lg">{{ pagination.total if pagination else applications|length if applications else 0 }}</p>
         </div>
-        <div class="card p-3 text-center border-yellow-400/30">
-            <p class="text-[#475569] text-xs">Pending</p>
-            <p class="text-yellow-500 font-bold text-lg">
+        <div class="card p-3 text-center border-yellow-500/30">
+            <p class="text-gray-400 text-xs">Pending</p>
+            <p class="text-yellow-400 font-bold text-lg">
                 {{ applications|selectattr('status', 'equalto', 'pending')|list|length if applications else 0 }}
             </p>
         </div>
-        <div class="card p-3 text-center border-blue-400/30">
-            <p class="text-[#475569] text-xs">Reviewed</p>
-            <p class="text-blue-500 font-bold text-lg">
+        <div class="card p-3 text-center border-blue-500/30">
+            <p class="text-gray-400 text-xs">Reviewed</p>
+            <p class="text-blue-400 font-bold text-lg">
                 {{ applications|selectattr('status', 'equalto', 'reviewed')|list|length if applications else 0 }}
             </p>
         </div>
-        <div class="card p-3 text-center border-purple-400/30">
-            <p class="text-[#475569] text-xs">Shortlisted</p>
-            <p class="text-purple-500 font-bold text-lg">
+        <div class="card p-3 text-center border-purple-500/30">
+            <p class="text-gray-400 text-xs">Shortlisted</p>
+            <p class="text-purple-400 font-bold text-lg">
                 {{ applications|selectattr('status', 'equalto', 'shortlisted')|list|length if applications else 0 }}
             </p>
         </div>
-        <div class="card p-3 text-center border-green-400/30">
-            <p class="text-[#475569] text-xs">Hired</p>
-            <p class="text-green-500 font-bold text-lg">
+        <div class="card p-3 text-center border-emerald-500/30">
+            <p class="text-gray-400 text-xs">Hired</p>
+            <p class="text-emerald-400 font-bold text-lg">
                 {{ applications|selectattr('status', 'equalto', 'hired')|list|length if applications else 0 }}
             </p>
         </div>
-        <div class="card p-3 text-center border-red-400/30">
-            <p class="text-[#475569] text-xs">Expired</p>
-            <p class="text-red-500 font-bold text-lg">{{ expired_count|default(0) }}</p>
+        <div class="card p-3 text-center border-red-500/30">
+            <p class="text-gray-400 text-xs">Expired</p>
+            <p class="text-red-400 font-bold text-lg">{{ expired_count|default(0) }}</p>
         </div>
     </div>
 
@@ -69,8 +70,8 @@
         <form method="GET" class="flex flex-wrap gap-3">
             <input type="text" name="search" placeholder="Search by name or email..." 
                    value="{{ search_query or '' }}"
-                   class="flex-1 min-w-[200px] border border-[#e2e8f0] rounded-xl px-4 py-2 text-[#0f172a] focus:border-[#0f172a] focus:outline-none">
-            <select name="status" class="border border-[#e2e8f0] rounded-xl px-4 py-2 text-[#0f172a] focus:border-[#0f172a] focus:outline-none">
+                   class="flex-1 min-w-[200px] bg-[#1a1a2e] border border-[#2d2d3f] rounded-xl px-4 py-2 text-gray-200 placeholder-gray-500 focus:border-indigo-500 focus:outline-none transition">
+            <select name="status" class="bg-[#1a1a2e] border border-[#2d2d3f] rounded-xl px-4 py-2 text-gray-200 focus:border-indigo-500 focus:outline-none transition">
                 <option value="">All Statuses</option>
                 <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
                 <option value="reviewed" {% if status_filter == 'reviewed' %}selected{% endif %}>Reviewed</option>
@@ -78,20 +79,20 @@
                 <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
                 <option value="hired" {% if status_filter == 'hired' %}selected{% endif %}>Hired</option>
             </select>
-            <select name="sort" class="border border-[#e2e8f0] rounded-xl px-4 py-2 text-[#0f172a] focus:border-[#0f172a] focus:outline-none">
+            <select name="sort" class="bg-[#1a1a2e] border border-[#2d2d3f] rounded-xl px-4 py-2 text-gray-200 focus:border-indigo-500 focus:outline-none transition">
                 <option value="applied_at" {% if sort_by == 'applied_at' %}selected{% endif %}>Applied Date</option>
                 <option value="applicant_name" {% if sort_by == 'applicant_name' %}selected{% endif %}>Name</option>
                 <option value="status" {% if sort_by == 'status' %}selected{% endif %}>Status</option>
             </select>
-            <select name="order" class="border border-[#e2e8f0] rounded-xl px-4 py-2 text-[#0f172a] focus:border-[#0f172a] focus:outline-none">
+            <select name="order" class="bg-[#1a1a2e] border border-[#2d2d3f] rounded-xl px-4 py-2 text-gray-200 focus:border-indigo-500 focus:outline-none transition">
                 <option value="desc" {% if sort_order == 'desc' %}selected{% endif %}>Newest First</option>
                 <option value="asc" {% if sort_order == 'asc' %}selected{% endif %}>Oldest First</option>
             </select>
-            <button type="submit" class="bg-[#0f172a] hover:bg-[#1e293b] text-white px-6 py-2 rounded-xl text-sm font-semibold transition">
+            <button type="submit" class="btn-primary px-6 py-2 rounded-xl text-white text-sm font-semibold transition">
                 <i class="fas fa-search mr-2"></i> Filter
             </button>
             {% if search_query or status_filter %}
-                <a href="{{ url_for('jobs.recruiter_applications') }}" class="bg-[#f1f5f9] hover:bg-[#e2e8f0] px-4 py-2 rounded-xl text-[#0f172a] text-sm transition">
+                <a href="{{ url_for('jobs.recruiter_applications') }}" class="bg-[#1a1a2e] hover:bg-[#2d2d3f] px-4 py-2 rounded-xl text-gray-300 text-sm transition border border-[#2d2d3f]">
                     <i class="fas fa-times mr-2"></i> Clear
                 </a>
             {% endif %}
@@ -103,11 +104,11 @@
         <form id="bulkForm" method="POST" action="{{ url_for('recruiter.bulk_delete_applications') }}">
             <div class="flex justify-between items-center mb-4">
                 <div class="flex items-center gap-3">
-                    <input type="checkbox" id="selectAll" onchange="toggleAll(this)" class="w-4 h-4">
-                    <label for="selectAll" class="text-sm text-[#475569]">Select All</label>
-                    <span class="text-sm text-[#94a3b8]">({{ applications|length }} applications)</span>
+                    <input type="checkbox" id="selectAll" onchange="toggleAll(this)" class="w-4 h-4 accent-indigo-500">
+                    <label for="selectAll" class="text-sm text-gray-400">Select All</label>
+                    <span class="text-sm text-gray-500">({{ applications|length }} applications)</span>
                 </div>
-                <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-semibold transition"
+                <button type="submit" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-4 py-2 rounded-xl text-sm font-semibold transition border border-red-500/20"
                         onclick="return confirm('Delete selected applications? This action can be restored within 30 days.')">
                     <i class="fas fa-trash mr-2"></i> Delete Selected
                 </button>
@@ -119,34 +120,34 @@
     {% if applications and applications|length > 0 %}
         <div class="space-y-4">
             {% for application in applications %}
-            <div class="card p-6 hover:border-[#0f172a] transition {% if application.is_expired() %}border-red-300 bg-red-50/50{% endif %}">
+            <div class="card p-6 hover:border-indigo-500/50 transition {% if application.is_expired() %}border-red-500/30 bg-red-950/20{% endif %}">
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div class="flex-1">
                         <div class="flex items-center gap-3">
-                            <input type="checkbox" name="app_ids[]" value="{{ application.id }}" class="app-checkbox w-4 h-4" form="bulkForm">
-                            <div class="w-10 h-10 rounded-full bg-[#f1f5f9] flex items-center justify-center text-[#0f172a] font-bold">
+                            <input type="checkbox" name="app_ids[]" value="{{ application.id }}" class="app-checkbox w-4 h-4 accent-indigo-500" form="bulkForm">
+                            <div class="w-10 h-10 rounded-full bg-[#1a1a2e] flex items-center justify-center text-white font-bold border border-[#2d2d3f]">
                                 {{ application.applicant_name[0]|upper }}
                             </div>
                             <div>
                                 <div class="flex items-center gap-2">
-                                    <h3 class="text-xl font-bold text-[#0f172a]">{{ application.applicant_name }}</h3>
+                                    <h3 class="text-xl font-bold text-white">{{ application.applicant_name }}</h3>
                                     {% if application.is_expired() %}
-                                        <span class="bg-red-500 text-white px-2 py-0.5 rounded-full text-xs font-semibold">
+                                        <span class="bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full text-xs font-semibold border border-red-500/20">
                                             <i class="fas fa-clock mr-1"></i> Expired
                                         </span>
                                     {% endif %}
                                 </div>
-                                <p class="text-[#475569]">{{ application.applicant_email }}</p>
+                                <p class="text-gray-400">{{ application.applicant_email }}</p>
                             </div>
                         </div>
-                        <div class="flex flex-wrap gap-3 mt-1 text-sm text-[#94a3b8]">
+                        <div class="flex flex-wrap gap-3 mt-1 text-sm text-gray-500">
                             <span><i class="fas fa-calendar mr-1"></i> Applied: {{ application.applied_at.strftime('%b %d, %Y') }}</span>
                             <span><i class="fas fa-briefcase mr-1"></i> {{ application.job.title if application.job else 'Unknown' }}</span>
                             {% if application.applicant_phone %}
                                 <span><i class="fas fa-phone mr-1"></i> {{ application.applicant_phone }}</span>
                             {% endif %}
                             {% if application.expires_at %}
-                                <span class="{% if application.is_expired() %}text-red-500{% else %}text-[#94a3b8]{% endif %}">
+                                <span class="{% if application.is_expired() %}text-red-400{% else %}text-gray-500{% endif %}">
                                     <i class="fas fa-hourglass-half mr-1"></i> 
                                     Expires: {{ application.expires_at.strftime('%b %d, %Y') }}
                                     {% if not application.is_expired() %}
@@ -157,24 +158,24 @@
                         </div>
                     </div>
                     <div class="flex flex-wrap items-center gap-3">
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold
-                            {% if application.status == 'pending' %}bg-yellow-100 text-yellow-600
-                            {% elif application.status == 'reviewed' %}bg-blue-100 text-blue-600
-                            {% elif application.status == 'shortlisted' %}bg-purple-100 text-purple-600
-                            {% elif application.status == 'hired' %}bg-green-100 text-green-600
-                            {% elif application.status == 'rejected' %}bg-red-100 text-red-600
-                            {% else %}bg-[#f1f5f9] text-[#475569]{% endif %}">
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold border
+                            {% if application.status == 'pending' %}bg-yellow-500/20 text-yellow-400 border-yellow-500/20
+                            {% elif application.status == 'reviewed' %}bg-blue-500/20 text-blue-400 border-blue-500/20
+                            {% elif application.status == 'shortlisted' %}bg-purple-500/20 text-purple-400 border-purple-500/20
+                            {% elif application.status == 'hired' %}bg-emerald-500/20 text-emerald-400 border-emerald-500/20
+                            {% elif application.status == 'rejected' %}bg-red-500/20 text-red-400 border-red-500/20
+                            {% else %}bg-[#1a1a2e] text-gray-400 border-[#2d2d3f]{% endif %}">
                             {{ application.status|title }}
                         </span>
                         <div class="flex gap-2">
                             <a href="{{ url_for('jobs.application_detail', application_id=application.id) }}" 
-                               class="bg-[#f1f5f9] hover:bg-[#e2e8f0] px-3 py-2 rounded-xl text-[#0f172a] text-sm font-semibold transition">
+                               class="bg-[#1a1a2e] hover:bg-[#2d2d3f] px-3 py-2 rounded-xl text-gray-300 text-sm font-semibold transition border border-[#2d2d3f]">
                                 <i class="fas fa-eye"></i>
                             </a>
                             <form method="POST" action="{{ url_for('recruiter.delete_application', app_id=application.id) }}" 
                                   class="d-inline" 
                                   onsubmit="return confirm('Delete this application? It can be restored within 30 days.')">
-                                <button type="submit" class="bg-red-100 hover:bg-red-200 px-3 py-2 rounded-xl text-red-600 text-sm font-semibold transition">
+                                <button type="submit" class="bg-red-500/10 hover:bg-red-500/20 px-3 py-2 rounded-xl text-red-400 text-sm font-semibold transition border border-red-500/20">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </form>
@@ -182,30 +183,30 @@
                     </div>
                 </div>
                 
-                <div class="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-[#e2e8f0]">
+                <div class="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-[#2d2d3f]">
                     <form method="POST" action="{{ url_for('jobs.update_application_status', application_id=application.id) }}" class="flex gap-2">
                         <select name="status" 
-                                class="border border-[#e2e8f0] rounded-xl px-2 py-1.5 text-[#0f172a] text-sm focus:border-[#0f172a] focus:outline-none">
+                                class="bg-[#1a1a2e] border border-[#2d2d3f] rounded-xl px-2 py-1.5 text-gray-200 text-sm focus:border-indigo-500 focus:outline-none transition">
                             <option value="pending" {% if application.status == 'pending' %}selected{% endif %}>Pending</option>
                             <option value="reviewed" {% if application.status == 'reviewed' %}selected{% endif %}>Reviewed</option>
                             <option value="shortlisted" {% if application.status == 'shortlisted' %}selected{% endif %}>Shortlist</option>
                             <option value="hired" {% if application.status == 'hired' %}selected{% endif %}>Hired ✅</option>
                             <option value="rejected" {% if application.status == 'rejected' %}selected{% endif %}>Reject ❌</option>
                         </select>
-                        <button type="submit" class="bg-[#0f172a] hover:bg-[#1e293b] px-3 py-1.5 rounded-xl text-white text-sm transition">
+                        <button type="submit" class="bg-indigo-500/10 hover:bg-indigo-500/20 px-3 py-1.5 rounded-xl text-indigo-400 text-sm transition border border-indigo-500/20">
                             <i class="fas fa-arrow-right"></i>
                         </button>
                     </form>
                 </div>
 
                 {% if application.cover_letter %}
-                <div class="mt-3 pt-3 border-t border-[#e2e8f0]">
-                    <p class="text-[#475569] text-sm"><i class="fas fa-file-alt mr-1"></i> {{ application.cover_letter[:150] }}{% if application.cover_letter|length > 150 %}...{% endif %}</p>
+                <div class="mt-3 pt-3 border-t border-[#2d2d3f]">
+                    <p class="text-gray-400 text-sm"><i class="fas fa-file-alt mr-1"></i> {{ application.cover_letter[:150] }}{% if application.cover_letter|length > 150 %}...{% endif %}</p>
                 </div>
                 {% endif %}
                 {% if application.notes %}
                 <div class="mt-2">
-                    <p class="text-[#94a3b8] text-xs"><i class="fas fa-sticky-note mr-1"></i> Note: {{ application.notes }}</p>
+                    <p class="text-gray-500 text-xs"><i class="fas fa-sticky-note mr-1"></i> Note: {{ application.notes }}</p>
                 </div>
                 {% endif %}
             </div>
@@ -218,22 +219,23 @@
                 {% for page_num in pagination.iter_pages() %}
                     {% if page_num %}
                         <a href="{{ url_for('jobs.recruiter_applications', page=page_num, status=status_filter, search=search_query, sort=sort_by, order=sort_order) }}" 
-                           class="px-4 py-2 rounded-xl {% if page_num == pagination.page %}bg-[#0f172a] text-white{% else %}bg-[#f1f5f9] text-[#0f172a] hover:bg-[#e2e8f0]{% endif %} transition">
+                           class="px-4 py-2 rounded-xl {% if page_num == pagination.page %}bg-indigo-500/20 text-indigo-400 border border-indigo-500/20{% else %}bg-[#1a1a2e] text-gray-300 hover:bg-[#2d2d3f] border border-[#2d2d3f]{% endif %} transition">
                             {{ page_num }}
                         </a>
                     {% else %}
-                        <span class="px-4 py-2 text-[#94a3b8]">…</span>
+                        <span class="px-4 py-2 text-gray-500">…</span>
                     {% endif %}
                 {% endfor %}
             </div>
         {% endif %}
     {% else %}
+        <!-- Empty State -->
         <div class="card p-12 text-center">
-            <i class="fas fa-inbox text-5xl text-[#94a3b8] mb-4"></i>
-            <p class="text-xl text-[#475569]">No applications yet</p>
-            <p class="text-[#94a3b8]">Your job postings will appear here once candidates apply</p>
+            <i class="fas fa-inbox text-5xl text-gray-600 mb-4"></i>
+            <p class="text-xl text-gray-400">No applications yet</p>
+            <p class="text-gray-500">Your job postings will appear here once candidates apply</p>
             <a href="{{ url_for('recruiter.create_job') }}" 
-               class="bg-[#0f172a] hover:bg-[#1e293b] text-white px-6 py-2.5 rounded-xl font-semibold inline-block mt-4 text-sm transition">
+               class="btn-primary px-6 py-2.5 rounded-xl font-semibold inline-block mt-4 text-sm transition">
                 <i class="fas fa-plus mr-2"></i> Post a Job
             </a>
         </div>
@@ -249,18 +251,13 @@ function toggleAll(master) {
 
 <style>
 .card {
-    background: white;
+    background: #14141e;
     border-radius: 16px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #2d2d3f;
     transition: all 0.2s;
 }
-.btn-primary {
-    background: #0f172a;
-    transition: all 0.2s;
-}
-.btn-primary:hover {
-    background: #1e293b;
-    transform: scale(0.98);
+.card:hover {
+    border-color: #4a4a6a;
 }
 </style>
 {% endblock %}
