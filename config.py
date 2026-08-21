@@ -1,3 +1,5 @@
+# config.py
+
 import os
 from dotenv import load_dotenv
 from pathlib import Path
@@ -39,8 +41,8 @@ class Config:
     SUPABASE_URL = os.environ.get('NEXT_PUBLIC_SUPABASE_URL', 'https://twpqpeeqebsobgaawgug.supabase.co')
     SUPABASE_PUBLISHABLE_KEY = os.environ.get('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'sb_publishable_3FZF-s7rliIgVCGXV_yq0Q_ZnS43BYp')
     
-    # ========== OPENAI CONFIGURATION ==========
-    OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+    # ========== GEMINI API CONFIGURATION (FREE TIER) ==========
+    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
     
     # ========== YOUTUBE API CONFIGURATION ==========
     YOUTUBE_API_KEY = os.environ.get('YOUTUBE_API_KEY')
@@ -105,7 +107,7 @@ class Config:
 # Print configuration status
 print(f"🔍 Database URL: {Config.SQLALCHEMY_DATABASE_URI}")
 print(f"🔍 Supabase URL: {Config.SUPABASE_URL}")
-print(f"🔍 OpenAI Key: {'✅ Set' if Config.OPENAI_API_KEY else '❌ Not Set'}")
+print(f"🔍 Gemini API Key: {'✅ Set' if Config.GEMINI_API_KEY else '❌ Not Set'} (FREE tier)")
 print(f"🔍 YouTube Key: {'✅ Set' if Config.YOUTUBE_API_KEY else '❌ Not Set'}")
 print(f"🔍 Coursera: {'✅ Business API' if Config.COURSERA_CLIENT_ID else '⚠️ Using Public API (free)'}")
 print(f"🔍 Udemy: {'✅ Set' if Config.UDEMY_CLIENT_ID else '❌ Not Set'}")

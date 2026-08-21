@@ -1,3 +1,5 @@
+# app/__init__.py
+
 from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify, make_response
 from flask_login import login_required, current_user
 from extensions import db, login_manager
@@ -24,7 +26,9 @@ from app.utils.cv_parser import CVParser
 from app.utils.skill_analyzer import SkillAnalyzer
 from app.utils.course_api import CourseAPI
 from app.utils.hybrid_parser import HybridParser
-from app.utils.openai_assistant import OpenAIAssistant
+# ✅ REPLACE OpenAI with TalentAssistant
+# from app.utils.openai_assistant import OpenAIAssistant
+from app.utils.talent_assistant import TalentAssistant
 from app.utils.cv_detector import CVDetector
 from models import User, Profile, RecruiterProfile, Candidate, Job, Placement, JobAlert, JobAlertLog, InterviewPractice, InterviewQuestion, InterviewResponse
 from app.recruiter import recruiter_bp 
@@ -149,6 +153,10 @@ def configure_login_manager():
 def register_blueprints(app):
     """Register all blueprints"""
     app.register_blueprint(auth_bp, url_prefix='/auth')
+    
+    # ✅ Register chat blueprint
+    from app.chat.routes import chat_bp
+    app.register_blueprint(chat_bp, url_prefix='/chat')
 
 
 def get_parsed_data_from_session():
@@ -1165,11 +1173,23 @@ def register_routes(app):
         if not parsed_data.get('skills'):
             parsed_data['skills'] = {}
         
-        return render_template('career_assistant.html', user=current_user, parsed_data=parsed_data)
+        # ✅ Check Gemini status
+        assistant = TalentAssistant(api_key=os.environ.get('GEMINI_API_KEY'))
+        gemini_enabled = assistant.gemini_enabled
+        
+        # ✅ FIXED: Use talent_assistant.html instead of career_assistant.html
+        return render_template('talent_assistant.html', 
+                             user=current_user, 
+                             parsed_data=parsed_data,
+                             gemini_enabled=gemini_enabled)
     
+    # ✅ UPDATED: Using the new chat blueprint instead
+    # The /api/ask route is now handled by the chat blueprint at /chat/api/chat
+    # Keeping this for backward compatibility
     @app.route('/api/ask', methods=['POST'])
     @login_required
     def api_ask():
+        """Legacy endpoint - redirects to new chat API"""
         if current_user.is_recruiter() or current_user.is_admin():
             return jsonify({'error': 'This feature is for job seekers only.'}), 403
         
@@ -1187,7 +1207,6 @@ def register_routes(app):
         
         user_skills = []
         experience = 0
-        sector = 'general'
         
         if parsed_data:
             for category, skills in parsed_data.get('skills', {}).items():
@@ -1196,12 +1215,16 @@ def register_routes(app):
                 elif isinstance(skills, str):
                     user_skills.append(skills)
             experience = parsed_data.get('experience_years', 0)
-            sector = SkillAnalyzer.detect_sector(user_skills)
         
-        assistant = OpenAIAssistant()
-        response = assistant.get_response(question, user_skills, experience, sector)
+        # ✅ Use TalentAssistant instead of OpenAIAssistant
+        assistant = TalentAssistant(api_key=os.environ.get('GEMINI_API_KEY'))
+        result = assistant.get_response(
+            question=question,
+            user_skills=user_skills,
+            experience=experience
+        )
         
-        return jsonify(response)
+        return jsonify(result)
     
     @app.route('/dashboard')
     @login_required
@@ -2001,7 +2024,7 @@ def register_routes(app):
 # ========== INTERVIEW HELPER FUNCTIONS ==========
 
 def generate_interview_questions(job_title, industry, experience_level, question_type, skills, num_questions=5):
-    """Generate interview questions using AI"""
+    """Generate interview questions using TalentAssistant with Gemini"""
     questions = []
     
     prompt = f"""Generate {num_questions} interview questions for a {question_type} interview for a {job_title} position.
@@ -2020,9 +2043,10 @@ For each question, provide:
 Return as a JSON array with fields: question, type, category, difficulty, expected_answer, tips"""
 
     try:
-        assistant = OpenAIAssistant()
-        response = assistant.get_response(prompt, skills, 0, 'interview')
-        answer = response.get('answer', '')
+        # ✅ Use TalentAssistant instead of OpenAIAssistant
+        assistant = TalentAssistant(api_key=os.environ.get('GEMINI_API_KEY'))
+        result = assistant.get_response(prompt, skills, 0)
+        answer = result.get('response', '')
         
         try:
             import json
@@ -2139,7 +2163,7 @@ def generate_fallback_questions(job_title, question_type, num_questions):
 
 
 def get_interview_feedback(question, answer, job_title, question_type):
-    """Get AI feedback on an interview answer"""
+    """Get AI feedback on an interview answer using Gemini"""
     prompt = f"""You are an expert interview coach. Provide feedback on this interview answer.
 
 Job Title: {job_title}
@@ -2157,9 +2181,10 @@ Provide feedback in the following format (JSON):
 }}"""
 
     try:
-        assistant = OpenAIAssistant()
-        response = assistant.get_response(prompt, [], 0, 'interview_coach')
-        answer_text = response.get('answer', '')
+        # ✅ Use TalentAssistant instead of OpenAIAssistant
+        assistant = TalentAssistant(api_key=os.environ.get('GEMINI_API_KEY'))
+        result = assistant.get_response(prompt, [], 0)
+        answer_text = result.get('response', '')
         
         try:
             import json
@@ -2215,8 +2240,10 @@ def create_app():
     from app.utils.oauth import configure_oauth
     configure_oauth(app)
     
+    # ✅ Register blueprints (includes chat blueprint)
     register_blueprints(app)
     
+    # ✅ Register routes
     register_routes(app)
     
     # ✅ Register CLI commands

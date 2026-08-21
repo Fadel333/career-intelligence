@@ -14,6 +14,9 @@ from . import recruiter_bp
 from .forms import JobForm
 from .services import CandidateMatcher
 
+# ✅ Import TalentAssistant for AI features (Gemini)
+from app.utils.talent_assistant import TalentAssistant
+
 # Fix imports - remove UserRole since it's not in models.py
 from models import db, User, RecruiterProfile, Job, Placement, Candidate, Shortlist,  JobApplication
 
@@ -468,6 +471,8 @@ def create_job():
                 flash(f'{field_label}: {error}', 'error')
     
     return render_template('recruiter/create_job.html', form=form)
+
+
 @recruiter_bp.route('/jobs/<int:job_id>/edit', methods=['GET', 'POST'])
 @login_required
 @recruiter_required
@@ -526,6 +531,7 @@ def edit_job(job_id):
     
     return render_template('recruiter/edit_job.html', form=form, job=job)
 
+
 @recruiter_bp.route('/jobs/<int:job_id>/status', methods=['POST'])
 @login_required
 @recruiter_required
@@ -549,7 +555,9 @@ def update_job_status(job_id):
     
     return redirect(url_for('recruiter.jobs'))
 
+
 # ========== APPLICATION MANAGEMENT ROUTES ==========
+
 @recruiter_bp.route('/applications')
 @login_required
 @recruiter_required
@@ -615,8 +623,8 @@ def applications():
     ).count()
     
     return render_template('recruiter/applications.html',
-        applications=paginated.items,  # CHANGE THIS: use .items to get the list
-        pagination=paginated,           # Keep pagination object for pagination links
+        applications=paginated.items,
+        pagination=paginated,
         status_counts=status_counts,
         status_filter=status_filter,
         search_query=search_query,
@@ -625,6 +633,7 @@ def applications():
         expired_count=expired_count,
         now=datetime.utcnow()
     )
+
 
 @recruiter_bp.route('/applications/<int:app_id>/delete', methods=['POST'])
 @login_required
@@ -1114,7 +1123,7 @@ def analytics():
 @login_required
 @recruiter_required
 def api_generate_description():
-    """AI-powered job description generation"""
+    """AI-powered job description generation using Gemini"""
     try:
         data = request.get_json()
         title = data.get('title', '')
@@ -1127,8 +1136,8 @@ def api_generate_description():
         company_name = recruiter.company_name if recruiter else "Our Company"
         
         try:
-            from app.utils.openai_assistant import OpenAIAssistant
-            assistant = OpenAIAssistant()
+            # ✅ Use TalentAssistant with Gemini (FREE tier)
+            assistant = TalentAssistant()
             
             prompt = f"""Generate a professional job description for:
 Title: {title}
@@ -1143,13 +1152,16 @@ Please include:
 
 Make it professional, clear, and attractive to candidates."""
             
-            response = assistant.get_response(prompt, [], 0, 'recruiting')
-            description = response.get('answer', '')
+            result = assistant.get_response(prompt, [], 0)
+            description = result.get('response', '')
+            
+            if not description or description.strip() == '':
+                description = generate_basic_description(title, skills, company_name)
             
             return jsonify({'description': description})
             
         except Exception as e:
-            print(f"OpenAI error: {e}")
+            print(f"AI error: {e}")
             description = generate_basic_description(title, skills, company_name)
             return jsonify({'description': description})
             
@@ -1308,7 +1320,8 @@ def api_search_candidates():
         'total': len(results)
     })
 
-# app/recruiter/routes.py - Add these routes
+
+# ========== SHORTLIST ROUTES ==========
 
 @recruiter_bp.route('/shortlist')
 @login_required
@@ -1417,5 +1430,3 @@ def update_shortlist_note(shortlist_id):
     
     flash('✅ Note updated successfully!', 'success')
     return redirect(url_for('recruiter.shortlist'))
-
- 

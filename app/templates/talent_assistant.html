@@ -1,0 +1,556 @@
+{% extends "base.html" %}
+
+{% block title %}AI Career Assistant - TalentForge AI{% endblock %}
+
+{% block content %}
+<section class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+    <!-- Header -->
+    <div class="mb-6 sm:mb-8" data-aos="fade-up">
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+            <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-white">AI Career Assistant</h1>
+            <span class="bg-gradient-to-r from-teal-400 to-purple-600 text-white text-[10px] sm:text-xs px-2 sm:px-3 py-1 rounded-full whitespace-nowrap">Powered by Gemini</span>
+            {% if gemini_enabled %}
+            <span class="bg-green-500/20 text-green-400 text-[10px] px-2 py-0.5 rounded-full border border-green-500/30 whitespace-nowrap">FREE Tier</span>
+            {% else %}
+            <span class="bg-yellow-500/20 text-yellow-400 text-[10px] px-2 py-0.5 rounded-full border border-yellow-500/30 whitespace-nowrap">Fallback</span>
+            {% endif %}
+        </div>
+        <p class="text-white/60 text-sm">Your personal AI career coach - ask me anything about your career path</p>
+    </div>
+
+    <div class="grid lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+        <!-- Sidebar -->
+        <div class="lg:col-span-1 space-y-4 sm:space-y-6 order-2 lg:order-1">
+            <!-- Suggested Questions -->
+            <div class="glass-card p-4 sm:p-5" data-aos="fade-right">
+                <h3 class="text-white font-semibold mb-3 flex items-center gap-2 text-sm sm:text-base">
+                    <i class="fas fa-lightbulb text-teal-400"></i> Suggested Questions
+                </h3>
+                <div class="space-y-1.5 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+                    <button class="suggestion-btn w-full text-left p-2 text-white/70 hover:bg-white/10 rounded-lg text-xs sm:text-sm transition">💡 What skills should I learn next?</button>
+                    <button class="suggestion-btn w-full text-left p-2 text-white/70 hover:bg-white/10 rounded-lg text-xs sm:text-sm transition">🎯 How do I prepare for technical interviews?</button>
+                    <button class="suggestion-btn w-full text-left p-2 text-white/70 hover:bg-white/10 rounded-lg text-xs sm:text-sm transition">💰 What's the salary range for developers in Ghana?</button>
+                    <button class="suggestion-btn w-full text-left p-2 text-white/70 hover:bg-white/10 rounded-lg text-xs sm:text-sm transition">📈 How can I improve my employability?</button>
+                    <button class="suggestion-btn w-full text-left p-2 text-white/70 hover:bg-white/10 rounded-lg text-xs sm:text-sm transition">🏆 Which certifications are most valuable in Africa?</button>
+                    <button class="suggestion-btn w-full text-left p-2 text-white/70 hover:bg-white/10 rounded-lg text-xs sm:text-sm transition">🎨 How to build a portfolio that stands out?</button>
+                    <button class="suggestion-btn w-full text-left p-2 text-white/70 hover:bg-white/10 rounded-lg text-xs sm:text-sm transition">📊 What are the top tech trends in Africa?</button>
+                    <button class="suggestion-btn w-full text-left p-2 text-white/70 hover:bg-white/10 rounded-lg text-xs sm:text-sm transition">🤝 How do I negotiate my salary?</button>
+                    <button class="suggestion-btn w-full text-left p-2 text-white/70 hover:bg-white/10 rounded-lg text-xs sm:text-sm transition">🚀 What's the best career path for me?</button>
+                    <button class="suggestion-btn w-full text-left p-2 text-white/70 hover:bg-white/10 rounded-lg text-xs sm:text-sm transition">🔄 How to transition to a new career?</button>
+                    <button class="suggestion-btn w-full text-left p-2 text-white/70 hover:bg-white/10 rounded-lg text-xs sm:text-sm transition">🌍 What sectors are growing in Ghana?</button>
+                    <button class="suggestion-btn w-full text-left p-2 text-white/70 hover:bg-white/10 rounded-lg text-xs sm:text-sm transition">💼 How to start a business in Ghana?</button>
+                </div>
+            </div>
+
+            <!-- Profile Stats -->
+            <div class="glass-card p-4 sm:p-5" data-aos="fade-right" data-aos-delay="100">
+                <h3 class="text-white font-semibold mb-3 flex items-center gap-2 text-sm sm:text-base">
+                    <i class="fas fa-user-circle text-teal-400"></i> Your Profile
+                </h3>
+                {% if parsed_data and parsed_data.skills %}
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-white/60">Skills Found</span>
+                            <span class="text-white font-medium">{{ parsed_data.total_skills or parsed_data.skills|length }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-white/60">Experience</span>
+                            <span class="text-white font-medium">{{ parsed_data.experience_years or 0 }}+ years</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-white/60">CV Status</span>
+                            <span class="text-teal-400 font-medium">✓ Processed</span>
+                        </div>
+                        {% if parsed_data.detected_sector %}
+                        <div class="flex justify-between items-center">
+                            <span class="text-white/60">Sector</span>
+                            <span class="text-purple-400 font-medium">{{ parsed_data.detected_sector|capitalize }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <p class="text-white/60 text-sm">Upload your CV for personalized advice</p>
+                    <a href="{{ url_for('upload_cv') }}" class="btn-outline w-full mt-3 py-2 rounded-full text-center text-sm block hover:bg-white/10 transition">
+                        📄 Upload CV →
+                    </a>
+                {% endif %}
+            </div>
+
+            <!-- AI Stats -->
+            <div class="glass-card p-4 sm:p-5" data-aos="fade-right" data-aos-delay="200">
+                <h3 class="text-white font-semibold mb-3 flex items-center gap-2 text-sm sm:text-base">
+                    <i class="fas fa-robot text-teal-400"></i> AI Stats
+                </h3>
+                <div class="space-y-2 text-xs sm:text-sm text-white/60">
+                    <div class="flex justify-between items-center">
+                        <span>Model</span>
+                        <span class="text-white font-medium">{% if gemini_enabled %}Gemini 3.6 Flash{% else %}Rules Engine{% endif %}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Sectors</span>
+                        <span class="text-white font-medium">25+</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Response Time</span>
+                        <span class="text-white font-medium" id="responseTime">~1-2s</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Status</span>
+                        <span class="{% if gemini_enabled %}text-green-400{% else %}text-yellow-400{% endif %} font-medium" id="aiStatus">
+                            {% if gemini_enabled %}● Online (Free){% else %}● Fallback{% endif %}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span>Daily Limit</span>
+                        <span class="text-white font-medium">{% if gemini_enabled %}1,500 req{% else %}Unlimited{% endif %}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sectors -->
+            <div class="glass-card p-4 sm:p-5" data-aos="fade-right" data-aos-delay="300">
+                <h3 class="text-white font-semibold mb-3 flex items-center gap-2 text-sm sm:text-base">
+                    <i class="fas fa-th-large text-teal-400"></i> 25+ Sectors
+                </h3>
+                <div class="flex flex-wrap gap-1.5">
+                    <span class="text-[10px] bg-white/5 px-2 py-1 rounded-full text-white/60">Tech</span>
+                    <span class="text-[10px] bg-white/5 px-2 py-1 rounded-full text-white/60">Data Science</span>
+                    <span class="text-[10px] bg-white/5 px-2 py-1 rounded-full text-white/60">Cybersecurity</span>
+                    <span class="text-[10px] bg-white/5 px-2 py-1 rounded-full text-white/60">Fintech</span>
+                    <span class="text-[10px] bg-white/5 px-2 py-1 rounded-full text-white/60">Healthcare</span>
+                    <span class="text-[10px] bg-white/5 px-2 py-1 rounded-full text-white/60">Nursing</span>
+                    <span class="text-[10px] bg-white/5 px-2 py-1 rounded-full text-white/60">Pharmacy</span>
+                    <span class="text-[10px] bg-white/5 px-2 py-1 rounded-full text-white/60">Law</span>
+                    <span class="text-[10px] bg-white/5 px-2 py-1 rounded-full text-white/60">Finance</span>
+                    <span class="text-[10px] bg-white/5 px-2 py-1 rounded-full text-white/60">Business</span>
+                    <span class="text-[10px] bg-white/5 px-2 py-1 rounded-full text-white/60">Education</span>
+                    <span class="text-[10px] bg-white/5 px-2 py-1 rounded-full text-white/60">Agriculture</span>
+                    <span class="text-[10px] bg-white/5 px-2 py-1 rounded-full text-white/60">Creative</span>
+                    <span class="text-[10px] bg-white/5 px-2 py-1 rounded-full text-white/60">Engineering</span>
+                    <span class="text-[10px] bg-white/5 px-2 py-1 rounded-full text-white/60">Hospitality</span>
+                    <span class="text-[10px] bg-white/5 px-2 py-1 rounded-full text-white/60">More...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Main Area -->
+        <div class="lg:col-span-3 order-1 lg:order-2">
+            <div class="glass-card p-0 overflow-hidden flex flex-col h-[calc(100vh-280px)] sm:h-[calc(100vh-300px)] lg:h-[600px]" data-aos="fade-up" data-aos-delay="100">
+                <!-- Chat Header -->
+                <div class="bg-gradient-to-r from-teal-500/20 to-purple-600/20 p-3 sm:p-4 border-b border-white/10 flex-shrink-0">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-teal-400 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-robot text-white text-sm sm:text-lg"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-white font-semibold text-sm sm:text-base">Career AI Assistant</h2>
+                                <p class="text-white/50 text-[10px] sm:text-xs">
+                                    Powered by <span class="text-teal-400">{% if gemini_enabled %}Gemini{% else %}Rules{% endif %}</span>
+                                    {% if gemini_enabled %}<span class="text-green-400">• FREE</span>{% endif %}
+                                    <span class="text-white/30">• 25+ sectors</span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 {% if gemini_enabled %}bg-green-400{% else %}bg-yellow-400{% endif %} rounded-full animate-pulse"></span>
+                            <span class="text-white/50 text-[10px] sm:text-xs">{% if gemini_enabled %}Online{% else %}Fallback{% endif %}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Messages -->
+                <div id="chatMessages" class="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4 custom-scrollbar">
+                    <!-- Welcome Message -->
+                    <div class="flex gap-3">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 bg-teal-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-robot text-teal-400 text-xs sm:text-sm"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="bg-white/5 rounded-2xl rounded-tl-none p-3 sm:p-4 max-w-[90%] sm:max-w-[80%]">
+                                <p class="text-white/90 text-sm sm:text-base">👋 Hi {{ current_user.fullname }}! I'm your AI career assistant powered by <span class="text-teal-400">{% if gemini_enabled %}Google Gemini{% else %}Rule-Based Engine{% endif %}</span>{% if gemini_enabled %} (FREE tier){% endif %}. I can help you with:</p>
+                                <ul class="mt-2 space-y-1 text-white/70 text-xs sm:text-sm">
+                                    <li>• 📚 Personalized skill recommendations (25+ sectors)</li>
+                                    <li>• 💼 Job search strategies and interview prep</li>
+                                    <li>• 📝 CV writing and portfolio advice</li>
+                                    <li>• 🎯 Career path guidance and salary insights (GHS)</li>
+                                    <li>• 🌍 African market trends and opportunities</li>
+                                    <li>• 🏆 Certification recommendations</li>
+                                    <li>• 💰 Salary negotiation tips</li>
+                                    <li>• 🚀 Entrepreneurship and business advice</li>
+                                </ul>
+                                <div class="mt-2 flex flex-wrap items-center gap-1.5 sm:gap-2 text-[9px] sm:text-[10px] text-white/30">
+                                    {% if gemini_enabled %}
+                                    <span class="bg-green-500/20 px-1.5 sm:px-2 py-0.5 rounded-full text-green-400">FREE</span>
+                                    <span>1,500 req/day</span>
+                                    {% else %}
+                                    <span class="bg-yellow-500/20 px-1.5 sm:px-2 py-0.5 rounded-full text-yellow-400">Fallback</span>
+                                    <span>Unlimited</span>
+                                    {% endif %}
+                                    <span>•</span>
+                                    <span>25+ sectors</span>
+                                </div>
+                                <p class="text-white/90 text-sm sm:text-base mt-2">What would you like to know today? 😊</p>
+                            </div>
+                            <p class="text-white/30 text-[10px] sm:text-xs mt-1">Just now</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Typing Indicator -->
+                <div id="typingIndicator" class="hidden p-3 sm:p-4 border-t border-white/10 flex-shrink-0">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 bg-teal-500/20 rounded-full flex items-center justify-center">
+                            <i class="fas fa-robot text-teal-400 text-xs sm:text-sm"></i>
+                        </div>
+                        <div class="bg-white/5 rounded-full px-3 sm:px-4 py-1.5 sm:py-2">
+                            <div class="flex gap-1">
+                                <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-teal-400 rounded-full animate-bounce" style="animation-delay: 0s"></span>
+                                <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-teal-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></span>
+                                <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-teal-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></span>
+                            </div>
+                            <span class="text-white/40 text-[10px] sm:text-xs ml-2">{% if gemini_enabled %}Gemini is thinking...{% else %}Processing...{% endif %}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Input -->
+                <div class="p-3 sm:p-4 border-t border-white/10 flex-shrink-0">
+                    <form id="chatForm" class="flex gap-2 sm:gap-3">
+                        <input type="text" id="userMessage" placeholder="Ask me anything about your career..." 
+                               class="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 rounded-xl bg-white/10 border border-white/20 text-white text-sm sm:text-base placeholder-white/40 focus:border-teal-400 focus:outline-none focus:ring-2 focus:ring-teal-400/30 transition">
+                        <button type="submit" class="btn-primary px-4 sm:px-6 py-2.5 sm:py-3 rounded-xl text-white font-semibold text-sm sm:text-base flex-shrink-0">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </form>
+                    <div class="flex flex-wrap justify-between items-center mt-2 gap-1">
+                        <p class="text-white/30 text-[10px] sm:text-xs">{% if gemini_enabled %}Powered by Gemini • Free tier • 1,500 req/day{% else %}Powered by Rules • Always works{% endif %}</p>
+                        <p class="text-white/30 text-[10px] sm:text-xs" id="charCount">0 characters</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    const chatMessages = document.getElementById('chatMessages');
+    const chatForm = document.getElementById('chatForm');
+    const userInput = document.getElementById('userMessage');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const charCount = document.getElementById('charCount');
+    
+    // Get user skills from session
+    let userSkills = [];
+    {% if parsed_data and parsed_data.skills %}
+        {% for category, skills in parsed_data.skills.items() %}
+            {% if skills %}
+                {% for skill in skills %}
+                    userSkills.push("{{ skill }}");
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    
+    let userExperience = {{ parsed_data.experience_years if parsed_data else 0 }};
+    let responseStartTime = 0;
+    let messageCount = 0;
+    let isProcessing = false;
+    
+    // Character counter
+    userInput.addEventListener('input', function() {
+        charCount.textContent = this.value.length + ' characters';
+    });
+    
+    // Enter key to submit
+    userInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            chatForm.dispatchEvent(new Event('submit'));
+        }
+    });
+    
+    function addMessage(text, isUser, source = 'gemini', sector = null) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `flex gap-3 ${isUser ? 'justify-end' : ''}`;
+        const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        if (isUser) {
+            messageDiv.innerHTML = `
+                <div class="flex-1"></div>
+                <div class="flex-1 flex justify-end">
+                    <div class="bg-gradient-to-r from-teal-500 to-purple-600 rounded-2xl rounded-tr-none p-3 max-w-[90%] sm:max-w-[80%]">
+                        <p class="text-white text-sm sm:text-base break-words">${escapeHtml(text)}</p>
+                    </div>
+                </div>
+                <div class="w-7 h-7 sm:w-8 sm:h-8 bg-teal-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-user text-teal-400 text-xs sm:text-sm"></i>
+                </div>
+            `;
+        } else {
+            // ✅ FIXED: Handle source properly
+            let sourceBadge = 'Gemini';
+            let sourceColor = 'text-teal-400';
+            
+            if (source === 'rule_based' || source === 'rules') {
+                sourceBadge = 'Rules';
+                sourceColor = 'text-yellow-400';
+            } else if (source === 'error') {
+                sourceBadge = 'Error';
+                sourceColor = 'text-red-400';
+            } else if (source === 'unknown' || !source) {
+                // ✅ If source is unknown, check if Gemini is enabled
+                {% if gemini_enabled %}
+                    sourceBadge = 'Gemini';
+                    sourceColor = 'text-teal-400';
+                {% else %}
+                    sourceBadge = 'Rules';
+                    sourceColor = 'text-yellow-400';
+                {% endif %}
+            }
+            
+            let sectorBadge = sector ? `<span class="text-white/30 text-[10px] ml-2">📍 ${sector.replace('_', ' ').title()}</span>` : '';
+            
+            messageDiv.innerHTML = `
+                <div class="w-7 h-7 sm:w-8 sm:h-8 bg-teal-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <i class="fas fa-robot text-teal-400 text-xs sm:text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="bg-white/5 rounded-2xl rounded-tl-none p-3 sm:p-4 max-w-[90%] sm:max-w-[80%]">
+                        <p class="text-white/90 text-sm sm:text-base whitespace-pre-line break-words">${formatResponse(escapeHtml(text))}</p>
+                        <div class="mt-2 flex flex-wrap items-center gap-2 text-[9px] sm:text-[10px] text-white/30 border-t border-white/10 pt-2">
+                            <span class="${sourceColor}">${sourceBadge}</span>
+                            ${sectorBadge}
+                            <span>•</span>
+                            <span>${timestamp}</span>
+                            ${source === 'gemini' ? '<span class="bg-green-500/20 px-1.5 py-0.5 rounded-full text-green-400">FREE</span>' : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+    
+    function formatResponse(text) {
+        text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
+        text = text.replace(/• /g, '• ');
+        text = text.replace(/\n/g, '<br>');
+        return text;
+    }
+    
+    function addFollowUpSuggestions(suggestions) {
+        if (!suggestions || suggestions.length === 0) return;
+        
+        const container = document.createElement('div');
+        container.className = 'flex gap-3 mt-2';
+        container.innerHTML = `
+            <div class="w-7 h-7 sm:w-8 sm:h-8 flex-shrink-0"></div>
+            <div class="flex-1 min-w-0">
+                <div class="bg-white/5 rounded-2xl p-3 sm:p-4">
+                    <p class="text-white/60 text-xs sm:text-sm mb-2">💡 Suggested follow-up questions:</p>
+                    <div class="flex flex-wrap gap-1.5 sm:gap-2">
+                        ${suggestions.map(q => `<button class="suggestion-followup text-teal-400 text-[10px] sm:text-xs bg-teal-500/10 px-2 py-1 rounded-full hover:bg-teal-500/20 transition">${escapeHtml(q)}</button>`).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        chatMessages.appendChild(container);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        document.querySelectorAll('.suggestion-followup').forEach(btn => {
+            btn.addEventListener('click', () => {
+                userInput.value = btn.textContent;
+                chatForm.dispatchEvent(new Event('submit'));
+            });
+        });
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function showTyping() {
+        typingIndicator.classList.remove('hidden');
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        responseStartTime = Date.now();
+    }
+    
+    function hideTyping() {
+        typingIndicator.classList.add('hidden');
+        const responseTime = ((Date.now() - responseStartTime) / 1000).toFixed(1);
+        document.getElementById('responseTime').textContent = `~${responseTime}s`;
+    }
+    
+    // ✅ Submit handler with proper error handling
+    chatForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const message = userInput.value.trim();
+        if (!message || isProcessing) return;
+        
+        isProcessing = true;
+        messageCount++;
+        
+        addMessage(message, true);
+        userInput.value = '';
+        charCount.textContent = '0 characters';
+        
+        showTyping();
+        
+        try {
+            const response = await fetch('/chat/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    question: message,
+                    skills: userSkills,
+                    experience: userExperience
+                })
+            });
+            
+            const data = await response.json();
+            hideTyping();
+            
+            if (data.success) {
+                if (data.response && data.response.trim()) {
+                    addMessage(data.response, false, data.source || 'gemini', data.sector);
+                } else {
+                    addMessage("I received your question but I'm having trouble formulating a response. Please try again. 🙏", false, 'error');
+                }
+                
+                if (data.suggested_followups && data.suggested_followups.length > 0) {
+                    setTimeout(() => {
+                        addFollowUpSuggestions(data.suggested_followups);
+                    }, 500);
+                }
+            } else {
+                const errorMsg = data.error || "I'm having trouble processing your request. Please try again. 🙏";
+                addMessage(errorMsg, false, 'error');
+            }
+        } catch (error) {
+            console.error('Fetch Error:', error);
+            hideTyping();
+            addMessage("I'm having trouble connecting to the server. Please check your internet and try again. 🙏", false, 'error');
+        } finally {
+            isProcessing = false;
+        }
+    });
+    
+    // Suggestion buttons
+    document.querySelectorAll('.suggestion-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            userInput.value = btn.textContent;
+            charCount.textContent = btn.textContent.length + ' characters';
+            chatForm.dispatchEvent(new Event('submit'));
+        });
+    });
+    
+    // Check Gemini status
+    async function checkAIStatus() {
+        try {
+            const response = await fetch('/chat/api/health');
+            const data = await response.json();
+            const statusEl = document.getElementById('aiStatus');
+            if (data.gemini_enabled) {
+                statusEl.textContent = '● Online (Free)';
+                statusEl.className = 'text-green-400 font-medium';
+            } else {
+                statusEl.textContent = '● Fallback';
+                statusEl.className = 'text-yellow-400 font-medium';
+            }
+        } catch (e) {
+            console.log('Status check failed');
+        }
+    }
+    
+    // Check status on load
+    document.addEventListener('DOMContentLoaded', checkAIStatus);
+</script>
+
+<style>
+    @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+    }
+    .animate-bounce {
+        animation: bounce 0.6s infinite;
+    }
+    .animate-pulse {
+        animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
+    
+    #chatMessages::-webkit-scrollbar {
+        width: 4px;
+    }
+    #chatMessages::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+    }
+    #chatMessages::-webkit-scrollbar-thumb {
+        background: rgba(78, 205, 196, 0.4);
+        border-radius: 10px;
+    }
+    #chatMessages::-webkit-scrollbar-thumb:hover {
+        background: rgba(78, 205, 196, 0.7);
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 3px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(78, 205, 196, 0.3);
+        border-radius: 10px;
+    }
+    
+    .suggestion-btn:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+        color: white !important;
+    }
+    
+    .glass-card {
+        background: rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 16px;
+        transition: all 0.3s ease;
+    }
+    .glass-card:hover {
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #4F46E5, #10B981);
+        transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+        transform: scale(1.02);
+        box-shadow: 0 4px 20px rgba(79, 70, 229, 0.3);
+    }
+    
+    .btn-outline {
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        transition: all 0.3s ease;
+    }
+    .btn-outline:hover {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.25);
+    }
+</style>
+
+{% endblock %}
