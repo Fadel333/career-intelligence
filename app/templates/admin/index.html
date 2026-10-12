@@ -4,9 +4,179 @@
 
 {% block content %}
 <div class="max-w-7xl mx-auto px-4 py-8">
-    <h1 class="text-3xl font-bold text-white mb-8">🛡️ Admin Dashboard</h1>
+    
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-bold text-white">🛡️ Admin Dashboard</h1>
+            <p class="text-white/60 text-sm">TalentForge AI — Command Center</p>
+        </div>
+        <div class="text-xs text-white/40">
+            {{ now.strftime('%b %d, %Y · %I:%M %p') if now else '' }}
+        </div>
+    </div>
 
-    <!-- Stats Cards -->
+    <!-- ===== NEW: USER & PLATFORM METRICS ===== -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        
+        <!-- Total Users -->
+        <div class="glass-card p-6">
+            <div class="flex items-center justify-between mb-2">
+                <i class="fas fa-users text-teal-400 text-xl"></i>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">
+                    +{{ users_today }} today
+                </span>
+            </div>
+            <p class="text-3xl font-bold text-white">{{ total_users }}</p>
+            <p class="text-white/60 text-sm">Total Users</p>
+            <p class="text-white/40 text-xs mt-1">
+                {{ total_students }} students · {{ total_recruiter_users }} recruiters
+            </p>
+        </div>
+
+        <!-- CVs Uploaded -->
+        <div class="glass-card p-6">
+            <div class="flex items-center justify-between mb-2">
+                <i class="fas fa-file-alt text-teal-400 text-xl"></i>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400">
+                    {{ cv_completion_rate }}%
+                </span>
+            </div>
+            <p class="text-3xl font-bold text-white">{{ cvs_uploaded }}</p>
+            <p class="text-white/60 text-sm">CVs Uploaded</p>
+            <p class="text-white/40 text-xs mt-1">
+                +{{ cvs_this_week }} this week
+            </p>
+        </div>
+
+        <!-- New This Week -->
+        <div class="glass-card p-6">
+            <div class="flex items-center justify-between mb-2">
+                <i class="fas fa-calendar-week text-teal-400 text-xl"></i>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/60">
+                    7 days
+                </span>
+            </div>
+            <p class="text-3xl font-bold text-white">{{ users_this_week }}</p>
+            <p class="text-white/60 text-sm">New This Week</p>
+            <p class="text-white/40 text-xs mt-1">
+                of {{ total_users }} total
+            </p>
+        </div>
+
+        <!-- Avg Employability -->
+        <div class="glass-card p-6">
+            <div class="flex items-center justify-between mb-2">
+                <i class="fas fa-chart-line text-teal-400 text-xl"></i>
+                <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">
+                    avg
+                </span>
+            </div>
+            <p class="text-3xl font-bold text-white">{{ avg_score }}</p>
+            <p class="text-white/60 text-sm">Avg Employability</p>
+            <p class="text-white/40 text-xs mt-1">
+                out of 100
+            </p>
+        </div>
+
+    </div>
+
+    <!-- ===== NEW: CHART + TOP SECTORS ===== -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        
+        <!-- Signup Chart -->
+        <div class="lg:col-span-2 glass-card p-6">
+            <h2 class="text-lg font-bold text-white mb-4">
+                📈 Signups (Last 30 Days)
+            </h2>
+            <div style="position: relative; height: 240px;">
+                <canvas id="signupChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Top Sectors -->
+        <div class="glass-card p-6">
+            <h2 class="text-lg font-bold text-white mb-4">
+                🎯 Top Target Sectors
+            </h2>
+            {% if top_sectors %}
+            <div class="space-y-4">
+                {% for sector, count in top_sectors %}
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="text-white/80 text-sm">{{ sector|title }}</span>
+                        <span class="text-white font-semibold text-sm">{{ count }}</span>
+                    </div>
+                    <div class="h-1.5 rounded-full bg-white/10 overflow-hidden">
+                        <div class="h-full bg-teal-400 rounded-full"
+                             style="width: {{ (count / top_sectors[0][1] * 100)|round }}%;"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8">
+                <i class="fas fa-chart-pie text-3xl text-white/20 mb-2"></i>
+                <p class="text-white/40 text-sm">No sector data yet</p>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- ===== NEW: RECENT SIGNUPS ===== -->
+    <div class="glass-card p-6 mb-8">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-white">👥 Recent Signups</h2>
+            <span class="text-white/40 text-xs">Latest 10</span>
+        </div>
+        {% if recent_users %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-white/40 border-b border-white/10 text-xs uppercase">
+                        <th class="text-left py-3 font-medium">Name</th>
+                        <th class="text-left py-3 font-medium">Email</th>
+                        <th class="text-left py-3 font-medium">Type</th>
+                        <th class="text-left py-3 font-medium">Sector</th>
+                        <th class="text-left py-3 font-medium">Score</th>
+                        <th class="text-left py-3 font-medium">Joined</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in recent_users %}
+                    <tr class="border-b border-white/5 hover:bg-white/5 transition">
+                        <td class="py-3 text-white/80">{{ user.fullname or '—' }}</td>
+                        <td class="py-3 text-white/60 text-xs">{{ user.email }}</td>
+                        <td class="py-3">
+                            <span class="px-2 py-0.5 rounded-full text-xs
+                                {% if user.user_type == 'student' %}bg-teal-500/20 text-teal-400
+                                {% elif user.user_type == 'recruiter' %}bg-blue-500/20 text-blue-400
+                                {% elif user.user_type == 'admin' %}bg-purple-500/20 text-purple-400
+                                {% else %}bg-white/10 text-white/60{% endif %}">
+                                {{ user.user_type|capitalize }}
+                            </span>
+                        </td>
+                        <td class="py-3 text-white/60 text-xs">{{ user.detected_sector|title if user.detected_sector else '—' }}</td>
+                        <td class="py-3 text-white/60 text-xs">{{ user.employability_score or '—' }}</td>
+                        <td class="py-3 text-white/40 text-xs">{{ user.created_at.strftime('%b %d') if user.created_at else '—' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-white/40 text-sm text-center py-6">No users yet</p>
+        {% endif %}
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- ===== YOUR EXISTING SECTIONS (UNCHANGED) ===== -->
+    <!-- ============================================================ -->
+
+    <h2 class="text-lg font-bold text-white mb-4 mt-8">🏢 Recruiter & Placement Stats</h2>
+
+    <!-- Stats Cards (your existing) -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
         <div class="glass-card p-6">
             <p class="text-white/60 text-sm">Total Recruiters</p>
@@ -29,7 +199,7 @@
         </div>
     </div>
 
-    <!-- Pending Verifications -->
+    <!-- Pending Verifications (your existing) -->
     <div class="glass-card p-6">
         <div class="flex justify-between items-center mb-4">
             <h2 class="text-xl font-bold text-white">⏳ Pending Verifications</h2>
@@ -66,5 +236,72 @@
             </div>
         {% endif %}
     </div>
+
 </div>
+
+<!-- ===== CHART.JS ===== -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('signupChart');
+        if (!ctx) return;
+
+        const chartData = {{ chart_data|tojson }};
+
+        // Handle empty data
+        if (chartData.length === 0) {
+            ctx.parentElement.innerHTML = '<p class="text-white/40 text-sm text-center py-20">No signup data yet</p>';
+            return;
+        }
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartData.map(d => d.date),
+                datasets: [{
+                    label: 'Signups',
+                    data: chartData.map(d => d.count),
+                    borderColor: '#2dd4bf',
+                    backgroundColor: 'rgba(45, 212, 191, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#2dd4bf',
+                    pointBorderColor: '#0d1117',
+                    pointBorderWidth: 2,
+                    pointHoverRadius: 5,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#161b22',
+                        borderColor: '#30363d',
+                        borderWidth: 1,
+                        titleColor: '#f0f6fc',
+                        bodyColor: '#8b949e',
+                        padding: 10,
+                        cornerRadius: 6,
+                        displayColors: false,
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#8b949e', font: { size: 10 } },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: '#8b949e', font: { size: 10 }, stepSize: 1, precision: 0 },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}
