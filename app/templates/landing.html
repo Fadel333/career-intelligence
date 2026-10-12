@@ -179,7 +179,7 @@
 </section>
 
 <!-- ============================================
-     VIDEO DEMO — Autoplay Ad
+     VIDEO DEMO — SlimFile-Style Modal
      ============================================ -->
 <section id="demo" class="py-12 sm:py-16 border-b border-[#30363d]">
     <div class="max-w-5xl mx-auto px-4 sm:px-6">
@@ -190,76 +190,117 @@
                 See It In Action
             </span>
             <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4 leading-tight px-2">
-                90 seconds to understand
+                Watch how easy it is to
                 <br>
-                <span class="text-gray-500">how TalentForge works.</span>
+                <span class="text-teal-400">forge your career.</span>
             </h2>
             <p class="text-gray-400 text-sm sm:text-base max-w-2xl mx-auto px-4">
-                Watch how a graduate goes from confused to career-ready — using real data, not guesses.
+                A 90-second walkthrough — from CV upload to job match.
             </p>
         </div>
 
-        <!-- ===== VIDEO CONTAINER ===== -->
-        <div class="relative">
+        <!-- ===== VIDEO PREVIEW CARD (Clickable) ===== -->
+        <div class="relative group cursor-pointer" onclick="openVideoModal()">
 
-            <!-- Video Card -->
-            <div class="card overflow-hidden border-teal-500/20 rounded-xl"
-                 style="background: linear-gradient(145deg, rgba(22, 27, 34, 0.95) 0%, rgba(13, 17, 23, 0.95) 100%);">
+            <!-- Card with rounded corners -->
+            <div class="card overflow-hidden border-teal-500/20 rounded-2xl transition-all
+                        group-hover:border-teal-500/50 group-hover:shadow-2xl group-hover:shadow-teal-500/10">
 
                 <div class="relative bg-black" style="aspect-ratio: 16 / 9; width: 100%;">
 
-                    <!-- ===== AUTOPLAY VIDEO ===== -->
-                    <video id="demoVideo"
-                           class="absolute inset-0 w-full h-full object-cover"
-                           autoplay
+                    <!-- Thumbnail (first frame of video) -->
+                    <video class="absolute inset-0 w-full h-full object-cover opacity-90"
                            muted
-                           loop
                            playsinline
-                           preload="metadata"
-                           poster="{{ url_for('static', filename='images/video-poster.jpg') }}">
-                        <source src="https://twpqpeeqebsobgaawgug.supabase.co/storage/v1/object/public/talentforge-demo.mp4/WhatsApp%20Video%202026-10-12%20at%207.22.57%20PM.mp4" type="video/mp4">
-                        Your browser does not support the video tag.
+                           preload="metadata">
+                        <source src="https://twpqpeeqebsobgaawgug.supabase.co/storage/v1/object/public/talentforge-demo.mp4/WhatsApp%20Video%202026-10-12%20at%207.22.57%20PM.mp4#t=0.5" type="video/mp4">
                     </video>
 
-                    <!-- ===== UNMUTE BUTTON ===== -->
-                    <button id="unmuteBtn"
-                            class="absolute top-3 right-3 sm:top-4 sm:right-4 z-20
-                                   bg-black/70 hover:bg-black/90 backdrop-blur-sm
-                                   text-white text-xs sm:text-sm font-medium
-                                   px-3 py-2 sm:px-4 sm:py-2.5 rounded-full
-                                   flex items-center gap-2
-                                   border border-white/20 hover:border-teal-400/50
-                                   transition-all">
-                        <i class="fas fa-volume-mute" id="volumeIcon"></i>
-                        <span id="volumeText">Unmute</span>
-                    </button>
+                    <!-- Dark overlay -->
+                    <div class="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition-all"></div>
 
-                    <!-- ===== SUBTLE GRADIENT OVERLAY ===== -->
-                    <div class="absolute inset-0 pointer-events-none"
-                         style="background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.3) 100%);"></div>
+                    <!-- Big Play Button -->
+                    <div class="absolute inset-0 flex flex-col items-center justify-center gap-4 z-10">
+
+                        <!-- Pulsing ring + play button -->
+                        <div class="relative">
+                            <div class="absolute inset-0 rounded-full bg-teal-500/30 animate-ping"></div>
+                            <div class="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24
+                                        rounded-full bg-teal-500 hover:bg-teal-400
+                                        flex items-center justify-center
+                                        shadow-2xl shadow-teal-500/50
+                                        transition-all group-hover:scale-110">
+                                <i class="fas fa-play text-white text-xl sm:text-2xl md:text-3xl ml-1"></i>
+                            </div>
+                        </div>
+
+                        <!-- Label -->
+                        <span class="text-white text-xs sm:text-sm font-medium
+                                     bg-black/60 backdrop-blur-sm
+                                     px-4 py-2 rounded-full
+                                     border border-white/20">
+                            Watch 90-second demo
+                        </span>
+                    </div>
 
                 </div>
             </div>
-
-            <!-- ===== BELOW VIDEO: QUICK STATS ===== -->
-            <div class="grid grid-cols-3 gap-2 sm:gap-4 mt-4 sm:mt-6">
-                <div class="text-center px-1">
-                    <div class="text-lg sm:text-2xl font-bold text-teal-400">90s</div>
-                    <p class="text-gray-500 text-[10px] sm:text-xs mt-0.5 sm:mt-1">Watch time</p>
-                </div>
-                <div class="text-center px-1">
-                    <div class="text-lg sm:text-2xl font-bold text-teal-400">4 steps</div>
-                    <p class="text-gray-500 text-[10px] sm:text-xs mt-0.5 sm:mt-1">CV to career</p>
-                </div>
-                <div class="text-center px-1">
-                    <div class="text-lg sm:text-2xl font-bold text-teal-400">Free</div>
-                    <p class="text-gray-500 text-[10px] sm:text-xs mt-0.5 sm:mt-1">No credit card</p>
-                </div>
-            </div>
-
         </div>
+
+        <!-- ===== BELOW VIDEO: QUICK STATS ===== -->
+        <div class="grid grid-cols-3 gap-2 sm:gap-4 mt-4 sm:mt-6">
+            <div class="text-center px-1">
+                <div class="text-lg sm:text-2xl font-bold text-teal-400">90s</div>
+                <p class="text-gray-500 text-[10px] sm:text-xs mt-0.5 sm:mt-1">Watch time</p>
+            </div>
+            <div class="text-center px-1">
+                <div class="text-lg sm:text-2xl font-bold text-teal-400">4 steps</div>
+                <p class="text-gray-500 text-[10px] sm:text-xs mt-0.5 sm:mt-1">CV to career</p>
+            </div>
+            <div class="text-center px-1">
+                <div class="text-lg sm:text-2xl font-bold text-teal-400">Free</div>
+                <p class="text-gray-500 text-[10px] sm:text-xs mt-0.5 sm:mt-1">No credit card</p>
+            </div>
+        </div>
+
     </div>
 </section>
+
+<!-- ============================================
+     VIDEO MODAL (Fullscreen Overlay — SlimFile style)
+     ============================================ -->
+<div id="videoModal" 
+     class="fixed inset-0 z-[9999] hidden items-center justify-center p-4 sm:p-6
+            bg-black/95 backdrop-blur-sm"
+     onclick="closeVideoModal()">
+
+    <!-- Close Button -->
+    <button onclick="closeVideoModal()"
+            class="absolute top-4 right-4 sm:top-6 sm:right-6 z-10
+                   w-10 h-10 sm:w-12 sm:h-12 rounded-full
+                   bg-white/10 hover:bg-white/20 backdrop-blur-sm
+                   flex items-center justify-center
+                   text-white hover:text-teal-400
+                   border border-white/20 hover:border-teal-400/50
+                   transition-all">
+        <i class="fas fa-times text-lg sm:text-xl"></i>
+    </button>
+
+    <!-- Video Container -->
+    <div class="relative w-full max-w-5xl" onclick="event.stopPropagation()">
+        <div class="rounded-2xl overflow-hidden shadow-2xl border border-teal-500/30 bg-black"
+             style="aspect-ratio: 16 / 9;">
+            <video id="modalVideo"
+                   class="w-full h-full object-contain"
+                   controls
+                   playsinline
+                   preload="auto">
+                <source src="https://twpqpeeqebsobgaawgug.supabase.co/storage/v1/object/public/talentforge-demo.mp4/WhatsApp%20Video%202026-10-12%20at%207.22.57%20PM.mp4" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
+        </div>
+    </div>
+</div>
 
 <!-- ============================================
      PROBLEM SECTION — Refined
@@ -800,74 +841,57 @@
 </section>
 
 <!-- ============================================
-     VIDEO CONTROLS SCRIPT
+     VIDEO MODAL SCRIPT
      ============================================ -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const video = document.getElementById('demoVideo');
-        const unmuteBtn = document.getElementById('unmuteBtn');
-        const volumeIcon = document.getElementById('volumeIcon');
-        const volumeText = document.getElementById('volumeText');
+    const videoModal = document.getElementById('videoModal');
+    const modalVideo = document.getElementById('modalVideo');
 
-        if (!video) return;
-
-        // ===== AUTOPLAY HANDLER =====
-        const playPromise = video.play();
-
-        if (playPromise !== undefined) {
-            playPromise
-                .then(() => {
-                    console.log('✅ Video autoplay started');
-                    if (typeof trackEvent === 'function') {
-                        trackEvent('video_autoplay_started', {
-                            video_name: 'TalentForge Demo'
-                        });
-                    }
-                })
-                .catch(err => {
-                    console.log('⚠️ Autoplay blocked:', err);
-                    // Fallback: show native controls so user can play
-                    video.controls = true;
-                    if (typeof trackEvent === 'function') {
-                        trackEvent('video_autoplay_blocked');
-                    }
-                });
-        }
-
-        // ===== UNMUTE BUTTON HANDLER =====
-        if (unmuteBtn) {
-            unmuteBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-
-                if (video.muted) {
-                    video.muted = false;
-                    video.volume = 1.0;
-                    volumeIcon.className = 'fas fa-volume-up';
-                    volumeText.textContent = 'Mute';
-
-                    if (typeof trackEvent === 'function') {
-                        trackEvent('video_unmuted');
-                    }
-                } else {
-                    video.muted = true;
-                    volumeIcon.className = 'fas fa-volume-mute';
-                    volumeText.textContent = 'Unmute';
-
-                    if (typeof trackEvent === 'function') {
-                        trackEvent('video_muted');
-                    }
-                }
+    function openVideoModal() {
+        // Show modal
+        videoModal.classList.remove('hidden');
+        videoModal.classList.add('flex');
+        
+        // Prevent body scroll
+        document.body.style.overflow = 'hidden';
+        
+        // Reset and play video with sound
+        modalVideo.currentTime = 0;
+        modalVideo.muted = false;
+        modalVideo.volume = 1.0;
+        
+        modalVideo.play().catch(err => {
+            console.log('Video play blocked, falling back to muted:', err);
+            modalVideo.muted = true;
+            modalVideo.play();
+        });
+        
+        // Track in Google Analytics
+        if (typeof trackEvent === 'function') {
+            trackEvent('video_modal_opened', {
+                video_name: 'TalentForge Demo'
             });
         }
+    }
 
-        // ===== PAUSE WHEN TAB HIDDEN =====
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden) {
-                video.pause();
-            } else {
-                video.play().catch(() => {});
-            }
-        });
+    function closeVideoModal() {
+        // Pause and reset video
+        modalVideo.pause();
+        modalVideo.currentTime = 0;
+        
+        // Hide modal
+        videoModal.classList.add('hidden');
+        videoModal.classList.remove('flex');
+        
+        // Restore body scroll
+        document.body.style.overflow = '';
+    }
+
+    // ESC key to close
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && !videoModal.classList.contains('hidden')) {
+            closeVideoModal();
+        }
     });
 </script>
 
