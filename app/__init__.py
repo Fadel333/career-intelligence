@@ -720,40 +720,40 @@ def register_routes(app):
     """Register all application routes"""
     
     # ========== PUBLIC ROUTES ==========
-@app.route('/')
-def index():
-    """Landing page with real stats"""
-    from models import NewsletterSubscriber
-    
-    # Real metrics
-    total_users = User.query.count()
-    total_students = User.query.filter_by(user_type='student').count()
-    total_recruiters = User.query.filter_by(user_type='recruiter').count()
-    total_jobs = Job.query.filter_by(status='published').count()
-    total_placements = Placement.query.count()
-    total_cvs = User.query.filter(User.cv_filename.isnot(None)).count()
-    
-    # Average employability score (only from users who have one)
-    avg_score = db.session.query(func.avg(User.employability_score)).filter(
-        User.employability_score.isnot(None),
-        User.employability_score > 0
-    ).scalar() or 0
-    
-    stats = {
-        'total_users': total_users,
-        'students': total_students,
-        'employers': total_recruiters,
-        'jobs': total_jobs,
-        'placements': total_placements,
-        'cvs_analyzed': total_cvs,
-        'avg_score': round(float(avg_score), 1)
-    }
-    
-    return render_template('landing.html', stats=stats)
+    @app.route('/')
+    def index():
+        """Landing page with real stats"""
+        # Real metrics
+        total_users = User.query.count()
+        total_students = User.query.filter_by(user_type='student').count()
+        total_recruiters = User.query.filter_by(user_type='recruiter').count()
+        total_jobs = Job.query.filter_by(status='published').count()
+        total_placements = Placement.query.count()
+        total_cvs = User.query.filter(User.cv_filename.isnot(None)).count()
+        
+        # Average employability score (only from users who have one)
+        avg_score = db.session.query(func.avg(User.employability_score)).filter(
+            User.employability_score.isnot(None),
+            User.employability_score > 0
+        ).scalar() or 0
+        
+        stats = {
+            'total_users': total_users,
+            'students': total_students,
+            'employers': total_recruiters,
+            'jobs': total_jobs,
+            'placements': total_placements,
+            'cvs_analyzed': total_cvs,
+            'avg_score': round(float(avg_score), 1)
+        }
+        
+        return render_template('landing.html', stats=stats)
     
     @app.route('/privacy-policy')
     def privacy_policy():
         return render_template('privacy_policy.html')
+    
+    
     
     @app.route('/terms-of-use')
     def terms_of_use():
