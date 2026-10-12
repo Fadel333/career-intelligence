@@ -965,3 +965,139 @@ def send_alert_test_no_matches_email(user, alert):
     """
 
     return send_email(subject, user.email, html)
+
+# ============================================
+# NEWSLETTER EMAILS
+# ============================================
+
+def send_welcome_newsletter_email(email, name=None):
+    """Send welcome email to new newsletter subscriber."""
+    base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
+    display_name = name or "there"
+    
+    subject = "Welcome to TalentForge AI Newsletter 🎉"
+    
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            body {{ font-family: 'Inter', Arial, sans-serif; background: #f8f6f0; color: #2c3e50; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }}
+            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #6366f1; }}
+            .logo {{ font-size: 28px; font-weight: 800; color: #2c3e50; }}
+            .logo span {{ color: #6366f1; }}
+            .tagline {{ color: #10b981; font-size: 14px; font-weight: 500; }}
+            .content {{ padding: 30px 0; }}
+            .footer {{ text-align: center; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }}
+        </style>
+    </head>
+    <body>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f8f6f0">
+            <tr>
+                <td align="center" style="padding: 20px 0;">
+                    <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="max-width: 600px; width: 100%; border-radius: 16px;">
+                        <tr>
+                            <td style="padding: 40px 30px;">
+                                <div class="header">
+                                    <div class="logo">TalentForge <span>AI</span></div>
+                                    <p class="tagline">Africa's Talent Intelligence Platform</p>
+                                </div>
+                                <div class="content">
+                                    <h2 style="color: #2c3e50;">Welcome, {display_name}! 🎉</h2>
+                                    <p style="color: #555; line-height: 1.6;">
+                                        Thanks for subscribing to the TalentForge AI newsletter! You'll be the first to hear about:
+                                    </p>
+                                    <div style="background: #f8f6f0; padding: 20px; border-radius: 12px; margin: 20px 0;">
+                                        <ul style="color: #555; padding-left: 20px; margin: 0;">
+                                            <li style="margin-bottom: 8px;">📊 New job market insights for Africa</li>
+                                            <li style="margin-bottom: 8px;">🚀 Feature updates and improvements</li>
+                                            <li style="margin-bottom: 8px;">💡 Career tips and learning resources</li>
+                                            <li>🎯 Job opportunities matching your skills</li>
+                                        </ul>
+                                    </div>
+                                    <p style="color: #555; line-height: 1.6;">
+                                        We typically send one update per week — no spam, ever.
+                                    </p>
+                                    {create_clickable_button('🚀 Visit TalentForge', base_url)}
+                                </div>
+                                <div class="footer">
+                                    <p>© 2026 TalentForge AI. All rights reserved.</p>
+                                    <p>Ghana · West Africa</p>
+                                    <p style="margin-top: 8px;">
+                                        <a href="{base_url}/newsletter/unsubscribe?email={email}" 
+                                           style="color: #999; text-decoration: underline;">Unsubscribe</a>
+                                    </p>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+    """
+    
+    return send_email(subject, email, html)
+
+
+def send_newsletter_broadcast(subscriber_email, subject, html_content):
+    """Send a newsletter to one subscriber.
+    Called in a loop by the admin broadcast route.
+    """
+    base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
+    
+    # Wrap the admin-provided HTML in our standard layout
+    wrapped_html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            body {{ font-family: 'Inter', Arial, sans-serif; background: #f8f6f0; color: #2c3e50; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); }}
+            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #6366f1; }}
+            .logo {{ font-size: 28px; font-weight: 800; color: #2c3e50; }}
+            .logo span {{ color: #6366f1; }}
+            .tagline {{ color: #10b981; font-size: 14px; font-weight: 500; }}
+            .content {{ padding: 30px 0; }}
+            .footer {{ text-align: center; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }}
+        </style>
+    </head>
+    <body>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f8f6f0">
+            <tr>
+                <td align="center" style="padding: 20px 0;">
+                    <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="max-width: 600px; width: 100%; border-radius: 16px;">
+                        <tr>
+                            <td style="padding: 40px 30px;">
+                                <div class="header">
+                                    <div class="logo">TalentForge <span>AI</span></div>
+                                    <p class="tagline">Africa's Talent Intelligence Platform</p>
+                                </div>
+                                <div class="content">
+                                    {html_content}
+                                </div>
+                                <div class="footer">
+                                    <p>© 2026 TalentForge AI. All rights reserved.</p>
+                                    <p>Ghana · West Africa</p>
+                                    <p style="margin-top: 8px;">
+                                        <a href="{base_url}/newsletter/unsubscribe?email={subscriber_email}" 
+                                           style="color: #999; text-decoration: underline;">Unsubscribe</a>
+                                    </p>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+    """
+    
+    return send_email(subject, subscriber_email, wrapped_html)

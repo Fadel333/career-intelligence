@@ -34,6 +34,7 @@ from models import User, Profile, RecruiterProfile, Candidate, Job, Placement, J
 from app.recruiter import recruiter_bp 
 from app.admin.routes import admin_bp 
 from app.jobs.routes import jobs_bp 
+from app.newsletter.routes import newsletter_bp
 from app.cli import register_commands
 
 # Initialize Flask-Mail ONCE
@@ -153,7 +154,7 @@ def configure_login_manager():
 def register_blueprints(app):
     """Register all blueprints"""
     app.register_blueprint(auth_bp, url_prefix='/auth')
-    
+    app.register_blueprint(newsletter_bp)
     # ✅ Register chat blueprint
     from app.chat.routes import chat_bp
     app.register_blueprint(chat_bp, url_prefix='/chat')

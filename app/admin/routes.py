@@ -8,6 +8,7 @@ from models import db, User, RecruiterProfile, Job, Placement
 from app.utils.decorators import admin_required
 
 from app.utils.email import send_verification_approved_email, send_verification_rejected_email
+from models import db, User, RecruiterProfile, Job, Placement, NewsletterSubscriber
 
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
@@ -230,3 +231,51 @@ def reset_verification(recruiter_id):
 
     flash(f'🔄 {recruiter.company_name} verification has been reset to pending.', 'info')
     return redirect(url_for('admin.verifications'))
+
+@admin_bp.route('/newsletter')
+@login_required
+@admin_required
+def newsletter_composer():
+    """Newsletter composer page"""
+    subscribers = NewsletterSubscriber.query.filter_by(is_active=True).all()
+    total_subs = len(subscribers)
+    
+    return render_template('admin/newsletter.html',
+        subscriber_count=total_subs,
+        subscribers=subscribers[:20]  # Show first 20
+    )
+
+
+@admin_bp.route('/newsletter/send', methods=['POST'])
+@login_required
+@admin_required
+def newsletter_send():
+    """Send newsletter to all active subscribers"""
+    from app.utils.email import send_newsletter_broadcast
+    
+    subject = request.form.get('subject', '').strip()
+    html_content = request.form.get('html_content', '').strip()
+    
+    if not subject or not html_content:
+        flash('Subject and content are required', 'error')
+        return redirect(url_for('admin.newsletter_composer'))
+    
+    subscribers = NewsletterSubscriber.query.filter_by(is_active=True).all()
+    
+    if not subscribers:
+        flash('No active subscribers to send to', 'warning')
+        return redirect(url_for('admin.newsletter_composer'))
+    
+    sent = 0
+    failed = 0
+    
+    for sub in subscribers:
+        try:
+            send_newsletter_broadcast(sub.email, subject, html_content)
+            sent += 1
+        except Exception as e:
+            failed += 1
+            print(f"❌ Failed to send to {sub.email}: {e}")
+    
+    flash(f'✅ Newsletter sent to {sent} subscribers ({failed} failed)', 'success')
+    return redirect(url_for('admin.newsletter_composer'))

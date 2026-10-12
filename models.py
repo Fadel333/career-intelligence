@@ -884,6 +884,19 @@ class InterviewResponse(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
+class NewsletterSubscriber(db.Model):
+    __tablename__ = 'newsletter_subscribers'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(255), unique=True, nullable=False)
+    name = db.Column(db.String(120))
+    is_active = db.Column(db.Boolean, default=True)
+    subscribed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    unsubscribed_at = db.Column(db.DateTime)
+    source = db.Column(db.String(50), default='footer')  # where they signed up
+    
+    def __repr__(self):
+        return f'<Subscriber {self.email}>'
 # ============================================
 # USER LOADER
 # ============================================

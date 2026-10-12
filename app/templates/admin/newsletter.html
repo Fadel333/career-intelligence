@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Newsletter Composer - Admin{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-8">
+
+    <!-- Header -->
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-white mb-1">📧 Newsletter Composer</h1>
+        <p class="text-white/60 text-sm">
+            Send updates to <span class="text-teal-400 font-semibold">{{ subscriber_count }}</span> active subscribers
+        </p>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="glass-card p-4">
+            <p class="text-white/60 text-xs">Active Subscribers</p>
+            <p class="text-2xl font-bold text-teal-400">{{ subscriber_count }}</p>
+        </div>
+        <div class="glass-card p-4">
+            <p class="text-white/60 text-xs">Daily SendGrid Limit</p>
+            <p class="text-2xl font-bold text-white">100</p>
+        </div>
+        <div class="glass-card p-4">
+            <p class="text-white/60 text-xs">Capacity Left</p>
+            <p class="text-2xl font-bold text-yellow-400">{{ 100 - subscriber_count }}</p>
+        </div>
+        <div class="glass-card p-4">
+            <p class="text-white/60 text-xs">Status</p>
+            <p class="text-sm font-semibold text-green-400 mt-1">
+                <span class="inline-block w-2 h-2 rounded-full bg-green-400 mr-1"></span>
+                Ready
+            </p>
+        </div>
+    </div>
+
+    <!-- Composer Form -->
+    <form method="POST" action="{{ url_for('admin.newsletter_send') }}" class="glass-card p-6">
+
+        <!-- Subject -->
+        <div class="mb-4">
+            <label class="text-white/70 text-sm font-medium block mb-2">
+                Subject Line <span class="text-red-400">*</span>
+            </label>
+            <input type="text" 
+                   name="subject" 
+                   required
+                   maxlength="120"
+                   placeholder="TalentForge Weekly — Top 5 Skills in Ghana"
+                   class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:border-teal-500/50 focus:outline-none transition">
+            <p class="text-white/40 text-xs mt-1">Keep it under 60 characters for best open rates</p>
+        </div>
+
+        <!-- HTML Content -->
+        <div class="mb-4">
+            <label class="text-white/70 text-sm font-medium block mb-2">
+                Email Content (HTML) <span class="text-red-400">*</span>
+            </label>
+            <textarea name="html_content" 
+                      rows="14" 
+                      required
+                      placeholder="<h2>Hello!</h2>&#10;<p>Here's what's new at TalentForge...</p>"
+                      class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white font-mono text-sm placeholder-white/30 focus:border-teal-500/50 focus:outline-none transition"></textarea>
+            <p class="text-white/40 text-xs mt-1">
+                Use HTML tags. The email will be wrapped in our branded template.
+            </p>
+        </div>
+
+        <!-- Quick Templates -->
+        <div class="mb-6">
+            <p class="text-white/70 text-sm font-medium mb-2">Quick Templates:</p>
+            <div class="flex flex-wrap gap-2">
+                <button type="button" 
+                        onclick="insertTemplate('weekly')"
+                        class="text-xs bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-3 py-1.5 text-white/70 hover:text-white transition">
+                    📊 Weekly Update
+                </button>
+                <button type="button" 
+                        onclick="insertTemplate('feature')"
+                        class="text-xs bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-3 py-1.5 text-white/70 hover:text-white transition">
+                    🚀 New Feature
+                </button>
+                <button type="button" 
+                        onclick="insertTemplate('jobs')"
+                        class="text-xs bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-3 py-1.5 text-white/70 hover:text-white transition">
+                    💼 Job Alert
+                </button>
+                <button type="button" 
+                        onclick="insertTemplate('tip')"
+                        class="text-xs bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg px-3 py-1.5 text-white/70 hover:text-white transition">
+                    💡 Career Tip
+                </button>
+            </div>
+        </div>
+
+        <!-- Send Button -->
+        <div class="flex flex-col sm:flex-row gap-3">
+            <button type="submit" 
+                    onclick="return confirm('Send newsletter to all {{ subscriber_count }} subscribers?')"
+                    class="btn-primary flex-1 py-3 rounded-xl font-semibold inline-flex items-center justify-center gap-2">
+                <i class="fas fa-paper-plane"></i>
+                Send to {{ subscriber_count }} Subscribers
+            </button>
+            <a href="{{ url_for('admin.index') }}" 
+               class="btn-secondary py-3 px-6 rounded-xl font-semibold inline-flex items-center justify-center gap-2">
+                Cancel
+            </a>
+        </div>
+
+        <p class="text-white/40 text-xs mt-3 text-center">
+            ⚠️ Emails are sent one-by-one in the background. Large lists may take a few minutes.
+        </p>
+    </form>
+
+    <!-- Recent Subscribers -->
+    {% if subscribers %}
+    <div class="glass-card p-6 mt-6">
+        <h3 class="text-white font-semibold mb-4">Recent Subscribers</h3>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="text-white/40 text-xs uppercase border-b border-white/10">
+                        <th class="text-left py-2 font-medium">Email</th>
+                        <th class="text-left py-2 font-medium">Source</th>
+                        <th class="text-left py-2 font-medium">Subscribed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sub in subscribers %}
+                    <tr class="border-b border-white/5">
+                        <td class="py-2 text-white/80">{{ sub.email }}</td>
+                        <td class="py-2 text-white/50 text-xs">{{ sub.source }}</td>
+                        <td class="py-2 text-white/50 text-xs">{{ sub.subscribed_at.strftime('%b %d, %Y') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+    const templates = {
+        weekly: `<h2>📊 Your Weekly TalentForge Update</h2>
+<p>Hello!</p>
+<p>Here's what's new in Africa's job market this week:</p>
+<h3>📈 Top Skills in Demand</h3>
+<ul>
+    <li><strong>Data Analysis</strong> — mentioned in 45% of new jobs</li>
+    <li><strong>Python</strong> — steady demand across tech roles</li>
+    <li><strong>Communication</strong> — soft skill in 80% of listings</li>
+</ul>
+<h3>💼 Featured Opportunities</h3>
+<p>Check out the latest jobs on our board.</p>
+<p>Stay sharp,<br>— The TalentForge Team</p>`,
+
+        feature: `<h2>🚀 New Feature Just Launched!</h2>
+<p>We're excited to announce a new feature on TalentForge AI:</p>
+<h3>[Feature Name]</h3>
+<p>[Describe what it does and why it matters.]</p>
+<p>Log in to try it out!</p>
+<p>— The TalentForge Team</p>`,
+
+        jobs: `<h2>💼 New Jobs Matching Your Skills</h2>
+<p>Hello!</p>
+<p>We found some new opportunities that might interest you:</p>
+<ul>
+    <li><strong>[Job Title]</strong> at [Company]</li>
+    <li><strong>[Job Title]</strong> at [Company]</li>
+    <li><strong>[Job Title]</strong> at [Company]</li>
+</ul>
+<p>Apply now before they close!</p>
+<p>— The TalentForge Team</p>`,
+
+        tip: `<h2>💡 Career Tip of the Week</h2>
+<p>Hello!</p>
+<p><strong>This week's tip:</strong></p>
+<blockquote>
+    [Insert your tip here — a short, actionable piece of advice]
+</blockquote>
+<p>Put it into practice this week and see the difference.</p>
+<p>— The TalentForge Team</p>`
+    };
+
+    function insertTemplate(key) {
+        const textarea = document.querySelector('textarea[name="html_content"]');
+        if (textarea) {
+            textarea.value = templates[key];
+            textarea.focus();
+        }
+    }
+</script>
+{% endblock %}
