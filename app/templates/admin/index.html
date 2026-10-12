@@ -594,6 +594,35 @@
         {% endif %}
     </div>
 
+    <!-- ===== NEWSLETTER COMPOSER ACCESS ===== -->
+<div class="panel mb-6" style="border-color: rgba(45, 212, 191, 0.3);">
+    <div class="panel-body" style="padding: 20px 22px;">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div class="flex items-center gap-4">
+                <div class="metric-icon-wrap metric-icon-teal" style="width: 48px; height: 48px; font-size: 20px;">
+                    <i class="fas fa-paper-plane"></i>
+                </div>
+                <div>
+                    <h3 class="text-white font-semibold text-base mb-1">Newsletter Composer</h3>
+                    <p class="text-white/50 text-xs">
+                        Send announcements and updates to your subscribers
+                    </p>
+                    <p class="text-teal-400 text-xs mt-1 font-medium">
+                        <i class="fas fa-users mr-1"></i>
+                        {{ subscriber_count if subscriber_count else '0' }} active subscribers
+                    </p>
+                </div>
+            </div>
+            <a href="{{ url_for('admin.newsletter_composer') }}" 
+               class="btn-review" 
+               style="padding: 10px 20px; font-size: 13px;">
+                <i class="fas fa-envelope-open-text"></i>
+                Open Composer
+            </a>
+        </div>
+    </div>
+</div>
+
     <!-- ===== DIVIDER ===== -->
     <div class="flex items-center gap-4 my-8">
         <div class="flex-1 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>

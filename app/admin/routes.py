@@ -4,12 +4,9 @@ from flask_login import login_required, current_user
 from sqlalchemy import desc, func
 from datetime import datetime, timedelta
 
-from models import db, User, RecruiterProfile, Job, Placement
-from app.utils.decorators import admin_required
-
-from app.utils.email import send_verification_approved_email, send_verification_rejected_email
 from models import db, User, RecruiterProfile, Job, Placement, NewsletterSubscriber
-
+from app.utils.decorators import admin_required
+from app.utils.email import send_verification_approved_email, send_verification_rejected_email
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -30,7 +27,7 @@ def index():
     total_jobs = Job.query.count()
     total_placements = Placement.query.count()
 
-    # ========== NEW: USER METRICS ==========
+    # ========== USER METRICS ==========
     total_users = User.query.count()
     users_today = User.query.filter(User.created_at >= today).count()
     users_this_week = User.query.filter(User.created_at >= week_ago).count()
@@ -38,19 +35,19 @@ def index():
     total_students = User.query.filter_by(user_type='student').count()
     total_recruiter_users = User.query.filter_by(user_type='recruiter').count()
 
-    # ========== NEW: CV METRICS ==========
+    # ========== CV METRICS ==========
     cvs_uploaded = User.query.filter(User.cv_filename.isnot(None)).count()
     cvs_this_week = User.query.filter(
         User.cv_uploaded_at >= week_ago,
         User.cv_filename.isnot(None)
     ).count()
 
-    # ========== NEW: EMPLOYABILITY SCORE ==========
+    # ========== EMPLOYABILITY SCORE ==========
     avg_score = db.session.query(func.avg(User.employability_score)).filter(
         User.employability_score.isnot(None)
     ).scalar() or 0
 
-    # ========== NEW: SIGNUPS OVER 30 DAYS (for chart) ==========
+    # ========== SIGNUPS OVER 30 DAYS ==========
     signups_by_day = db.session.query(
         func.date(User.created_at).label('date'),
         func.count(User.id).label('count')
@@ -67,7 +64,7 @@ def index():
         for row in signups_by_day
     ]
 
-    # ========== NEW: TOP SECTORS ==========
+    # ========== TOP SECTORS ==========
     top_sectors = db.session.query(
         User.detected_sector,
         func.count(User.id).label('count')
@@ -80,14 +77,17 @@ def index():
         func.count(User.id).desc()
     ).limit(5).all()
 
-    # ========== NEW: RECENT SIGNUPS ==========
+    # ========== RECENT SIGNUPS ==========
     recent_users = User.query.order_by(
         desc(User.created_at)
     ).limit(10).all()
 
-    # ========== EXISTING: Pending recruiters ==========
+    # ========== PENDING RECRUITERS ==========
     pending_recruiters = RecruiterProfile.query.filter_by(verification_status='pending')\
         .order_by(desc(RecruiterProfile.created_at)).all()
+
+    # ========== NEWSLETTER SUBSCRIBERS ==========
+    subscriber_count = NewsletterSubscriber.query.filter_by(is_active=True).count()
 
     return render_template('admin/index.html',
         # Existing
@@ -96,25 +96,27 @@ def index():
         total_jobs=total_jobs,
         total_placements=total_placements,
         pending_recruiters=pending_recruiters,
-        # New - user metrics
+        # User metrics
         total_users=total_users,
         users_today=users_today,
         users_this_week=users_this_week,
         total_students=total_students,
         total_recruiter_users=total_recruiter_users,
-        # New - CV metrics
+        # CV metrics
         cvs_uploaded=cvs_uploaded,
         cvs_this_week=cvs_this_week,
         cv_completion_rate=round((cvs_uploaded / total_users * 100), 1) if total_users else 0,
-        # New - score
+        # Score
         avg_score=round(float(avg_score), 1),
-        # New - chart
+        # Chart
         chart_data=chart_data,
-        # New - sectors
+        # Sectors
         top_sectors=top_sectors,
-        # New - recent
+        # Recent
         recent_users=recent_users,
-        # For "updated at"
+        # Newsletter
+        subscriber_count=subscriber_count,
+        # Timestamp
         now=now
     )
 
@@ -160,13 +162,11 @@ def approve_verification(recruiter_id):
     """Approve a recruiter's verification request"""
     recruiter = RecruiterProfile.query.get_or_404(recruiter_id)
 
-    # Update verification status
     recruiter.verification_status = 'approved'
     recruiter.verified_at = datetime.utcnow()
     recruiter.verified_by = current_user.id
     recruiter.rejection_reason = None
 
-    # Update all documents status
     if recruiter.verification_documents:
         for doc in recruiter.verification_documents:
             doc['status'] = 'approved'
@@ -192,12 +192,10 @@ def reject_verification(recruiter_id):
         flash('Please provide a reason for rejection.', 'error')
         return redirect(url_for('admin.verification_detail', recruiter_id=recruiter_id))
 
-    # Update verification status
     recruiter.verification_status = 'rejected'
     recruiter.rejection_reason = rejection_reason
     recruiter.verified_by = current_user.id
 
-    # Update all documents status
     if recruiter.verification_documents:
         for doc in recruiter.verification_documents:
             doc['status'] = 'rejected'
@@ -222,7 +220,6 @@ def reset_verification(recruiter_id):
     recruiter.verified_by = None
     recruiter.rejection_reason = None
 
-    # Reset all documents status
     if recruiter.verification_documents:
         for doc in recruiter.verification_documents:
             doc['status'] = 'pending'
@@ -232,6 +229,7 @@ def reset_verification(recruiter_id):
     flash(f'🔄 {recruiter.company_name} verification has been reset to pending.', 'info')
     return redirect(url_for('admin.verifications'))
 
+
 @admin_bp.route('/newsletter')
 @login_required
 @admin_required
@@ -239,10 +237,10 @@ def newsletter_composer():
     """Newsletter composer page"""
     subscribers = NewsletterSubscriber.query.filter_by(is_active=True).all()
     total_subs = len(subscribers)
-    
+
     return render_template('admin/newsletter.html',
         subscriber_count=total_subs,
-        subscribers=subscribers[:20]  # Show first 20
+        subscribers=subscribers[:20]
     )
 
 
@@ -252,23 +250,23 @@ def newsletter_composer():
 def newsletter_send():
     """Send newsletter to all active subscribers"""
     from app.utils.email import send_newsletter_broadcast
-    
+
     subject = request.form.get('subject', '').strip()
     html_content = request.form.get('html_content', '').strip()
-    
+
     if not subject or not html_content:
         flash('Subject and content are required', 'error')
         return redirect(url_for('admin.newsletter_composer'))
-    
+
     subscribers = NewsletterSubscriber.query.filter_by(is_active=True).all()
-    
+
     if not subscribers:
         flash('No active subscribers to send to', 'warning')
         return redirect(url_for('admin.newsletter_composer'))
-    
+
     sent = 0
     failed = 0
-    
+
     for sub in subscribers:
         try:
             send_newsletter_broadcast(sub.email, subject, html_content)
@@ -276,6 +274,6 @@ def newsletter_send():
         except Exception as e:
             failed += 1
             print(f"❌ Failed to send to {sub.email}: {e}")
-    
+
     flash(f'✅ Newsletter sent to {sent} subscribers ({failed} failed)', 'success')
     return redirect(url_for('admin.newsletter_composer'))
