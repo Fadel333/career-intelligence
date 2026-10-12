@@ -728,7 +728,7 @@ def register_routes(app):
             'jobs': get_real_job_count(),
             'placements': get_real_placement_count()
         }
-        return render_template('base.html', stats=stats)
+        return render_template('landing.html', stats=stats)
     
     @app.route('/privacy-policy')
     def privacy_policy():
