@@ -501,7 +501,7 @@
             background: #484f58;
         }
         
-        /* ===== DROPDOWN MENU ===== */
+        /* ===== DROPDOWN MENU (User Menu) ===== */
         .dropdown-menu {
             background: #161b22;
             border: 1px solid #30363d;
@@ -529,6 +529,115 @@
             width: 20px;
             color: #8b949e;
         }
+        
+        /* ===== TOOLS DROPDOWN (Enhanced) ===== */
+        .tools-dropdown {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+            padding: 0.4rem 0;
+            min-width: 280px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .tools-dropdown::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .tools-dropdown::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 2px;
+        }
+        
+        .tools-dropdown::-webkit-scrollbar-thumb:hover {
+            background: #484f58;
+        }
+        
+        .tool-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 1rem;
+            color: #8b949e;
+            font-size: 0.85rem;
+            transition: all 0.15s ease;
+            text-decoration: none;
+        }
+        
+        .tool-item:hover {
+            color: #f0f6fc;
+            background: #21262d;
+        }
+        
+        .tool-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.15s ease;
+        }
+        
+        .tool-icon-teal {
+            background: rgba(45, 212, 191, 0.1);
+            border: 1px solid rgba(45, 212, 191, 0.2);
+            color: #2dd4bf;
+        }
+        
+        .tool-icon-blue {
+            background: rgba(88, 166, 255, 0.1);
+            border: 1px solid rgba(88, 166, 255, 0.2);
+            color: #58a6ff;
+        }
+        
+        .tool-icon-purple {
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            color: #a78bfa;
+        }
+        
+        .tool-icon-neutral {
+            background: rgba(139, 148, 158, 0.1);
+            border: 1px solid rgba(139, 148, 158, 0.2);
+            color: #8b949e;
+        }
+        
+        .tool-item:hover .tool-icon-teal {
+            background: rgba(45, 212, 191, 0.2);
+            border-color: rgba(45, 212, 191, 0.4);
+        }
+        
+        .tool-item:hover .tool-icon-blue {
+            background: rgba(88, 166, 255, 0.2);
+            border-color: rgba(88, 166, 255, 0.4);
+        }
+        
+        .tool-item:hover .tool-icon-purple {
+            background: rgba(139, 92, 246, 0.2);
+            border-color: rgba(139, 92, 246, 0.4);
+        }
+        
+        .tool-item:hover .tool-icon-neutral {
+            background: rgba(139, 148, 158, 0.2);
+            border-color: rgba(139, 148, 158, 0.4);
+        }
+        
+        .tool-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.5rem 1rem 0.25rem 1rem;
+        }
+        
+        .tool-label-teal { color: #2dd4bf; }
+        .tool-label-blue { color: #58a6ff; }
+        .tool-label-purple { color: #a78bfa; }
+        .tool-label-neutral { color: #8b949e; }
     </style>
 </head>
 <body>
@@ -673,6 +782,196 @@
         
         <div class="topbar-right">
             {% if current_user.is_authenticated %}
+            
+            <!-- ===== TOOLS DROPDOWN (NEW) ===== -->
+            <div class="relative group hidden md:block">
+                <button class="btn-topbar btn-topbar-secondary flex items-center gap-2">
+                    <i class="fas fa-th-large text-xs"></i>
+                    <span>Tools</span>
+                    <i class="fas fa-chevron-down text-[10px] opacity-60"></i>
+                </button>
+                
+                <!-- Dropdown panel -->
+                <div class="absolute right-0 top-full mt-2 tools-dropdown opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
+                    
+                    {% if current_user.is_student() %}
+                    <!-- STUDENT TOOLS -->
+                    <div class="tool-label tool-label-teal">
+                        <i class="fas fa-graduation-cap mr-1"></i> Student Tools
+                    </div>
+                    
+                    <a href="{{ url_for('upload_cv') }}" class="tool-item">
+                        <div class="tool-icon tool-icon-teal">
+                            <i class="fas fa-upload text-xs"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white text-xs font-medium">Upload CV</p>
+                            <p class="text-gray-500 text-[10px] truncate">Get instant AI analysis</p>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('skill_analysis') }}" class="tool-item">
+                        <div class="tool-icon tool-icon-teal">
+                            <i class="fas fa-chart-line text-xs"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white text-xs font-medium">Skill Analysis</p>
+                            <p class="text-gray-500 text-[10px] truncate">See your gaps vs. market</p>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('learning_roadmap') }}" class="tool-item">
+                        <div class="tool-icon tool-icon-teal">
+                            <i class="fas fa-road text-xs"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white text-xs font-medium">Learning Roadmap</p>
+                            <p class="text-gray-500 text-[10px] truncate">Personalized learning plan</p>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('job_matches') }}" class="tool-item">
+                        <div class="tool-icon tool-icon-teal">
+                            <i class="fas fa-briefcase text-xs"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white text-xs font-medium">Job Matches</p>
+                            <p class="text-gray-500 text-[10px] truncate">Jobs ranked by your skills</p>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('interview_practice_hub') }}" class="tool-item">
+                        <div class="tool-icon tool-icon-teal">
+                            <i class="fas fa-microphone text-xs"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white text-xs font-medium">Interview Practice</p>
+                            <p class="text-gray-500 text-[10px] truncate">Practice with AI feedback</p>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('career_assistant') }}" class="tool-item">
+                        <div class="tool-icon tool-icon-teal">
+                            <i class="fas fa-robot text-xs"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white text-xs font-medium">AI Assistant</p>
+                            <p class="text-gray-500 text-[10px] truncate">Ask career questions</p>
+                        </div>
+                    </a>
+                    {% endif %}
+                    
+                    {% if current_user.is_recruiter() %}
+                    <!-- RECRUITER TOOLS -->
+                    <div class="tool-label tool-label-blue">
+                        <i class="fas fa-building mr-1"></i> Recruiter Tools
+                    </div>
+                    
+                    <a href="{{ url_for('recruiter.create_job') }}" class="tool-item">
+                        <div class="tool-icon tool-icon-blue">
+                            <i class="fas fa-plus-circle text-xs"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white text-xs font-medium">Post a Job</p>
+                            <p class="text-gray-500 text-[10px] truncate">Create a new listing</p>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('recruiter.candidates') }}" class="tool-item">
+                        <div class="tool-icon tool-icon-blue">
+                            <i class="fas fa-users text-xs"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white text-xs font-medium">Find Candidates</p>
+                            <p class="text-gray-500 text-[10px] truncate">Search pre-analyzed talent</p>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('recruiter.shortlist') }}" class="tool-item">
+                        <div class="tool-icon tool-icon-blue">
+                            <i class="fas fa-star text-xs"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white text-xs font-medium">Shortlist</p>
+                            <p class="text-gray-500 text-[10px] truncate">Your saved candidates</p>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('recruiter.analytics') }}" class="tool-item">
+                        <div class="tool-icon tool-icon-blue">
+                            <i class="fas fa-chart-pie text-xs"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white text-xs font-medium">Analytics</p>
+                            <p class="text-gray-500 text-[10px] truncate">Hiring insights & metrics</p>
+                        </div>
+                    </a>
+                    {% endif %}
+                    
+                    {% if current_user.is_admin() %}
+                    <!-- ADMIN TOOLS -->
+                    <div class="tool-label tool-label-purple">
+                        <i class="fas fa-shield-alt mr-1"></i> Admin Tools
+                    </div>
+                    
+                    <a href="{{ url_for('admin.index') }}" class="tool-item">
+                        <div class="tool-icon tool-icon-purple">
+                            <i class="fas fa-chart-line text-xs"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white text-xs font-medium">Admin Dashboard</p>
+                            <p class="text-gray-500 text-[10px] truncate">Platform metrics</p>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('admin.newsletter_composer') }}" class="tool-item">
+                        <div class="tool-icon tool-icon-purple">
+                            <i class="fas fa-paper-plane text-xs"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white text-xs font-medium">Newsletter</p>
+                            <p class="text-gray-500 text-[10px] truncate">Send announcements</p>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('admin.verifications') }}" class="tool-item">
+                        <div class="tool-icon tool-icon-purple">
+                            <i class="fas fa-user-check text-xs"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white text-xs font-medium">Verifications</p>
+                            <p class="text-gray-500 text-[10px] truncate">Review recruiter requests</p>
+                        </div>
+                    </a>
+                    {% endif %}
+                    
+                    <!-- Divider -->
+                    <div class="border-t border-[#30363d] my-1"></div>
+                    
+                    <!-- COMMON -->
+                    <a href="{{ url_for('jobs.job_board') }}" class="tool-item">
+                        <div class="tool-icon tool-icon-neutral">
+                            <i class="fas fa-briefcase text-xs"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white text-xs font-medium">Job Board</p>
+                            <p class="text-gray-500 text-[10px] truncate">Browse all opportunities</p>
+                        </div>
+                    </a>
+                    
+                    <a href="{{ url_for('profile') }}" class="tool-item">
+                        <div class="tool-icon tool-icon-neutral">
+                            <i class="fas fa-user text-xs"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-white text-xs font-medium">My Profile</p>
+                            <p class="text-gray-500 text-[10px] truncate">Manage your account</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- ===== USER MENU ===== -->
             <div class="relative group">
                 <button class="user-menu">
                     {% if current_user.profile_image %}
@@ -938,6 +1237,26 @@
                 msg.className = 'text-xs mt-1.5 text-red-400';
                 btn.textContent = 'Subscribe';
                 btn.disabled = false;
+            }
+        });
+
+        // ===== Keyboard Shortcut: Ctrl+K opens Tools =====
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                
+                // Only trigger if user is logged in and Tools button exists
+                const toolsBtn = document.querySelector('.topbar-right .group button.btn-topbar');
+                if (toolsBtn) {
+                    // Simulate hover to open the dropdown
+                    const dropdown = toolsBtn.nextElementSibling;
+                    if (dropdown) {
+                        dropdown.classList.remove('opacity-0', 'invisible');
+                        setTimeout(() => {
+                            dropdown.classList.add('opacity-0', 'invisible');
+                        }, 3000);
+                    }
+                }
             }
         });
     </script>
