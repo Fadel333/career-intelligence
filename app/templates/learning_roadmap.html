@@ -3,211 +3,233 @@
 {% block title %}Your Learning Roadmap - TalentForge AI{% endblock %}
 
 {% block content %}
-<section class="max-w-7xl mx-auto px-6 py-8">
-    <div class="mb-8" data-aos="fade-up">
-        <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">Your Personalized Learning Roadmap</h1>
-        <p class="text-white/60">AI-powered course recommendations to close your skill gaps</p>
+<section class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+    <!-- ===== HEADER ===== -->
+    <div class="mb-6 sm:mb-8" data-aos="fade-up">
+        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2">
+            Your Personalized Learning Roadmap
+        </h1>
+        <p class="text-white/60 text-sm sm:text-base">
+            AI-powered course recommendations to close your skill gaps
+        </p>
     </div>
 
     {% if not parsed_data or not parsed_data.get('skills') %}
-    <!-- No CV Uploaded Yet -->
-    <div class="glass-card p-12 text-center" data-aos="fade-up">
-        <i class="fas fa-cloud-upload-alt text-6xl text-white/30 mb-4"></i>
-        <h2 class="text-2xl font-bold text-white mb-2">No CV Uploaded Yet</h2>
-        <p class="text-white/60 mb-6">Upload your CV to get personalized learning recommendations</p>
-        <a href="{{ url_for('upload_cv') }}" class="btn-primary px-8 py-3 rounded-full text-white font-semibold inline-flex items-center gap-2">
+    <!-- ===== NO CV UPLOADED ===== -->
+    <div class="glass-card p-8 sm:p-12 text-center" data-aos="fade-up">
+        <i class="fas fa-cloud-upload-alt text-5xl sm:text-6xl text-white/30 mb-4"></i>
+        <h2 class="text-xl sm:text-2xl font-bold text-white mb-2">No CV Uploaded Yet</h2>
+        <p class="text-white/60 text-sm sm:text-base mb-6">
+            Upload your CV to get personalized learning recommendations
+        </p>
+        <a href="{{ url_for('upload_cv') }}" 
+           class="btn-primary px-6 sm:px-8 py-3 rounded-full text-white font-semibold inline-flex items-center gap-2">
             <i class="fas fa-upload"></i> Upload CV Now
         </a>
     </div>
     {% else %}
-    
+
     {% set all_skills = [] %}
     {% for category, skills in parsed_data.skills.items() %}
         {% for skill in skills %}
             {% set _ = all_skills.append(skill) %}
         {% endfor %}
     {% endfor %}
-    
+
     {% set employability = skill_analyzer.calculate_employability_score(all_skills, parsed_data.get('experience_years', 0)) %}
     {% set gaps = skill_analyzer.analyze_gaps(all_skills) %}
     {% set roadmap = skill_analyzer.generate_learning_roadmap(gaps) %}
 
-    <!-- Overall Progress -->
-    <div class="glass-card p-6 mb-8" data-aos="fade-up">
-        <h2 class="text-xl font-bold text-white mb-4">Your Learning Progress</h2>
-        <div class="grid md:grid-cols-4 gap-6">
-            <div class="text-center">
-                <div class="text-2xl font-bold text-teal-400">{{ employability.total_skills_matched }}</div>
-                <div class="text-white/60 text-sm">Skills Mastered</div>
+    <!-- ===== OVERALL PROGRESS ===== -->
+    <div class="glass-card p-4 sm:p-6 mb-6 sm:mb-8" data-aos="fade-up">
+        <h2 class="text-lg sm:text-xl font-bold text-white mb-4">Your Learning Progress</h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
+            <div class="text-center p-2">
+                <div class="text-xl sm:text-2xl font-bold text-teal-400">
+                    {{ employability.total_skills_matched }}
+                </div>
+                <div class="text-white/60 text-xs sm:text-sm mt-1">Skills Mastered</div>
             </div>
-            <div class="text-center">
-                <div class="text-2xl font-bold text-orange-400">{{ gaps|length }}</div>
-                <div class="text-white/60 text-sm">Skills to Learn</div>
+            <div class="text-center p-2">
+                <div class="text-xl sm:text-2xl font-bold text-orange-400">{{ gaps|length }}</div>
+                <div class="text-white/60 text-xs sm:text-sm mt-1">Skills to Learn</div>
             </div>
-            <div class="text-center">
-                <div class="text-2xl font-bold text-purple-400">
+            <div class="text-center p-2">
+                <div class="text-xl sm:text-2xl font-bold text-purple-400">
                     {% set total_weeks = 0 %}
                     {% for gap in gaps[:5] %}
                         {% set _ = total_weeks + 4 %}
                     {% endfor %}
                     {{ total_weeks }}
                 </div>
-                <div class="text-white/60 text-sm">Estimated Weeks</div>
+                <div class="text-white/60 text-xs sm:text-sm mt-1">Estimated Weeks</div>
             </div>
-            <div class="text-center">
-                <div class="text-2xl font-bold text-pink-400">
+            <div class="text-center p-2">
+                <div class="text-xl sm:text-2xl font-bold text-pink-400">
                     {% set total_hours = gaps|length * 20 %}
                     {{ total_hours }}
                 </div>
-                <div class="text-white/60 text-sm">Learning Hours</div>
+                <div class="text-white/60 text-xs sm:text-sm mt-1">Learning Hours</div>
             </div>
         </div>
     </div>
 
-    <div class="grid lg:grid-cols-3 gap-8">
-        <!-- Main Roadmap Content -->
-        <div class="lg:col-span-2 space-y-8">
-            
-            <!-- Immediate Priority (Critical) -->
+    <!-- ===== MAIN GRID ===== -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
+
+        <!-- ===== MAIN ROADMAP ===== -->
+        <div class="lg:col-span-2 space-y-6 sm:space-y-8 order-2 lg:order-1">
+
+            <!-- Immediate Priority -->
             {% if roadmap.immediate %}
-            <div class="glass-card p-6" data-aos="fade-right">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-10 h-10 bg-red-500/20 rounded-full flex items-center justify-center">
-                        <i class="fas fa-fire text-red-400"></i>
+            <div class="glass-card p-4 sm:p-6" data-aos="fade-right">
+                <div class="flex items-start sm:items-center gap-3 mb-4">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-fire text-red-400 text-sm sm:text-base"></i>
                     </div>
-                    <h2 class="text-xl font-bold text-white">Immediate Priority (0-2 Weeks)</h2>
+                    <div class="min-w-0">
+                        <h2 class="text-base sm:text-xl font-bold text-white">
+                            Immediate Priority
+                        </h2>
+                        <p class="text-white/50 text-xs sm:text-sm">0–2 weeks</p>
+                    </div>
                 </div>
-                <p class="text-white/60 text-sm mb-4">These skills are critical for your career growth. Start with these!</p>
-                
-                <div class="space-y-4">
+                <p class="text-white/60 text-xs sm:text-sm mb-4">
+                    These skills are critical for your career growth. Start with these!
+                </p>
+
+                <div class="space-y-3 sm:space-y-4">
                     {% for item in roadmap.immediate %}
-                    <div class="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition">
-                        <div class="flex items-start justify-between">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <span class="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold">{{ item.id }}</span>
-                                    <h3 class="text-lg font-bold text-white">{{ item.skill }}</h3>
-                                    <span class="bg-red-500/20 text-red-400 text-xs px-2 py-1 rounded-full">Critical</span>
-                                </div>
-                                
-                                <!-- Display Real Courses -->
-                                {% if item.courses %}
-                                <div class="space-y-2 mt-3">
-                                    <p class="text-white/60 text-xs font-semibold">📚 Recommended Courses:</p>
-                                    {% for course in item.courses[:2] %}
-                                    <div class="flex items-center gap-2 p-2 bg-white/5 rounded-lg hover:bg-white/10 transition">
-                                        <i class="{{ course.icon or 'fas fa-graduation-cap' }} {{ course.color or 'text-teal-400' }} text-lg"></i>
-                                        <div class="flex-1 min-w-0">
-                                            <p class="text-white text-sm truncate">{{ course.title }}</p>
-                                            <div class="flex flex-wrap gap-2 text-xs text-white/50">
-                                                <span><i class="fas fa-clock mr-1"></i>{{ course.duration }}</span>
-                                                <span><i class="fas fa-hourglass-half mr-1"></i>{{ course.effort }}</span>
-                                                {% if course.certificate %}
-                                                <span class="text-teal-400">✓ Certificate</span>
-                                                {% endif %}
-                                                {% if course.free %}
-                                                <span class="text-green-400">✓ Free</span>
-                                                {% endif %}
-                                                {% if course.price and course.price != 'Free' %}
-                                                <span class="text-yellow-400">💰 {{ course.price }}</span>
-                                                {% endif %}
-                                            </div>
+                    <div class="bg-white/5 rounded-xl p-3 sm:p-4 hover:bg-white/10 transition">
+                        <!-- Skill Header -->
+                        <div class="flex flex-wrap items-center gap-2 mb-3">
+                            <span class="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">{{ item.id }}</span>
+                            <h3 class="text-base sm:text-lg font-bold text-white break-words">{{ item.skill }}</h3>
+                            <span class="bg-red-500/20 text-red-400 text-[10px] sm:text-xs px-2 py-0.5 sm:py-1 rounded-full">Critical</span>
+                        </div>
+
+                        <!-- Courses -->
+                        {% if item.courses %}
+                        <div class="space-y-2">
+                            <p class="text-white/60 text-[11px] sm:text-xs font-semibold">📚 Recommended Courses:</p>
+                            {% for course in item.courses[:2] %}
+                            <div class="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition">
+                                <div class="flex items-start gap-3">
+                                    <i class="{{ course.icon or 'fas fa-graduation-cap' }} {{ course.color or 'text-teal-400' }} text-lg sm:text-xl flex-shrink-0 mt-0.5"></i>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-white text-sm font-medium break-words">{{ course.title }}</p>
+                                        <div class="flex flex-wrap gap-2 text-[10px] sm:text-xs text-white/50 mt-1">
+                                            <span><i class="fas fa-clock mr-1"></i>{{ course.duration }}</span>
+                                            <span><i class="fas fa-hourglass-half mr-1"></i>{{ course.effort }}</span>
+                                            {% if course.certificate %}
+                                            <span class="text-teal-400">✓ Certificate</span>
+                                            {% endif %}
+                                            {% if course.free %}
+                                            <span class="text-green-400">✓ Free</span>
+                                            {% endif %}
+                                            {% if course.price and course.price != 'Free' %}
+                                            <span class="text-yellow-400">💰 {{ course.price }}</span>
+                                            {% endif %}
                                         </div>
-                                        <a href="{{ course.url or '#' }}" target="_blank" class="btn-primary px-3 py-1 rounded-full text-white text-xs font-semibold whitespace-nowrap">
-                                            Enroll <i class="fas fa-arrow-right ml-1"></i>
+                                        <a href="{{ course.url or '#' }}" target="_blank" 
+                                           class="btn-primary inline-flex items-center gap-1 px-3 py-1 rounded-full text-white text-[11px] sm:text-xs font-semibold mt-2">
+                                            Enroll <i class="fas fa-arrow-right"></i>
                                         </a>
                                     </div>
-                                    {% endfor %}
                                 </div>
-                                {% else %}
-                                <p class="text-teal-400 text-sm mb-2">{{ item.course_name or 'Course coming soon' }}</p>
-                                <div class="flex flex-wrap gap-3 text-xs text-white/60">
-                                    <span><i class="fas fa-clock mr-1"></i> {{ item.duration or '4 weeks' }}</span>
-                                    <span><i class="fas fa-hourglass-half mr-1"></i> {{ item.effort or '4 hrs/week' }}</span>
-                                    {% if item.certification %}
-                                    <span><i class="fas fa-certificate text-teal-400 mr-1"></i> Certificate Included</span>
-                                    {% endif %}
-                                </div>
-                                {% endif %}
-                                
-                                <!-- Display Certifications -->
-                                {% if item.certifications %}
-                                <div class="mt-3">
-                                    <p class="text-white/60 text-xs font-semibold">🏆 Recommended Certifications:</p>
-                                    <div class="flex flex-wrap gap-2 mt-1">
-                                        {% for cert in item.certifications[:2] %}
-                                        <span class="bg-yellow-500/20 text-yellow-300 text-xs px-2 py-1 rounded-full">
-                                            <i class="fas fa-certificate mr-1"></i>{{ cert.name }}
-                                        </span>
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-teal-400 text-sm mb-2">{{ item.course_name or 'Course coming soon' }}</p>
+                        <div class="flex flex-wrap gap-3 text-xs text-white/60">
+                            <span><i class="fas fa-clock mr-1"></i> {{ item.duration or '4 weeks' }}</span>
+                            <span><i class="fas fa-hourglass-half mr-1"></i> {{ item.effort or '4 hrs/week' }}</span>
+                            {% if item.certification %}
+                            <span><i class="fas fa-certificate text-teal-400 mr-1"></i> Certificate</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Certifications -->
+                        {% if item.certifications %}
+                        <div class="mt-3">
+                            <p class="text-white/60 text-[11px] sm:text-xs font-semibold">🏆 Recommended Certifications:</p>
+                            <div class="flex flex-wrap gap-2 mt-1.5">
+                                {% for cert in item.certifications[:2] %}
+                                <span class="bg-yellow-500/20 text-yellow-300 text-[10px] sm:text-xs px-2 py-1 rounded-full">
+                                    <i class="fas fa-certificate mr-1"></i>{{ cert.name }}
+                                </span>
+                                {% endfor %}
                             </div>
                         </div>
+                        {% endif %}
                     </div>
                     {% endfor %}
                 </div>
             </div>
             {% endif %}
 
-            <!-- Short Term (High Priority) -->
+            <!-- Short Term -->
             {% if roadmap.short_term %}
-            <div class="glass-card p-6" data-aos="fade-right" data-aos-delay="100">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-10 h-10 bg-orange-500/20 rounded-full flex items-center justify-center">
-                        <i class="fas fa-chart-line text-orange-400"></i>
+            <div class="glass-card p-4 sm:p-6" data-aos="fade-right" data-aos-delay="100">
+                <div class="flex items-start sm:items-center gap-3 mb-4">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 bg-orange-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-chart-line text-orange-400 text-sm sm:text-base"></i>
                     </div>
-                    <h2 class="text-xl font-bold text-white">Short Term (2-6 Weeks)</h2>
+                    <div class="min-w-0">
+                        <h2 class="text-base sm:text-xl font-bold text-white">
+                            Short Term
+                        </h2>
+                        <p class="text-white/50 text-xs sm:text-sm">2–6 weeks</p>
+                    </div>
                 </div>
-                <p class="text-white/60 text-sm mb-4">Build these skills to significantly boost your employability.</p>
-                
-                <div class="space-y-4">
+                <p class="text-white/60 text-xs sm:text-sm mb-4">
+                    Build these skills to significantly boost your employability.
+                </p>
+
+                <div class="space-y-3 sm:space-y-4">
                     {% for item in roadmap.short_term %}
-                    <div class="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition">
-                        <div class="flex items-start justify-between">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <span class="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold">{{ item.id }}</span>
-                                    <h3 class="text-lg font-bold text-white">{{ item.skill }}</h3>
-                                    <span class="bg-orange-500/20 text-orange-400 text-xs px-2 py-1 rounded-full">High Priority</span>
-                                </div>
-                                
-                                <!-- Display Real Courses -->
-                                {% if item.courses %}
-                                <div class="space-y-2 mt-3">
-                                    <p class="text-white/60 text-xs font-semibold">📚 Recommended Courses:</p>
-                                    {% for course in item.courses[:2] %}
-                                    <div class="flex items-center gap-2 p-2 bg-white/5 rounded-lg hover:bg-white/10 transition">
-                                        <i class="{{ course.icon or 'fas fa-graduation-cap' }} {{ course.color or 'text-teal-400' }} text-lg"></i>
-                                        <div class="flex-1 min-w-0">
-                                            <p class="text-white text-sm truncate">{{ course.title }}</p>
-                                            <div class="flex flex-wrap gap-2 text-xs text-white/50">
-                                                <span><i class="fas fa-clock mr-1"></i>{{ course.duration }}</span>
-                                                <span><i class="fas fa-hourglass-half mr-1"></i>{{ course.effort }}</span>
-                                                {% if course.certificate %}
-                                                <span class="text-teal-400">✓ Certificate</span>
-                                                {% endif %}
-                                            </div>
+                    <div class="bg-white/5 rounded-xl p-3 sm:p-4 hover:bg-white/10 transition">
+                        <div class="flex flex-wrap items-center gap-2 mb-3">
+                            <span class="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">{{ item.id }}</span>
+                            <h3 class="text-base sm:text-lg font-bold text-white break-words">{{ item.skill }}</h3>
+                            <span class="bg-orange-500/20 text-orange-400 text-[10px] sm:text-xs px-2 py-0.5 sm:py-1 rounded-full">High Priority</span>
+                        </div>
+
+                        {% if item.courses %}
+                        <div class="space-y-2">
+                            <p class="text-white/60 text-[11px] sm:text-xs font-semibold">📚 Recommended Courses:</p>
+                            {% for course in item.courses[:2] %}
+                            <div class="bg-white/5 rounded-lg p-3 hover:bg-white/10 transition">
+                                <div class="flex items-start gap-3">
+                                    <i class="{{ course.icon or 'fas fa-graduation-cap' }} {{ course.color or 'text-teal-400' }} text-lg sm:text-xl flex-shrink-0 mt-0.5"></i>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-white text-sm font-medium break-words">{{ course.title }}</p>
+                                        <div class="flex flex-wrap gap-2 text-[10px] sm:text-xs text-white/50 mt-1">
+                                            <span><i class="fas fa-clock mr-1"></i>{{ course.duration }}</span>
+                                            <span><i class="fas fa-hourglass-half mr-1"></i>{{ course.effort }}</span>
+                                            {% if course.certificate %}
+                                            <span class="text-teal-400">✓ Certificate</span>
+                                            {% endif %}
                                         </div>
-                                        <a href="{{ course.url or '#' }}" target="_blank" class="btn-outline px-3 py-1 rounded-full text-white text-xs font-semibold whitespace-nowrap">
-                                            View <i class="fas fa-external-link-alt ml-1"></i>
+                                        <a href="{{ course.url or '#' }}" target="_blank" 
+                                           class="btn-outline inline-flex items-center gap-1 px-3 py-1 rounded-full text-white text-[11px] sm:text-xs font-semibold mt-2">
+                                            View <i class="fas fa-external-link-alt"></i>
                                         </a>
                                     </div>
-                                    {% endfor %}
                                 </div>
-                                {% else %}
-                                <p class="text-teal-400 text-sm mb-2">{{ item.course_name or 'Course coming soon' }}</p>
-                                <div class="flex flex-wrap gap-3 text-xs text-white/60">
-                                    <span><i class="fas fa-clock mr-1"></i> {{ item.duration or '4 weeks' }}</span>
-                                    <span><i class="fas fa-hourglass-half mr-1"></i> {{ item.effort or '4 hrs/week' }}</span>
-                                    {% if item.certification %}
-                                    <span><i class="fas fa-certificate text-teal-400 mr-1"></i> Certificate Included</span>
-                                    {% endif %}
-                                </div>
-                                {% endif %}
                             </div>
+                            {% endfor %}
                         </div>
+                        {% else %}
+                        <p class="text-teal-400 text-sm mb-2">{{ item.course_name or 'Course coming soon' }}</p>
+                        <div class="flex flex-wrap gap-3 text-xs text-white/60">
+                            <span><i class="fas fa-clock mr-1"></i> {{ item.duration or '4 weeks' }}</span>
+                            <span><i class="fas fa-hourglass-half mr-1"></i> {{ item.effort or '4 hrs/week' }}</span>
+                        </div>
+                        {% endif %}
                     </div>
                     {% endfor %}
                 </div>
@@ -216,24 +238,31 @@
 
             <!-- Medium Term -->
             {% if roadmap.medium_term %}
-            <div class="glass-card p-6" data-aos="fade-right" data-aos-delay="200">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-10 h-10 bg-yellow-500/20 rounded-full flex items-center justify-center">
-                        <i class="fas fa-calendar-alt text-yellow-400"></i>
+            <div class="glass-card p-4 sm:p-6" data-aos="fade-right" data-aos-delay="200">
+                <div class="flex items-start sm:items-center gap-3 mb-4">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 bg-yellow-500/20 rounded-full flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-calendar-alt text-yellow-400 text-sm sm:text-base"></i>
                     </div>
-                    <h2 class="text-xl font-bold text-white">Medium Term (6-12 Weeks)</h2>
+                    <div class="min-w-0">
+                        <h2 class="text-base sm:text-xl font-bold text-white">
+                            Medium Term
+                        </h2>
+                        <p class="text-white/50 text-xs sm:text-sm">6–12 weeks</p>
+                    </div>
                 </div>
-                <p class="text-white/60 text-sm mb-4">Advanced skills that will make you stand out.</p>
-                
-                <div class="space-y-4">
+                <p class="text-white/60 text-xs sm:text-sm mb-4">
+                    Advanced skills that will make you stand out.
+                </p>
+
+                <div class="space-y-3 sm:space-y-4">
                     {% for item in roadmap.medium_term %}
-                    <div class="bg-white/5 rounded-xl p-4 hover:bg-white/10 transition">
-                        <div class="flex items-start justify-between">
-                            <div class="flex-1">
-                                <div class="flex items-center gap-2 mb-2">
-                                    <span class="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-white text-xs font-bold">{{ item.id }}</span>
-                                    <h3 class="text-lg font-bold text-white">{{ item.skill }}</h3>
-                                    <span class="bg-yellow-500/20 text-yellow-400 text-xs px-2 py-1 rounded-full">Medium Priority</span>
+                    <div class="bg-white/5 rounded-xl p-3 sm:p-4 hover:bg-white/10 transition">
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex flex-wrap items-center gap-2 mb-2">
+                                    <span class="w-6 h-6 bg-yellow-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">{{ item.id }}</span>
+                                    <h3 class="text-base sm:text-lg font-bold text-white break-words">{{ item.skill }}</h3>
+                                    <span class="bg-yellow-500/20 text-yellow-400 text-[10px] sm:text-xs px-2 py-0.5 sm:py-1 rounded-full">Medium</span>
                                 </div>
                                 <p class="text-teal-400 text-sm mb-2">{{ item.course_name or 'Coming soon' }}</p>
                                 <div class="flex flex-wrap gap-3 text-xs text-white/60">
@@ -241,8 +270,8 @@
                                     <span><i class="fas fa-hourglass-half mr-1"></i> {{ item.effort or '4 hrs/week' }}</span>
                                 </div>
                             </div>
-                            <button class="btn-outline px-4 py-2 rounded-full text-white text-sm font-semibold">
-                                Save <i class="fas fa-bookmark ml-1"></i>
+                            <button class="btn-outline px-4 py-2 rounded-full text-white text-xs sm:text-sm font-semibold whitespace-nowrap self-start sm:self-auto">
+                                <i class="fas fa-bookmark mr-1"></i> Save
                             </button>
                         </div>
                     </div>
@@ -252,39 +281,40 @@
             {% endif %}
         </div>
 
-        <!-- Sidebar - Resources & Tips -->
-        <div class="space-y-8">
+        <!-- ===== SIDEBAR ===== -->
+        <div class="space-y-6 sm:space-y-8 order-1 lg:order-2">
+
             <!-- Learning Platforms -->
-            <div class="glass-card p-6" data-aos="fade-left">
-                <h3 class="text-lg font-bold text-white mb-4">
+            <div class="glass-card p-4 sm:p-6" data-aos="fade-left">
+                <h3 class="text-base sm:text-lg font-bold text-white mb-4">
                     <i class="fas fa-graduation-cap text-teal-400 mr-2"></i> Learning Platforms
                 </h3>
-                <div class="space-y-3">
+                <div class="space-y-2 sm:space-y-3">
                     <a href="https://www.coursera.org" target="_blank" class="flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition">
-                        <i class="fab fa-coursera text-2xl text-blue-400"></i>
-                        <div>
-                            <p class="text-white font-medium">Coursera</p>
-                            <p class="text-white/50 text-xs">University-accredited courses</p>
+                        <i class="fab fa-coursera text-xl sm:text-2xl text-blue-400 flex-shrink-0"></i>
+                        <div class="min-w-0">
+                            <p class="text-white font-medium text-sm">Coursera</p>
+                            <p class="text-white/50 text-xs">University-accredited</p>
                         </div>
                     </a>
                     <a href="https://www.udemy.com" target="_blank" class="flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition">
-                        <i class="fab fa-udemy text-2xl text-purple-400"></i>
-                        <div>
-                            <p class="text-white font-medium">Udemy</p>
-                            <p class="text-white/50 text-xs">Affordable practical courses</p>
+                        <i class="fab fa-udemy text-xl sm:text-2xl text-purple-400 flex-shrink-0"></i>
+                        <div class="min-w-0">
+                            <p class="text-white font-medium text-sm">Udemy</p>
+                            <p class="text-white/50 text-xs">Practical courses</p>
                         </div>
                     </a>
                     <a href="https://www.youtube.com" target="_blank" class="flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition">
-                        <i class="fab fa-youtube text-2xl text-red-400"></i>
-                        <div>
-                            <p class="text-white font-medium">YouTube</p>
-                            <p class="text-white/50 text-xs">Free tutorials & guides</p>
+                        <i class="fab fa-youtube text-xl sm:text-2xl text-red-400 flex-shrink-0"></i>
+                        <div class="min-w-0">
+                            <p class="text-white font-medium text-sm">YouTube</p>
+                            <p class="text-white/50 text-xs">Free tutorials</p>
                         </div>
                     </a>
                     <a href="https://aws.amazon.com/training" target="_blank" class="flex items-center gap-3 p-3 bg-white/5 rounded-lg hover:bg-white/10 transition">
-                        <i class="fab fa-aws text-2xl text-orange-400"></i>
-                        <div>
-                            <p class="text-white font-medium">AWS Training</p>
+                        <i class="fab fa-aws text-xl sm:text-2xl text-orange-400 flex-shrink-0"></i>
+                        <div class="min-w-0">
+                            <p class="text-white font-medium text-sm">AWS Training</p>
                             <p class="text-white/50 text-xs">Cloud certifications</p>
                         </div>
                     </a>
@@ -292,40 +322,40 @@
             </div>
 
             <!-- Study Tips -->
-            <div class="glass-card p-6" data-aos="fade-left" data-aos-delay="100">
-                <h3 class="text-lg font-bold text-white mb-4">
+            <div class="glass-card p-4 sm:p-6" data-aos="fade-left" data-aos-delay="100">
+                <h3 class="text-base sm:text-lg font-bold text-white mb-4">
                     <i class="fas fa-lightbulb text-teal-400 mr-2"></i> Study Tips
                 </h3>
-                <div class="space-y-3">
+                <div class="space-y-2.5 sm:space-y-3">
                     <div class="flex items-start gap-2">
-                        <i class="fas fa-check-circle text-teal-400 text-sm mt-0.5"></i>
+                        <i class="fas fa-check-circle text-teal-400 text-sm mt-0.5 flex-shrink-0"></i>
                         <p class="text-white/70 text-sm">Set weekly learning goals</p>
                     </div>
                     <div class="flex items-start gap-2">
-                        <i class="fas fa-check-circle text-teal-400 text-sm mt-0.5"></i>
+                        <i class="fas fa-check-circle text-teal-400 text-sm mt-0.5 flex-shrink-0"></i>
                         <p class="text-white/70 text-sm">Practice with real projects</p>
                     </div>
                     <div class="flex items-start gap-2">
-                        <i class="fas fa-check-circle text-teal-400 text-sm mt-0.5"></i>
-                        <p class="text-white/70 text-sm">Join study groups or communities</p>
+                        <i class="fas fa-check-circle text-teal-400 text-sm mt-0.5 flex-shrink-0"></i>
+                        <p class="text-white/70 text-sm">Join study groups</p>
                     </div>
                     <div class="flex items-start gap-2">
-                        <i class="fas fa-check-circle text-teal-400 text-sm mt-0.5"></i>
-                        <p class="text-white/70 text-sm">Take notes and review regularly</p>
+                        <i class="fas fa-check-circle text-teal-400 text-sm mt-0.5 flex-shrink-0"></i>
+                        <p class="text-white/70 text-sm">Review notes regularly</p>
                     </div>
                     <div class="flex items-start gap-2">
-                        <i class="fas fa-check-circle text-teal-400 text-sm mt-0.5"></i>
-                        <p class="text-white/70 text-sm">Build a portfolio as you learn</p>
+                        <i class="fas fa-check-circle text-teal-400 text-sm mt-0.5 flex-shrink-0"></i>
+                        <p class="text-white/70 text-sm">Build a portfolio</p>
                     </div>
                 </div>
             </div>
 
-            <!-- Motivation Card -->
-            <div class="glass-card p-6 text-center" data-aos="fade-left" data-aos-delay="200">
-                <i class="fas fa-trophy text-4xl text-teal-400 mb-3"></i>
-                <h3 class="text-lg font-bold text-white mb-2">Stay Motivated!</h3>
-                <p class="text-white/60 text-sm">
-                    Complete your learning roadmap to increase employability by up to 40%
+            <!-- Motivation -->
+            <div class="glass-card p-4 sm:p-6 text-center" data-aos="fade-left" data-aos-delay="200">
+                <i class="fas fa-trophy text-3xl sm:text-4xl text-teal-400 mb-3"></i>
+                <h3 class="text-base sm:text-lg font-bold text-white mb-2">Stay Motivated!</h3>
+                <p class="text-white/60 text-xs sm:text-sm">
+                    Complete your roadmap to increase employability by up to 40%
                 </p>
                 <div class="mt-4 h-2 bg-white/10 rounded-full overflow-hidden">
                     <div class="h-full bg-gradient-to-r from-teal-400 to-purple-600 rounded-full" style="width: 0%"></div>
@@ -333,12 +363,13 @@
                 <p class="text-white/40 text-xs mt-2">Track your progress as you complete courses</p>
             </div>
 
-            <!-- Download Roadmap -->
-            <div class="glass-card p-6 text-center" data-aos="fade-left" data-aos-delay="250">
-                <i class="fas fa-download text-3xl text-teal-400 mb-3"></i>
-                <h3 class="text-lg font-bold text-white mb-2">Download Roadmap</h3>
-                <p class="text-white/60 text-sm mb-3">Get a PDF version of your learning plan</p>
-                <button onclick="window.print()" class="btn-outline w-full py-2 rounded-full text-white font-semibold">
+            <!-- Download -->
+            <div class="glass-card p-4 sm:p-6 text-center" data-aos="fade-left" data-aos-delay="250">
+                <i class="fas fa-download text-2xl sm:text-3xl text-teal-400 mb-3"></i>
+                <h3 class="text-base sm:text-lg font-bold text-white mb-2">Download Roadmap</h3>
+                <p class="text-white/60 text-xs sm:text-sm mb-3">Get a PDF of your learning plan</p>
+                <button onclick="window.print()" 
+                        class="btn-outline w-full py-2 rounded-full text-white font-semibold text-sm">
                     <i class="fas fa-file-pdf mr-2"></i> Download PDF
                 </button>
             </div>
