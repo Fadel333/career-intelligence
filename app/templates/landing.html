@@ -791,6 +791,145 @@
 </section>
 
 <!-- ============================================
+     WHY CHOOSE US — 3 Trust Pillars
+     ============================================ -->
+<section class="py-16 border-t border-[#30363d]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6">
+        
+        <div class="text-center mb-12 max-w-2xl mx-auto">
+            <span class="inline-block text-teal-400 font-semibold text-xs uppercase tracking-widest mb-3">
+                Why TalentForge
+            </span>
+            <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">
+                Built different.
+                <span class="text-gray-500">On purpose.</span>
+            </h2>
+        </div>
+        
+        <div class="grid md:grid-cols-3 gap-5">
+            <!-- Pillar 1 -->
+            <div class="card p-6 text-center hover:border-teal-500/40 transition">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500/20 to-cyan-500/10 border border-teal-500/30 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-bolt text-teal-400 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-white mb-2">AI-Powered</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">
+                    Real African job market data. Not templates, not guesses, not generic advice from Silicon Valley.
+                </p>
+            </div>
+            
+            <!-- Pillar 2 -->
+            <div class="card p-6 text-center hover:border-teal-500/40 transition">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500/20 to-cyan-500/10 border border-teal-500/30 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-lock text-teal-400 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-white mb-2">Privacy-First</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">
+                    Your CV stays private. We don't sell your data. We don't share it. Ever. Built with your trust in mind.
+                </p>
+            </div>
+            
+            <!-- Pillar 3 -->
+            <div class="card p-6 text-center hover:border-teal-500/40 transition">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-500/20 to-cyan-500/10 border border-teal-500/30 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-globe-africa text-teal-400 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-semibold text-white mb-2">Africa-First</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">
+                    Built in Ghana, for Africa. We understand the local job market, local employers, local reality.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================
+     FAQ SECTION
+     ============================================ -->
+<section class="py-16 border-t border-[#30363d]">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6">
+        
+        <div class="text-center mb-12">
+            <span class="inline-block text-teal-400 font-semibold text-xs uppercase tracking-widest mb-3">
+                Common Questions
+            </span>
+            <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4">
+                Everything you need to know
+            </h2>
+        </div>
+        
+        <div class="space-y-3">
+            {% for faq in [
+                {'q': 'Is TalentForge AI really free?', 'a': 'Yes — 100% free for students and job seekers. We plan to add premium features for recruiters and universities in the future, but the core platform will always be free for students.'},
+                {'q': 'Is my CV safe?', 'a': 'Absolutely. Your CV is encrypted in transit and at rest. We never sell your data or share your CV with anyone without your explicit permission. You can delete your account and data anytime.'},
+                {'q': 'How does the AI work?', 'a': 'We use Google Gemini to parse your CV, extract skills, and match them against real African job market data. Every recommendation links back to actual data — no black boxes, no guessing.'},
+                {'q': 'How accurate is the skill analysis?', 'a': 'Our skill extraction is 90%+ accurate on standard CVs. The job market matching is based on real postings from major African job boards, updated regularly.'},
+                {'q': 'Do I need to pay for a subscription?', 'a': 'No. No credit card required. No hidden fees. No trial periods. Free forever for students.'}
+            ] %}
+            <details class="card p-5 group cursor-pointer">
+                <summary class="flex items-center justify-between list-none">
+                    <span class="text-white font-medium text-sm pr-4">{{ faq.q }}</span>
+                    <i class="fas fa-chevron-down text-teal-400 text-xs transition-transform group-open:rotate-180"></i>
+                </summary>
+                <p class="text-gray-400 text-sm mt-3 leading-relaxed pl-0">
+                    {{ faq.a }}
+                </p>
+            </details>
+            {% endfor %}
+        </div>
+        
+        <p class="text-center text-gray-500 text-sm mt-8">
+            Still have questions? 
+            <a href="mailto:faditechnologies@gmail.com" class="text-teal-400 hover:text-teal-300 underline">
+                Email us
+            </a>
+        </p>
+    </div>
+</section>
+
+<!-- ============================================
+     GUEST MODE CTA
+     ============================================ -->
+<section class="py-16 border-t border-[#30363d]">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6">
+        <div class="card p-8 sm:p-10 text-center border-teal-500/30 relative overflow-hidden"
+             style="background: linear-gradient(145deg, rgba(45, 212, 191, 0.08) 0%, rgba(22, 27, 34, 0.95) 100%);">
+            
+            <div class="absolute top-0 right-0 w-64 h-64 rounded-full bg-teal-500/10 blur-3xl pointer-events-none"></div>
+            
+            <div class="relative z-10">
+                <div class="inline-flex items-center gap-2 bg-teal-500/20 px-3 py-1.5 rounded-full mb-4 border border-teal-500/40">
+                    <i class="fas fa-bolt text-teal-400 text-xs"></i>
+                    <span class="text-teal-400 text-xs font-semibold uppercase tracking-wider">No Signup Required</span>
+                </div>
+                
+                <h2 class="text-3xl sm:text-4xl font-bold text-white mb-4 leading-tight">
+                    Try it now.
+                    <br>
+                    <span class="text-teal-400">See your score in 30 seconds.</span>
+                </h2>
+                
+                <p class="text-gray-400 text-base mb-8 max-w-xl mx-auto">
+                    Upload your CV and get an instant employability score, skill gaps preview, 
+                    and a peek at your personalized roadmap — no account needed.
+                </p>
+                
+                <a href="{{ url_for('guest_upload') }}" 
+                   class="btn-primary text-base px-8 py-3.5 rounded-lg shadow-lg shadow-teal-500/30 inline-flex items-center gap-2">
+                    <i class="fas fa-rocket"></i>
+                    Analyze My CV — Free
+                    <i class="fas fa-arrow-right text-sm"></i>
+                </a>
+                
+                <p class="text-gray-500 text-xs mt-4">
+                    <i class="fas fa-lock mr-1"></i>
+                    Your CV is deleted after analysis. No account. No tracking.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- ============================================
      FINAL CTA
      ============================================ -->
 <section class="py-20 border-t border-[#30363d] relative overflow-hidden">

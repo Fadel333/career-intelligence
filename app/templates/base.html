@@ -3,15 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>{% block title %}TalentForge AI | Africa's Talent Intelligence Platform - AI-Powered Employability & Talent Analytics{% endblock %}</title>
+    <title>{% block title %}TalentForge AI | Africa's Talent Intelligence Platform{% endblock %}</title>
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
-    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/logo.svg') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon.ico') }}">
     
@@ -24,15 +21,24 @@
         })(window, document, "clarity", "script", "xzoxxcak0g");
     </script>
     
-    <!-- ===== GOOGLE ANALYTICS (ONLY ONCE, OUTSIDE STYLE) ===== -->
+    <!-- ===== GOOGLE ANALYTICS (GDPR Consent Mode v2) ===== -->
     {% if config.GA_MEASUREMENT_ID %}
-    <script async src="https://www.googletagmanager.com/gtag/js?id={{ config.GA_MEASUREMENT_ID }}"></script>
     <script>
         window.dataLayer = window.dataLayer || [];
         function gtag(){dataLayer.push(arguments);}
+        
+        // STEP 1: Default — deny until user accepts
+        gtag('consent', 'default', {
+            'analytics_storage': 'denied',
+            'ad_storage': 'denied',
+            'ad_user_data': 'denied',
+            'ad_personalization': 'denied'
+        });
+        
+        // STEP 2: Load GA
         gtag('js', new Date());
         gtag('config', '{{ config.GA_MEASUREMENT_ID }}');
-
+        
         // Custom event tracker helper
         function trackEvent(name, params = {}) {
             if (typeof gtag !== 'undefined') {
@@ -40,6 +46,7 @@
             }
         }
     </script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ config.GA_MEASUREMENT_ID }}"></script>
     {% endif %}
     
     <style>
@@ -282,7 +289,7 @@
             padding: 0 2rem 2rem 2rem;
         }
         
-        /* ===== OVERLEAF-STYLE CARDS ===== */
+        /* ===== CARDS ===== */
         .card {
             background: #161b22;
             border-radius: 6px;
@@ -294,25 +301,7 @@
             border-color: #58a6ff;
         }
         
-        .card-header {
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid #30363d;
-            background: #0d1117;
-            border-radius: 6px 6px 0 0;
-        }
-        
-        .card-body {
-            padding: 1rem;
-        }
-        
-        .card-footer {
-            padding: 0.75rem 1rem;
-            border-top: 1px solid #30363d;
-            background: #0d1117;
-            border-radius: 0 0 6px 6px;
-        }
-        
-        /* ===== OVERLEAF-STYLE BUTTONS ===== */
+        /* ===== BUTTONS ===== */
         .btn-primary {
             background: #238636;
             color: #ffffff;
@@ -354,27 +343,7 @@
             border-color: #8b949e;
         }
         
-        .btn-outline {
-            background: transparent;
-            color: #58a6ff;
-            font-weight: 500;
-            transition: all 0.15s ease;
-            border: 1px solid #58a6ff;
-            padding: 0.4rem 1rem;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            text-decoration: none;
-        }
-        
-        .btn-outline:hover {
-            background: #1f2937;
-        }
-        
-        /* ===== OVERLEAF-STYLE FORM ELEMENTS ===== */
+        /* ===== FORM ELEMENTS ===== */
         input, textarea, select {
             background: #0d1117;
             border: 1px solid #30363d;
@@ -396,37 +365,7 @@
             outline: none;
         }
         
-        /* ===== OVERLEAF-STYLE BADGES ===== */
-        .badge {
-            display: inline-block;
-            padding: 0.1rem 0.5rem;
-            border-radius: 9999px;
-            font-size: 0.7rem;
-            font-weight: 500;
-        }
-        
-        .badge-success {
-            background: #238636;
-            color: #ffffff;
-        }
-        .badge-warning {
-            background: #9e6a03;
-            color: #f0f6fc;
-        }
-        .badge-danger {
-            background: #da3633;
-            color: #ffffff;
-        }
-        .badge-info {
-            background: #1f6feb;
-            color: #ffffff;
-        }
-        .badge-neutral {
-            background: #21262d;
-            color: #8b949e;
-        }
-        
-        /* ===== OVERLEAF-STYLE STATS ===== */
+        /* ===== STATS ===== */
         .stat-number {
             font-size: 1.75rem;
             font-weight: 600;
@@ -445,63 +384,31 @@
         }
         
         @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-8px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            .sidebar.open {
-                transform: translateX(0);
-            }
-            .main-content {
-                margin-left: 0;
-            }
-            .main-content-inner {
-                padding: 0 1rem 1rem 1rem;
-            }
-            .topbar {
-                padding: 0.4rem 1rem;
-            }
-            .topbar-left .breadcrumb .hide-mobile {
-                display: none;
-            }
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .main-content-inner { padding: 0 1rem 1rem 1rem; }
+            .topbar { padding: 0.4rem 1rem; }
         }
         
         @media (max-width: 480px) {
-            .stat-number {
-                font-size: 1.25rem;
-            }
-            .main-content-inner {
-                padding: 0 0.75rem 0.75rem 0.75rem;
-            }
+            .stat-number { font-size: 1.25rem; }
+            .main-content-inner { padding: 0 0.75rem 0.75rem 0.75rem; }
         }
         
         /* ===== SCROLLBAR ===== */
-        ::-webkit-scrollbar {
-            width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #0d1117;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #30363d;
-            border-radius: 3px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #484f58;
-        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0d1117; }
+        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #484f58; }
         
-        /* ===== DROPDOWN MENU (User Menu) ===== */
+        /* ===== DROPDOWN MENU (User) ===== */
         .dropdown-menu {
             background: #161b22;
             border: 1px solid #30363d;
@@ -530,7 +437,7 @@
             color: #8b949e;
         }
         
-        /* ===== TOOLS DROPDOWN (Enhanced) ===== */
+        /* ===== TOOLS DROPDOWN ===== */
         .tools-dropdown {
             background: #161b22;
             border: 1px solid #30363d;
@@ -540,19 +447,6 @@
             min-width: 280px;
             max-height: 80vh;
             overflow-y: auto;
-        }
-        
-        .tools-dropdown::-webkit-scrollbar {
-            width: 4px;
-        }
-        
-        .tools-dropdown::-webkit-scrollbar-thumb {
-            background: #30363d;
-            border-radius: 2px;
-        }
-        
-        .tools-dropdown::-webkit-scrollbar-thumb:hover {
-            background: #484f58;
         }
         
         .tool-item {
@@ -606,25 +500,10 @@
             color: #8b949e;
         }
         
-        .tool-item:hover .tool-icon-teal {
-            background: rgba(45, 212, 191, 0.2);
-            border-color: rgba(45, 212, 191, 0.4);
-        }
-        
-        .tool-item:hover .tool-icon-blue {
-            background: rgba(88, 166, 255, 0.2);
-            border-color: rgba(88, 166, 255, 0.4);
-        }
-        
-        .tool-item:hover .tool-icon-purple {
-            background: rgba(139, 92, 246, 0.2);
-            border-color: rgba(139, 92, 246, 0.4);
-        }
-        
-        .tool-item:hover .tool-icon-neutral {
-            background: rgba(139, 148, 158, 0.2);
-            border-color: rgba(139, 148, 158, 0.4);
-        }
+        .tool-item:hover .tool-icon-teal { background: rgba(45, 212, 191, 0.2); border-color: rgba(45, 212, 191, 0.4); }
+        .tool-item:hover .tool-icon-blue { background: rgba(88, 166, 255, 0.2); border-color: rgba(88, 166, 255, 0.4); }
+        .tool-item:hover .tool-icon-purple { background: rgba(139, 92, 246, 0.2); border-color: rgba(139, 92, 246, 0.4); }
+        .tool-item:hover .tool-icon-neutral { background: rgba(139, 148, 158, 0.2); border-color: rgba(139, 148, 158, 0.4); }
         
         .tool-label {
             font-size: 10px;
@@ -638,6 +517,12 @@
         .tool-label-blue { color: #58a6ff; }
         .tool-label-purple { color: #a78bfa; }
         .tool-label-neutral { color: #8b949e; }
+        
+        /* ===== COOKIE BANNER ===== */
+        @keyframes slideUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
     </style>
 </head>
 <body>
@@ -783,7 +668,7 @@
         <div class="topbar-right">
             {% if current_user.is_authenticated %}
             
-            <!-- ===== TOOLS DROPDOWN (NEW) ===== -->
+            <!-- ===== TOOLS DROPDOWN ===== -->
             <div class="relative group hidden md:block">
                 <button class="btn-topbar btn-topbar-secondary flex items-center gap-2">
                     <i class="fas fa-th-large text-xs"></i>
@@ -791,69 +676,49 @@
                     <i class="fas fa-chevron-down text-[10px] opacity-60"></i>
                 </button>
                 
-                <!-- Dropdown panel -->
                 <div class="absolute right-0 top-full mt-2 tools-dropdown opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-50">
                     
                     {% if current_user.is_student() %}
-                    <!-- STUDENT TOOLS -->
                     <div class="tool-label tool-label-teal">
                         <i class="fas fa-graduation-cap mr-1"></i> Student Tools
                     </div>
-                    
                     <a href="{{ url_for('upload_cv') }}" class="tool-item">
-                        <div class="tool-icon tool-icon-teal">
-                            <i class="fas fa-upload text-xs"></i>
-                        </div>
+                        <div class="tool-icon tool-icon-teal"><i class="fas fa-upload text-xs"></i></div>
                         <div class="flex-1 min-w-0">
                             <p class="text-white text-xs font-medium">Upload CV</p>
                             <p class="text-gray-500 text-[10px] truncate">Get instant AI analysis</p>
                         </div>
                     </a>
-                    
                     <a href="{{ url_for('skill_analysis') }}" class="tool-item">
-                        <div class="tool-icon tool-icon-teal">
-                            <i class="fas fa-chart-line text-xs"></i>
-                        </div>
+                        <div class="tool-icon tool-icon-teal"><i class="fas fa-chart-line text-xs"></i></div>
                         <div class="flex-1 min-w-0">
                             <p class="text-white text-xs font-medium">Skill Analysis</p>
                             <p class="text-gray-500 text-[10px] truncate">See your gaps vs. market</p>
                         </div>
                     </a>
-                    
                     <a href="{{ url_for('learning_roadmap') }}" class="tool-item">
-                        <div class="tool-icon tool-icon-teal">
-                            <i class="fas fa-road text-xs"></i>
-                        </div>
+                        <div class="tool-icon tool-icon-teal"><i class="fas fa-road text-xs"></i></div>
                         <div class="flex-1 min-w-0">
                             <p class="text-white text-xs font-medium">Learning Roadmap</p>
                             <p class="text-gray-500 text-[10px] truncate">Personalized learning plan</p>
                         </div>
                     </a>
-                    
                     <a href="{{ url_for('job_matches') }}" class="tool-item">
-                        <div class="tool-icon tool-icon-teal">
-                            <i class="fas fa-briefcase text-xs"></i>
-                        </div>
+                        <div class="tool-icon tool-icon-teal"><i class="fas fa-briefcase text-xs"></i></div>
                         <div class="flex-1 min-w-0">
                             <p class="text-white text-xs font-medium">Job Matches</p>
                             <p class="text-gray-500 text-[10px] truncate">Jobs ranked by your skills</p>
                         </div>
                     </a>
-                    
                     <a href="{{ url_for('interview_practice_hub') }}" class="tool-item">
-                        <div class="tool-icon tool-icon-teal">
-                            <i class="fas fa-microphone text-xs"></i>
-                        </div>
+                        <div class="tool-icon tool-icon-teal"><i class="fas fa-microphone text-xs"></i></div>
                         <div class="flex-1 min-w-0">
                             <p class="text-white text-xs font-medium">Interview Practice</p>
                             <p class="text-gray-500 text-[10px] truncate">Practice with AI feedback</p>
                         </div>
                     </a>
-                    
                     <a href="{{ url_for('career_assistant') }}" class="tool-item">
-                        <div class="tool-icon tool-icon-teal">
-                            <i class="fas fa-robot text-xs"></i>
-                        </div>
+                        <div class="tool-icon tool-icon-teal"><i class="fas fa-robot text-xs"></i></div>
                         <div class="flex-1 min-w-0">
                             <p class="text-white text-xs font-medium">AI Assistant</p>
                             <p class="text-gray-500 text-[10px] truncate">Ask career questions</p>
@@ -862,45 +727,32 @@
                     {% endif %}
                     
                     {% if current_user.is_recruiter() %}
-                    <!-- RECRUITER TOOLS -->
                     <div class="tool-label tool-label-blue">
                         <i class="fas fa-building mr-1"></i> Recruiter Tools
                     </div>
-                    
                     <a href="{{ url_for('recruiter.create_job') }}" class="tool-item">
-                        <div class="tool-icon tool-icon-blue">
-                            <i class="fas fa-plus-circle text-xs"></i>
-                        </div>
+                        <div class="tool-icon tool-icon-blue"><i class="fas fa-plus-circle text-xs"></i></div>
                         <div class="flex-1 min-w-0">
                             <p class="text-white text-xs font-medium">Post a Job</p>
                             <p class="text-gray-500 text-[10px] truncate">Create a new listing</p>
                         </div>
                     </a>
-                    
                     <a href="{{ url_for('recruiter.candidates') }}" class="tool-item">
-                        <div class="tool-icon tool-icon-blue">
-                            <i class="fas fa-users text-xs"></i>
-                        </div>
+                        <div class="tool-icon tool-icon-blue"><i class="fas fa-users text-xs"></i></div>
                         <div class="flex-1 min-w-0">
                             <p class="text-white text-xs font-medium">Find Candidates</p>
                             <p class="text-gray-500 text-[10px] truncate">Search pre-analyzed talent</p>
                         </div>
                     </a>
-                    
                     <a href="{{ url_for('recruiter.shortlist') }}" class="tool-item">
-                        <div class="tool-icon tool-icon-blue">
-                            <i class="fas fa-star text-xs"></i>
-                        </div>
+                        <div class="tool-icon tool-icon-blue"><i class="fas fa-star text-xs"></i></div>
                         <div class="flex-1 min-w-0">
                             <p class="text-white text-xs font-medium">Shortlist</p>
                             <p class="text-gray-500 text-[10px] truncate">Your saved candidates</p>
                         </div>
                     </a>
-                    
                     <a href="{{ url_for('recruiter.analytics') }}" class="tool-item">
-                        <div class="tool-icon tool-icon-blue">
-                            <i class="fas fa-chart-pie text-xs"></i>
-                        </div>
+                        <div class="tool-icon tool-icon-blue"><i class="fas fa-chart-pie text-xs"></i></div>
                         <div class="flex-1 min-w-0">
                             <p class="text-white text-xs font-medium">Analytics</p>
                             <p class="text-gray-500 text-[10px] truncate">Hiring insights & metrics</p>
@@ -909,35 +761,25 @@
                     {% endif %}
                     
                     {% if current_user.is_admin() %}
-                    <!-- ADMIN TOOLS -->
                     <div class="tool-label tool-label-purple">
                         <i class="fas fa-shield-alt mr-1"></i> Admin Tools
                     </div>
-                    
                     <a href="{{ url_for('admin.index') }}" class="tool-item">
-                        <div class="tool-icon tool-icon-purple">
-                            <i class="fas fa-chart-line text-xs"></i>
-                        </div>
+                        <div class="tool-icon tool-icon-purple"><i class="fas fa-chart-line text-xs"></i></div>
                         <div class="flex-1 min-w-0">
                             <p class="text-white text-xs font-medium">Admin Dashboard</p>
                             <p class="text-gray-500 text-[10px] truncate">Platform metrics</p>
                         </div>
                     </a>
-                    
                     <a href="{{ url_for('admin.newsletter_composer') }}" class="tool-item">
-                        <div class="tool-icon tool-icon-purple">
-                            <i class="fas fa-paper-plane text-xs"></i>
-                        </div>
+                        <div class="tool-icon tool-icon-purple"><i class="fas fa-paper-plane text-xs"></i></div>
                         <div class="flex-1 min-w-0">
                             <p class="text-white text-xs font-medium">Newsletter</p>
                             <p class="text-gray-500 text-[10px] truncate">Send announcements</p>
                         </div>
                     </a>
-                    
                     <a href="{{ url_for('admin.verifications') }}" class="tool-item">
-                        <div class="tool-icon tool-icon-purple">
-                            <i class="fas fa-user-check text-xs"></i>
-                        </div>
+                        <div class="tool-icon tool-icon-purple"><i class="fas fa-user-check text-xs"></i></div>
                         <div class="flex-1 min-w-0">
                             <p class="text-white text-xs font-medium">Verifications</p>
                             <p class="text-gray-500 text-[10px] truncate">Review recruiter requests</p>
@@ -945,24 +787,17 @@
                     </a>
                     {% endif %}
                     
-                    <!-- Divider -->
                     <div class="border-t border-[#30363d] my-1"></div>
                     
-                    <!-- COMMON -->
                     <a href="{{ url_for('jobs.job_board') }}" class="tool-item">
-                        <div class="tool-icon tool-icon-neutral">
-                            <i class="fas fa-briefcase text-xs"></i>
-                        </div>
+                        <div class="tool-icon tool-icon-neutral"><i class="fas fa-briefcase text-xs"></i></div>
                         <div class="flex-1 min-w-0">
                             <p class="text-white text-xs font-medium">Job Board</p>
                             <p class="text-gray-500 text-[10px] truncate">Browse all opportunities</p>
                         </div>
                     </a>
-                    
                     <a href="{{ url_for('profile') }}" class="tool-item">
-                        <div class="tool-icon tool-icon-neutral">
-                            <i class="fas fa-user text-xs"></i>
-                        </div>
+                        <div class="tool-icon tool-icon-neutral"><i class="fas fa-user text-xs"></i></div>
                         <div class="flex-1 min-w-0">
                             <p class="text-white text-xs font-medium">My Profile</p>
                             <p class="text-gray-500 text-[10px] truncate">Manage your account</p>
@@ -1035,21 +870,18 @@
     </main>
 
     <!-- ============================================
-         FOOTER — Teal Glow (Option B)
+         FOOTER
          ============================================ -->
     <footer class="border-t border-teal-500/20 mt-8 relative overflow-hidden" 
             style="background: linear-gradient(180deg, rgba(45, 212, 191, 0.04) 0%, #0d1117 60%);">
         
-        <!-- Subtle radial glow (top-right corner) -->
         <div class="absolute top-0 right-0 w-96 h-96 pointer-events-none opacity-40"
              style="background: radial-gradient(circle, rgba(45, 212, 191, 0.08) 0%, transparent 70%);"></div>
         
         <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 relative z-10">
 
-            <!-- Main Grid -->
             <div class="grid grid-cols-2 md:grid-cols-12 gap-6 md:gap-4 mb-6">
 
-                <!-- Brand -->
                 <div class="col-span-2 md:col-span-4">
                     <a href="{{ url_for('index') }}" class="inline-flex items-center gap-2 mb-2 group">
                         <img src="{{ url_for('static', filename='images/logo.svg') }}" 
@@ -1062,29 +894,24 @@
                     </p>
                     <div class="flex items-center gap-1.5">
                         <a href="https://linkedin.com/company/talentforge-ai" target="_blank" 
-                           class="w-7 h-7 rounded-md bg-white/5 hover:bg-teal-500/20 border border-white/10 hover:border-teal-500/40 flex items-center justify-center text-gray-400 hover:text-teal-400 transition-all"
-                           aria-label="LinkedIn">
+                           class="w-7 h-7 rounded-md bg-white/5 hover:bg-teal-500/20 border border-white/10 hover:border-teal-500/40 flex items-center justify-center text-gray-400 hover:text-teal-400 transition-all">
                             <i class="fab fa-linkedin-in text-[11px]"></i>
                         </a>
                         <a href="https://github.com/TalentForge-AI" target="_blank" 
-                           class="w-7 h-7 rounded-md bg-white/5 hover:bg-teal-500/20 border border-white/10 hover:border-teal-500/40 flex items-center justify-center text-gray-400 hover:text-teal-400 transition-all"
-                           aria-label="GitHub">
+                           class="w-7 h-7 rounded-md bg-white/5 hover:bg-teal-500/20 border border-white/10 hover:border-teal-500/40 flex items-center justify-center text-gray-400 hover:text-teal-400 transition-all">
                             <i class="fab fa-github text-[11px]"></i>
                         </a>
                         <a href="https://twitter.com/talentforge_ai" target="_blank" 
-                           class="w-7 h-7 rounded-md bg-white/5 hover:bg-teal-500/20 border border-white/10 hover:border-teal-500/40 flex items-center justify-center text-gray-400 hover:text-teal-400 transition-all"
-                           aria-label="Twitter">
+                           class="w-7 h-7 rounded-md bg-white/5 hover:bg-teal-500/20 border border-white/10 hover:border-teal-500/40 flex items-center justify-center text-gray-400 hover:text-teal-400 transition-all">
                             <i class="fab fa-x-twitter text-[11px]"></i>
                         </a>
                         <a href="mailto:faditechnologies@gmail.com" 
-                           class="w-7 h-7 rounded-md bg-white/5 hover:bg-teal-500/20 border border-white/10 hover:border-teal-500/40 flex items-center justify-center text-gray-400 hover:text-teal-400 transition-all"
-                           aria-label="Email">
+                           class="w-7 h-7 rounded-md bg-white/5 hover:bg-teal-500/20 border border-white/10 hover:border-teal-500/40 flex items-center justify-center text-gray-400 hover:text-teal-400 transition-all">
                             <i class="fas fa-envelope text-[11px]"></i>
                         </a>
                     </div>
                 </div>
 
-                <!-- Platform -->
                 <div class="col-span-1 md:col-span-2">
                     <h4 class="text-white font-semibold text-xs mb-3 uppercase tracking-wider">Platform</h4>
                     <ul class="space-y-1.5">
@@ -1095,7 +922,6 @@
                     </ul>
                 </div>
 
-                <!-- Partners -->
                 <div class="col-span-1 md:col-span-2">
                     <h4 class="text-white font-semibold text-xs mb-3 uppercase tracking-wider">Partners</h4>
                     <ul class="space-y-1.5">
@@ -1105,18 +931,16 @@
                     </ul>
                 </div>
 
-                <!-- Company -->
                 <div class="col-span-1 md:col-span-2">
                     <h4 class="text-white font-semibold text-xs mb-3 uppercase tracking-wider">Company</h4>
                     <ul class="space-y-1.5">
                         <li><a href="{{ url_for('methodology') }}" class="text-gray-500 hover:text-teal-400 text-xs transition-colors">Methodology</a></li>
+                        <li><a href="{{ url_for('changelog') }}" class="text-gray-500 hover:text-teal-400 text-xs transition-colors">Changelog</a></li>
                         <li><a href="{{ url_for('privacy_policy') }}" class="text-gray-500 hover:text-teal-400 text-xs transition-colors">Privacy</a></li>
                         <li><a href="{{ url_for('terms_of_use') }}" class="text-gray-500 hover:text-teal-400 text-xs transition-colors">Terms</a></li>
-                        <li><a href="mailto:faditechnologies@gmail.com" class="text-gray-500 hover:text-teal-400 text-xs transition-colors">Contact</a></li>
                     </ul>
                 </div>
 
-                <!-- Newsletter -->
                 <div class="col-span-2 md:col-span-2">
                     <h4 class="text-white font-semibold text-xs mb-3 uppercase tracking-wider">Newsletter</h4>
                     <p class="text-gray-500 text-xs mb-2">Job insights & updates</p>
@@ -1135,7 +959,6 @@
                 </div>
             </div>
 
-            <!-- Bottom Bar -->
             <div class="pt-4 border-t border-teal-500/10 flex flex-col sm:flex-row items-center justify-between gap-2">
                 <p class="text-gray-600 text-[11px]">
                     © 2026 <span class="text-gray-400">TalentForge AI</span> · Built in Ghana 🇬🇭
@@ -1151,6 +974,55 @@
             </div>
         </div>
     </footer>
+
+    <!-- ============================================
+         COOKIE CONSENT BANNER
+         ============================================ -->
+    <div id="cookieBanner" 
+         class="fixed bottom-0 left-0 right-0 z-[9998] hidden
+                bg-[#161b22] border-t border-[#30363d] 
+                shadow-2xl shadow-black/50
+                backdrop-blur-sm"
+         style="animation: slideUp 0.4s ease-out;">
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+
+                <div class="flex items-start gap-3 flex-1">
+                    <div class="w-10 h-10 rounded-lg bg-teal-500/10 border border-teal-500/20 
+                                flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-cookie-bite text-teal-400 text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="text-white text-sm font-medium mb-0.5">We use cookies</p>
+                        <p class="text-gray-400 text-xs leading-relaxed">
+                            TalentForge uses cookies to improve your experience, analyze traffic, 
+                            and personalize content. 
+                            <a href="{{ url_for('privacy_policy') }}" 
+                               class="text-teal-400 hover:text-teal-300 underline">
+                                Privacy Policy
+                            </a>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 w-full md:w-auto flex-shrink-0">
+                    <button onclick="rejectCookies()" 
+                            class="flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-medium
+                                   bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white
+                                   border border-white/10 transition-all">
+                        Reject
+                    </button>
+                    <button onclick="acceptCookies()" 
+                            class="flex-1 md:flex-none px-4 py-2 rounded-lg text-sm font-medium
+                                   bg-teal-500 hover:bg-teal-400 text-white
+                                   shadow-lg shadow-teal-500/30 transition-all">
+                        <i class="fas fa-check mr-1.5"></i> Accept
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- ============================================
          JAVASCRIPT
@@ -1172,7 +1044,6 @@
                 });
             }
             
-            // Close sidebar on link click (mobile)
             document.querySelectorAll('.sidebar-nav a').forEach(link => {
                 link.addEventListener('click', function() {
                     if (window.innerWidth < 768) {
@@ -1190,7 +1061,6 @@
                 });
             });
             
-            // Auto-dismiss flash messages
             setTimeout(() => {
                 document.querySelectorAll('.flash-message').forEach(flash => {
                     flash.style.opacity = '0';
@@ -1240,25 +1110,68 @@
             }
         });
 
-        // ===== Keyboard Shortcut: Ctrl+K opens Tools =====
-        document.addEventListener('keydown', function(e) {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                e.preventDefault();
-                
-                // Only trigger if user is logged in and Tools button exists
-                const toolsBtn = document.querySelector('.topbar-right .group button.btn-topbar');
-                if (toolsBtn) {
-                    // Simulate hover to open the dropdown
-                    const dropdown = toolsBtn.nextElementSibling;
-                    if (dropdown) {
-                        dropdown.classList.remove('opacity-0', 'invisible');
-                        setTimeout(() => {
-                            dropdown.classList.add('opacity-0', 'invisible');
-                        }, 3000);
-                    }
+        // ===== COOKIE CONSENT =====
+        (function() {
+            'use strict';
+            
+            const COOKIE_KEY = 'talentforge_cookie_consent';
+            
+            function getCookieConsent() {
+                try { return localStorage.getItem(COOKIE_KEY); } catch (e) { return null; }
+            }
+            
+            function setCookieConsent(value) {
+                try {
+                    localStorage.setItem(COOKIE_KEY, value);
+                    localStorage.setItem(COOKIE_KEY + '_date', new Date().toISOString());
+                } catch (e) { console.warn('Could not save cookie consent:', e); }
+            }
+            
+            function showBanner() {
+                const banner = document.getElementById('cookieBanner');
+                if (banner) banner.classList.remove('hidden');
+            }
+            
+            function hideBanner() {
+                const banner = document.getElementById('cookieBanner');
+                if (banner) {
+                    banner.style.transform = 'translateY(100%)';
+                    banner.style.opacity = '0';
+                    banner.style.transition = 'all 0.3s ease';
+                    setTimeout(() => banner.classList.add('hidden'), 300);
                 }
             }
-        });
+            
+            window.acceptCookies = function() {
+                setCookieConsent('accepted');
+                hideBanner();
+                
+                if (typeof gtag === 'function') {
+                    gtag('consent', 'update', { 'analytics_storage': 'granted' });
+                }
+                if (typeof trackEvent === 'function') {
+                    trackEvent('cookie_consent_accepted');
+                }
+            };
+            
+            window.rejectCookies = function() {
+                setCookieConsent('rejected');
+                hideBanner();
+                
+                if (typeof gtag === 'function') {
+                    gtag('consent', 'update', { 'analytics_storage': 'denied' });
+                }
+                if (typeof trackEvent === 'function') {
+                    trackEvent('cookie_consent_rejected');
+                }
+            };
+            
+            document.addEventListener('DOMContentLoaded', function() {
+                if (!getCookieConsent()) {
+                    setTimeout(showBanner, 1000);
+                }
+            });
+        })();
     </script>
 </body>
 </html>

@@ -764,6 +764,16 @@ def register_routes(app):
         """Methodology page explaining how TalentForge AI works"""
         return render_template('methodology.html')
 
+    @app.route('/changelog')
+    def changelog():
+        """Changelog page"""
+        return render_template('changelog.html')
+    
+    @app.route('/guest/upload', methods=['GET', 'POST'])
+    def guest_upload():
+        """Guest mode — try before signup"""
+        return render_template('guest_upload.html')
+
     # ========== STUDENT-ONLY ROUTES ==========
     @app.route('/upload-cv', methods=['GET', 'POST'])
     @login_required
