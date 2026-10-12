@@ -30,7 +30,7 @@ from app.utils.hybrid_parser import HybridParser
 # from app.utils.openai_assistant import OpenAIAssistant
 from app.utils.talent_assistant import TalentAssistant
 from app.utils.cv_detector import CVDetector
-from models import User, Profile, RecruiterProfile, Candidate, Job, Placement, JobAlert, JobAlertLog, InterviewPractice, InterviewQuestion, InterviewResponse
+from models import User, Profile, RecruiterProfile, Candidate, Job, Placement, JobAlert, JobAlertLog, InterviewPractice, InterviewQuestion, InterviewResponse, SharedRoadmap
 from app.recruiter import recruiter_bp 
 from app.admin.routes import admin_bp 
 from app.jobs.routes import jobs_bp 
@@ -995,19 +995,26 @@ def register_routes(app):
         shared = SharedRoadmap.query.filter_by(
             public_slug=slug,
             is_active=True
-        ).first_or_404()
+        ).first()
         
-        # Increment view count
-        shared.views = (shared.views or 0) + 1
-        db.session.commit()
+        if not shared:
+            flash('This roadmap link is no longer available.', 'warning')
+            return redirect(url_for('index'))
+        
+        # Increment view count (with error handling)
+        try:
+            shared.views = (shared.views or 0) + 1
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            print(f"⚠️ View count error: {e}")
         
         # Get owner for name
         owner = User.query.get(shared.user_id)
         
         return render_template('shared_roadmap.html', 
                              shared=shared, 
-                             owner=owner)
-    
+                             owner=owner)   
     
     @app.route('/roadmap/unshare', methods=['POST'])
     @login_required

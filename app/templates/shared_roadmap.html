@@ -3,18 +3,17 @@
 {% block title %}{{ shared.target_role }} Roadmap | TalentForge AI{% endblock %}
 
 {% block meta %}
-<!-- Open Graph Meta Tags for Social Sharing -->
-<meta property="og:title" content="{{ shared.target_role }} Roadmap — TalentForge AI">
-<meta property="og:description" content="{{ owner.fullname }} is {{ shared.employability_score }}/100 ready for {{ shared.target_role }}. See their personalized learning roadmap.">
+<!-- Open Graph Meta Tags -->
+<meta property="og:title" content="{{ owner.fullname.split()[0] }}'s {{ shared.target_role }} Roadmap">
+<meta property="og:description" content="{{ shared.employability_score }}/100 employability score. See their AI-powered learning roadmap on TalentForge AI.">
 <meta property="og:type" content="article">
 <meta property="og:url" content="{{ url_for('view_shared_roadmap', slug=shared.public_slug, _external=True) }}">
-<meta property="og:image" content="https://career-intelligence-3.onrender.com/static/images/og-roadmap.png">
+<meta property="og:image" content="https://career-intelligence-3.onrender.com/static/images/og-preview.png">
 <meta property="og:site_name" content="TalentForge AI">
 
-<!-- Twitter Card -->
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="{{ shared.target_role }} Roadmap — TalentForge AI">
-<meta name="twitter:description" content="{{ shared.employability_score }}/100 ready for {{ shared.target_role }}. See their personalized roadmap.">
+<meta name="twitter:title" content="{{ owner.fullname.split()[0] }}'s {{ shared.target_role }} Roadmap">
+<meta name="twitter:description" content="{{ shared.employability_score }}/100 employability score.">
 {% endblock %}
 
 {% block breadcrumb %}
@@ -39,24 +38,28 @@
             </div>
             
             <!-- Name -->
-            <h1 class="text-3xl sm:text-4xl font-bold text-white mb-3">
+            <h1 class="text-3xl sm:text-4xl font-bold text-white mb-3 leading-tight">
                 {{ owner.fullname.split()[0] }}'s Path to
                 <br>
                 <span class="text-teal-400">{{ shared.target_role }}</span>
             </h1>
             
             <p class="text-gray-400 text-sm mb-6">
-                {{ shared.detected_sector|title }} · {{ shared.views }} views
+                {{ shared.detected_sector|title }} Career Path
+                {% if shared.views > 0 %}
+                · {{ shared.views }} views
+                {% endif %}
             </p>
             
             <!-- Score -->
-            <div class="inline-flex items-center gap-4 px-6 py-3 bg-white/5 rounded-2xl border border-white/10">
-                <div class="text-left">
+            <div class="inline-flex items-center gap-6 px-8 py-4 bg-white/5 rounded-2xl border border-white/10">
+                <div class="text-center">
                     <p class="text-gray-400 text-xs uppercase tracking-wider mb-1">Employability</p>
-                    <p class="text-3xl font-bold
+                    <p class="text-4xl font-bold
                               {% if shared.employability_score >= 75 %}text-green-400
                               {% elif shared.employability_score >= 50 %}text-teal-400
-                              {% else %}text-amber-400{% endif %}">
+                              {% else %}text-amber-400{% endif %}"
+                       style="letter-spacing: -0.03em;">
                         {{ shared.employability_score }}<span class="text-lg text-gray-500">/100</span>
                     </p>
                 </div>
@@ -64,11 +67,12 @@
         </div>
     </div>
     
-    <!-- Top Skills -->
+    <!-- Skills Mastered -->
     <div class="card p-6 mb-6">
         <h2 class="text-white font-semibold mb-4 flex items-center gap-2">
             <i class="fas fa-check-circle text-teal-400"></i>
             Skills Mastered
+            <span class="text-gray-500 text-xs ml-2">({{ shared.top_skills|length }})</span>
         </h2>
         <div class="flex flex-wrap gap-2">
             {% for skill in shared.top_skills %}
@@ -83,7 +87,7 @@
     <div class="card p-6 mb-6">
         <h2 class="text-white font-semibold mb-4 flex items-center gap-2">
             <i class="fas fa-bullseye text-amber-400"></i>
-            Skills to Learn
+            Top Skill Gaps
         </h2>
         <div class="space-y-3">
             {% for gap in shared.top_gaps %}
@@ -99,7 +103,9 @@
                 </div>
                 <div class="flex items-center justify-between text-xs text-gray-500">
                     <span>In {{ gap.demand }}% of jobs</span>
-                    <span>{{ gap.growth }} growth</span>
+                    {% if gap.growth %}
+                    <span class="text-teal-400">{{ gap.growth }} growth</span>
+                    {% endif %}
                 </div>
             </div>
             {% endfor %}
@@ -111,52 +117,71 @@
     <div class="card p-6 mb-6">
         <h2 class="text-white font-semibold mb-4 flex items-center gap-2">
             <i class="fas fa-road text-teal-400"></i>
-            Learning Roadmap
+            Learning Roadmap Preview
         </h2>
-        <div class="space-y-4">
-            {% if shared.roadmap_summary.immediate %}
-            <div>
-                <p class="text-red-400 text-xs uppercase font-semibold mb-2">🔥 Immediate Priority</p>
-                <div class="space-y-2">
-                    {% for item in shared.roadmap_summary.immediate %}
-                    <div class="p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
-                        <p class="text-white text-sm font-medium">{{ item.skill }}</p>
-                        <p class="text-gray-500 text-xs mt-1">{{ item.course_name or 'Course coming soon' }}</p>
-                    </div>
-                    {% endfor %}
+        
+        {% if shared.roadmap_summary.immediate %}
+        <div class="mb-5">
+            <p class="text-red-400 text-xs uppercase font-semibold mb-2 tracking-wider">
+                <i class="fas fa-fire mr-1"></i> Immediate Priority
+            </p>
+            <div class="space-y-2">
+                {% for item in shared.roadmap_summary.immediate %}
+                <div class="p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
+                    <p class="text-white text-sm font-medium">{{ item.skill }}</p>
+                    {% if item.course_name %}
+                    <p class="text-gray-500 text-xs mt-1">{{ item.course_name }}</p>
+                    {% endif %}
                 </div>
+                {% endfor %}
             </div>
-            {% endif %}
-            
-            {% if shared.roadmap_summary.short_term %}
-            <div>
-                <p class="text-amber-400 text-xs uppercase font-semibold mb-2">⚡ Short Term</p>
-                <div class="space-y-2">
-                    {% for item in shared.roadmap_summary.short_term %}
-                    <div class="p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
-                        <p class="text-white text-sm font-medium">{{ item.skill }}</p>
-                        <p class="text-gray-500 text-xs mt-1">{{ item.course_name or 'Course coming soon' }}</p>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
         </div>
+        {% endif %}
+        
+        {% if shared.roadmap_summary.short_term %}
+        <div>
+            <p class="text-amber-400 text-xs uppercase font-semibold mb-2 tracking-wider">
+                <i class="fas fa-bolt mr-1"></i> Short Term
+            </p>
+            <div class="space-y-2">
+                {% for item in shared.roadmap_summary.short_term %}
+                <div class="p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
+                    <p class="text-white text-sm font-medium">{{ item.skill }}</p>
+                    {% if item.course_name %}
+                    <p class="text-gray-500 text-xs mt-1">{{ item.course_name }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
     </div>
     {% endif %}
     
     <!-- CTA -->
     <div class="card p-6 text-center border-teal-500/30"
          style="background: linear-gradient(145deg, rgba(45, 212, 191, 0.08) 0%, rgba(22, 27, 34, 0.95) 100%);">
-        <h3 class="text-white font-bold text-xl mb-2">Want your own roadmap?</h3>
-        <p class="text-gray-400 text-sm mb-5 max-w-md mx-auto">
+        <div class="inline-flex items-center gap-2 bg-teal-500/10 px-3 py-1.5 rounded-full mb-4 border border-teal-500/30">
+            <i class="fas fa-bolt text-teal-400 text-xs"></i>
+            <span class="text-teal-400 text-xs font-semibold uppercase tracking-wider">No Signup Required</span>
+        </div>
+        
+        <h3 class="text-white font-bold text-2xl mb-2">Want your own roadmap?</h3>
+        <p class="text-gray-400 text-sm mb-6 max-w-md mx-auto">
             Upload your CV and get a personalized learning plan in 30 seconds. Free forever.
         </p>
+        
         <a href="{{ url_for('guest_upload') }}" 
-           class="btn-primary text-base px-6 py-3 rounded-lg shadow-lg shadow-teal-500/30">
+           class="btn-primary text-base px-6 py-3 rounded-lg shadow-lg shadow-teal-500/30 inline-flex items-center gap-2">
             <i class="fas fa-rocket"></i>
             Get My Roadmap — Free
+            <i class="fas fa-arrow-right text-sm"></i>
         </a>
+        
+        <p class="text-gray-500 text-xs mt-4">
+            <i class="fas fa-lock mr-1"></i>
+            Your CV is deleted after analysis.
+        </p>
     </div>
 
 </section>
