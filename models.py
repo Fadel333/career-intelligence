@@ -894,6 +894,34 @@ class NewsletterSubscriber(db.Model):
     subscribed_at = db.Column(db.DateTime, default=datetime.utcnow)
     unsubscribed_at = db.Column(db.DateTime)
     source = db.Column(db.String(50), default='footer')  # where they signed up
+
+class SharedRoadmap(db.Model):
+    """Public shareable roadmap"""
+    __tablename__ = 'shared_roadmaps'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    public_slug = db.Column(db.String(20), unique=True, nullable=False, index=True)
+    
+    # Snapshot of the roadmap at share time
+    target_role = db.Column(db.String(200))
+    detected_sector = db.Column(db.String(100))
+    employability_score = db.Column(db.Integer)
+    top_skills = db.Column(db.JSON)  # ["Python", "SQL", ...]
+    top_gaps = db.Column(db.JSON)  # [{skill, priority, demand, ...}]
+    roadmap_summary = db.Column(db.JSON)  # {immediate: [...], short_term: [...]}
+    
+    # Stats
+    views = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='shared_roadmaps')
+    
+    def __repr__(self):
+        return f'<SharedRoadmap {self.public_slug}>'
     
     def __repr__(self):
         return f'<Subscriber {self.email}>'

@@ -6,14 +6,159 @@
 <section class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
 
     <!-- ===== HEADER ===== -->
-    <div class="mb-6 sm:mb-8" data-aos="fade-up">
-        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-white mb-2">
-            Your Personalized Learning Roadmap
-        </h1>
-        <p class="text-white/60 text-sm sm:text-base">
-            AI-powered course recommendations to close your skill gaps
-        </p>
+    <div class="mb-8" data-aos="fade-up">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">Your Personalized Learning Roadmap</h1>
+            <p class="text-white/60">AI-powered course recommendations to close your skill gaps</p>
+        </div>
+        
+        <!-- Share Button -->
+        <button id="shareRoadmapBtn"
+                onclick="shareRoadmap()"
+                class="btn-primary inline-flex items-center gap-2 px-5 py-2.5 rounded-lg shadow-lg shadow-teal-500/20 self-start sm:self-auto">
+            <i class="fas fa-share-alt"></i>
+            Share My Roadmap
+        </button>
     </div>
+</div>
+
+<!-- Share Modal -->
+<div id="shareModal" class="hidden fixed inset-0 z-[9999] items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="card max-w-md w-full p-6 border-teal-500/30"
+         style="background: linear-gradient(145deg, rgba(22, 27, 34, 0.98) 0%, rgba(13, 17, 23, 0.98) 100%);">
+        
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-white font-bold text-lg">Share Your Roadmap</h1>
+            <button onclick="closeShareModal()" class="text-gray-400 hover:text-white transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <p class="text-gray-400 text-sm mb-4">
+            Get a public link to share on LinkedIn, WhatsApp, or Twitter.
+        </p>
+        
+        <!-- Loading state -->
+        <div id="shareLoading" class="text-center py-6">
+            <i class="fas fa-spinner fa-spin text-teal-400 text-2xl"></i>
+            <p class="text-gray-400 text-sm mt-2">Generating your share link...</p>
+        </div>
+        
+        <!-- Result state -->
+        <div id="shareResult" class="hidden">
+            <div class="mb-4">
+                <label class="text-gray-400 text-xs uppercase block mb-2">Your public link</label>
+                <div class="flex gap-2">
+                    <input type="text" 
+                           id="shareUrl" 
+                           readonly
+                           class="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-xs font-mono">
+                    <button onclick="copyShareUrl()" 
+                            class="bg-teal-500 hover:bg-teal-400 text-white px-3 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1">
+                        <i class="fas fa-copy"></i>
+                        <span id="copyBtnText">Copy</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-3 gap-2">
+                <a id="shareLinkedIn" href="#" target="_blank" 
+                   class="flex flex-col items-center gap-1 p-3 bg-white/5 hover:bg-blue-500/20 border border-white/10 hover:border-blue-500/40 rounded-lg transition">
+                    <i class="fab fa-linkedin text-blue-400"></i>
+                    <span class="text-white text-xs">LinkedIn</span>
+                </a>
+                <a id="shareTwitter" href="#" target="_blank" 
+                   class="flex flex-col items-center gap-1 p-3 bg-white/5 hover:bg-gray-500/20 border border-white/10 hover:border-gray-500/40 rounded-lg transition">
+                    <i class="fab fa-x-twitter text-gray-400"></i>
+                    <span class="text-white text-xs">Twitter</span>
+                </a>
+                <a id="shareWhatsApp" href="#" target="_blank" 
+                   class="flex flex-col items-center gap-1 p-3 bg-white/5 hover:bg-green-500/20 border border-white/10 hover:border-green-500/40 rounded-lg transition">
+                    <i class="fab fa-whatsapp text-green-400"></i>
+                    <span class="text-white text-xs">WhatsApp</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function shareRoadmap() {
+    const modal = document.getElementById('shareModal');
+    const loading = document.getElementById('shareLoading');
+    const result = document.getElementById('shareResult');
+    
+    // Show modal
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    loading.classList.remove('hidden');
+    result.classList.add('hidden');
+    
+    try {
+        const res = await fetch('/roadmap/share', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        });
+        
+        const data = await res.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to create share link');
+        }
+        
+        // Show result
+        loading.classList.add('hidden');
+        result.classList.remove('hidden');
+        
+        // Set URL
+        document.getElementById('shareUrl').value = data.url;
+        
+        // Set social links
+        const shareText = encodeURIComponent(`Check out my career roadmap on TalentForge AI 🚀`);
+        const shareUrlEncoded = encodeURIComponent(data.url);
+        
+        document.getElementById('shareLinkedIn').href = 
+            `https://www.linkedin.com/sharing/share-offsite/?url=${shareUrlEncoded}`;
+        document.getElementById('shareTwitter').href = 
+            `https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrlEncoded}`;
+        document.getElementById('shareWhatsApp').href = 
+            `https://wa.me/?text=${shareText}%20${shareUrlEncoded}`;
+        
+        // Track
+        if (typeof trackEvent === 'function') {
+            trackEvent('roadmap_shared', {
+                is_new: !data.already_shared
+            });
+        }
+        
+    } catch (err) {
+        loading.innerHTML = `<p class="text-red-400 text-sm">❌ ${err.message}</p>`;
+    }
+}
+
+function closeShareModal() {
+    const modal = document.getElementById('shareModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+async function copyShareUrl() {
+    const input = document.getElementById('shareUrl');
+    const text = document.getElementById('copyBtnText');
+    
+    try {
+        await navigator.clipboard.writeText(input.value);
+        text.textContent = 'Copied!';
+        setTimeout(() => text.textContent = 'Copy', 2000);
+    } catch (err) {
+        input.select();
+        document.execCommand('copy');
+        text.textContent = 'Copied!';
+        setTimeout(() => text.textContent = 'Copy', 2000);
+    }
+}
+</script>
 
     {% if not parsed_data or not parsed_data.get('skills') %}
     <!-- ===== NO CV UPLOADED ===== -->

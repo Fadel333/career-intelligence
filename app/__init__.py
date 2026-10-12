@@ -904,6 +904,123 @@ def register_routes(app):
         
         return render_template('guest_results.html', guest=guest_data)
 
+    @app.route('/roadmap/share', methods=['POST'])
+    @login_required
+    def share_roadmap():
+        """Create or toggle a public shareable roadmap"""
+        import secrets
+        
+        user = User.query.get(current_user.id)
+        if not user or not user.cv_analysis:
+            return jsonify({'success': False, 'error': 'No CV data'}), 400
+        
+        # Get parsed data
+        parsed_data = user.get_cv_analysis()
+        if not parsed_data:
+            return jsonify({'success': False, 'error': 'No CV data'}), 400
+        
+        # Extract skills
+        all_skills = []
+        for category, skills in parsed_data.get('skills', {}).items():
+            if isinstance(skills, list):
+                all_skills.extend(skills)
+            elif isinstance(skills, str):
+                all_skills.append(skills)
+        
+        if not all_skills:
+            return jsonify({'success': False, 'error': 'No skills found'}), 400
+        
+        # Get gaps
+        detected_sector = SkillAnalyzer.detect_sector(all_skills)
+        market_demands = SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get(
+            detected_sector,
+            SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get('technology', {})
+        )
+        gaps = SkillAnalyzer.analyze_gaps(all_skills, market_demands)
+        top_gaps = gaps[:5] if gaps else []
+        
+        # Get roadmap
+        roadmap = SkillAnalyzer.generate_learning_roadmap(gaps)
+        
+        # Check if already shared
+        existing = SharedRoadmap.query.filter_by(
+            user_id=current_user.id,
+            is_active=True
+        ).first()
+        
+        if existing:
+            # Return existing share URL
+            return jsonify({
+                'success': True,
+                'url': url_for('view_shared_roadmap', slug=existing.public_slug, _external=True),
+                'slug': existing.public_slug,
+                'already_shared': True
+            })
+        
+        # Create new share
+        public_slug = secrets.token_urlsafe(8)
+        
+        shared = SharedRoadmap(
+            user_id=current_user.id,
+            public_slug=public_slug,
+            target_role=parsed_data.get('target_role') or detected_sector.capitalize(),
+            detected_sector=detected_sector,
+            employability_score=user.employability_score or 0,
+            top_skills=all_skills[:10],
+            top_gaps=top_gaps,
+            roadmap_summary={
+                'immediate': roadmap.get('immediate', [])[:2],
+                'short_term': roadmap.get('short_term', [])[:2],
+                'medium_term': roadmap.get('medium_term', [])[:2],
+            }
+        )
+        
+        db.session.add(shared)
+        db.session.commit()
+        
+        # Track
+        print(f"✅ Roadmap shared: {public_slug} by user {current_user.id}")
+        
+        return jsonify({
+            'success': True,
+            'url': url_for('view_shared_roadmap', slug=public_slug, _external=True),
+            'slug': public_slug,
+            'already_shared': False
+        })
+    
+    
+    @app.route('/r/<slug>')
+    def view_shared_roadmap(slug):
+        """Public view of a shared roadmap"""
+        shared = SharedRoadmap.query.filter_by(
+            public_slug=slug,
+            is_active=True
+        ).first_or_404()
+        
+        # Increment view count
+        shared.views = (shared.views or 0) + 1
+        db.session.commit()
+        
+        # Get owner for name
+        owner = User.query.get(shared.user_id)
+        
+        return render_template('shared_roadmap.html', 
+                             shared=shared, 
+                             owner=owner)
+    
+    
+    @app.route('/roadmap/unshare', methods=['POST'])
+    @login_required
+    def unshare_roadmap():
+        """Deactivate a public roadmap"""
+        SharedRoadmap.query.filter_by(
+            user_id=current_user.id,
+            is_active=True
+        ).update({'is_active': False})
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Roadmap unshared'})
+
     # ========== STUDENT-ONLY ROUTES ==========
     @app.route('/upload-cv', methods=['GET', 'POST'])
     @login_required
