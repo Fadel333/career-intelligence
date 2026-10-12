@@ -1010,60 +1010,174 @@
         </div>
     </main>
 
-    <!-- ============================================
-         FOOTER — Slim Mobile-Friendly
-         ============================================ -->
-    <footer class="border-t border-[#30363d]">
-        <div class="max-w-7xl mx-auto px-4 md:px-6 py-3 md:py-6">
-            <!-- Grid - Compact on mobile -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-6">
-                <!-- Brand -->
-                <div class="col-span-2 md:col-span-1">
-                    <div class="flex items-center gap-2 mb-1 md:mb-2">
-                        <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="TalentForge AI" class="w-5 h-5 md:w-6 md:h-6 rounded-md bg-white p-0.5">
-                        <span class="text-white font-semibold text-xs md:text-sm">TalentForge AI</span>
-                    </div>
-                    <p class="text-gray-500 text-[10px] md:text-xs leading-tight hidden sm:block">Africa's Talent Intelligence Platform</p>
-                </div>
+     <!-- ============================================
+     FOOTER — Modern, Responsive, World-Class
+     ============================================ -->
+<footer class="border-t border-[#30363d] mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+
+        <!-- ===== MAIN FOOTER GRID ===== -->
+        <div class="grid grid-cols-2 md:grid-cols-12 gap-8 md:gap-6 mb-10">
+
+            <!-- Brand Column -->
+            <div class="col-span-2 md:col-span-4">
+                <a href="{{ url_for('index') }}" class="inline-flex items-center gap-3 mb-4 group">
+                    <img src="{{ url_for('static', filename='images/logo.svg') }}" 
+                         alt="TalentForge AI" 
+                         class="w-8 h-8 rounded-lg bg-white p-1 group-hover:scale-105 transition-transform">
+                    <span class="text-white font-bold text-lg tracking-tight">TalentForge AI</span>
+                </a>
+                <p class="text-gray-400 text-sm leading-relaxed mb-5 max-w-xs">
+                    Africa's first AI-powered talent intelligence platform. Bridging the gap between education and industry.
+                </p>
                 
-                <!-- Platform -->
-                <div>
-                    <h4 class="text-white font-medium text-[10px] md:text-xs mb-0.5 md:mb-2">Platform</h4>
-                    <ul class="space-y-0.5 md:space-y-1 text-[10px] md:text-xs">
-                        <li><a href="{{ url_for('privacy_policy') }}" class="text-gray-500 hover:text-gray-300 transition">Privacy</a></li>
-                        <li><a href="{{ url_for('terms_of_use') }}" class="text-gray-500 hover:text-gray-300 transition">Terms</a></li>
-                        <li><a href="{{ url_for('methodology') }}" class="text-gray-500 hover:text-gray-300 transition">Methodology</a></li>
-                    </ul>
-                </div>
-                
-                <!-- Partners -->
-                <div>
-                    <h4 class="text-white font-medium text-[10px] md:text-xs mb-0.5 md:mb-2">Partners</h4>
-                    <ul class="space-y-0.5 md:space-y-1 text-[10px] md:text-xs">
-                        <li><a href="{{ url_for('university_dashboard') }}" class="text-gray-500 hover:text-gray-300 transition">Universities</a></li>
-                        <li><a href="recruiter/dashboard" class="text-gray-500 hover:text-gray-300 transition">Employers</a></li>
-                        <li><a href="#partnership" class="text-gray-500 hover:text-gray-300 transition">Investors</a></li>
-                    </ul>
-                </div>
-                
-                <!-- Connect -->
-                <div class="col-span-2 md:col-span-1">
-                    <h4 class="text-white font-medium text-[10px] md:text-xs mb-0.5 md:mb-2">Connect</h4>
-                    <ul class="space-y-0.5 md:space-y-1 text-[10px] md:text-xs text-gray-500">
-                        <li class="truncate"><i class="fas fa-envelope text-[#58a6ff] mr-1 md:mr-1.5 text-[10px]"></i> fadiliddrisu24@gmail.com</li>
-                        <li class="hidden sm:block"><i class="fas fa-map-marker-alt text-[#58a6ff] mr-1 md:mr-1.5 text-[10px]"></i> Ghana · West Africa</li>
-                        <li><i class="fab fa-linkedin text-[#58a6ff] mr-1 md:mr-1.5 text-[10px]"></i> TalentForge AI</li>
-                    </ul>
+                <!-- Social Icons -->
+                <div class="flex items-center gap-2">
+                    <a href="https://linkedin.com/company/talentforge-ai" target="_blank" 
+                       class="w-9 h-9 rounded-lg bg-white/5 hover:bg-teal-500/20 border border-white/10 hover:border-teal-500/40 flex items-center justify-center text-gray-400 hover:text-teal-400 transition-all"
+                       aria-label="LinkedIn">
+                        <i class="fab fa-linkedin-in text-sm"></i>
+                    </a>
+                    <a href="https://github.com/TalentForge-AI" target="_blank" 
+                       class="w-9 h-9 rounded-lg bg-white/5 hover:bg-teal-500/20 border border-white/10 hover:border-teal-500/40 flex items-center justify-center text-gray-400 hover:text-teal-400 transition-all"
+                       aria-label="GitHub">
+                        <i class="fab fa-github text-sm"></i>
+                    </a>
+                    <a href="https://twitter.com/talentforge_ai" target="_blank" 
+                       class="w-9 h-9 rounded-lg bg-white/5 hover:bg-teal-500/20 border border-white/10 hover:border-teal-500/40 flex items-center justify-center text-gray-400 hover:text-teal-400 transition-all"
+                       aria-label="Twitter">
+                        <i class="fab fa-x-twitter text-sm"></i>
+                    </a>
+                    <a href="mailto:fadiliddrisu24@gmail.com" 
+                       class="w-9 h-9 rounded-lg bg-white/5 hover:bg-teal-500/20 border border-white/10 hover:border-teal-500/40 flex items-center justify-center text-gray-400 hover:text-teal-400 transition-all"
+                       aria-label="Email">
+                        <i class="fas fa-envelope text-sm"></i>
+                    </a>
                 </div>
             </div>
-            
-            <!-- Copyright -->
-            <div class="border-t border-[#30363d] pt-1.5 md:pt-3 mt-1.5 md:mt-3 text-center text-gray-500 text-[9px] md:text-[10px]">
-                <p>© 2026 TalentForge AI — All rights reserved.</p>
+
+            <!-- Platform Links -->
+            <div class="col-span-1 md:col-span-2">
+                <h4 class="text-white font-semibold text-sm mb-4 tracking-wide">Platform</h4>
+                <ul class="space-y-2.5">
+                    <li>
+                        <a href="{{ url_for('jobs.job_board') }}" class="text-gray-400 hover:text-teal-400 text-sm transition-colors inline-flex items-center gap-1.5 group">
+                            <i class="fas fa-briefcase text-xs text-gray-600 group-hover:text-teal-400 transition-colors"></i>
+                            Job Board
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('learning_roadmap') }}" class="text-gray-400 hover:text-teal-400 text-sm transition-colors inline-flex items-center gap-1.5 group">
+                            <i class="fas fa-road text-xs text-gray-600 group-hover:text-teal-400 transition-colors"></i>
+                            Roadmaps
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('career_assistant') }}" class="text-gray-400 hover:text-teal-400 text-sm transition-colors inline-flex items-center gap-1.5 group">
+                            <i class="fas fa-robot text-xs text-gray-600 group-hover:text-teal-400 transition-colors"></i>
+                            AI Assistant
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('interview_practice_hub') }}" class="text-gray-400 hover:text-teal-400 text-sm transition-colors inline-flex items-center gap-1.5 group">
+                            <i class="fas fa-microphone text-xs text-gray-600 group-hover:text-teal-400 transition-colors"></i>
+                            Interviews
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Partners -->
+            <div class="col-span-1 md:col-span-2">
+                <h4 class="text-white font-semibold text-sm mb-4 tracking-wide">Partners</h4>
+                <ul class="space-y-2.5">
+                    <li>
+                        <a href="{{ url_for('university_dashboard') }}" class="text-gray-400 hover:text-teal-400 text-sm transition-colors inline-flex items-center gap-1.5 group">
+                            <i class="fas fa-university text-xs text-gray-600 group-hover:text-teal-400 transition-colors"></i>
+                            Universities
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('recruiter.dashboard') }}" class="text-gray-400 hover:text-teal-400 text-sm transition-colors inline-flex items-center gap-1.5 group">
+                            <i class="fas fa-building text-xs text-gray-600 group-hover:text-teal-400 transition-colors"></i>
+                            Employers
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#partnership" class="text-gray-400 hover:text-teal-400 text-sm transition-colors inline-flex items-center gap-1.5 group">
+                            <i class="fas fa-handshake text-xs text-gray-600 group-hover:text-teal-400 transition-colors"></i>
+                            Investors
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Company -->
+            <div class="col-span-1 md:col-span-2">
+                <h4 class="text-white font-semibold text-sm mb-4 tracking-wide">Company</h4>
+                <ul class="space-y-2.5">
+                    <li>
+                        <a href="{{ url_for('methodology') }}" class="text-gray-400 hover:text-teal-400 text-sm transition-colors inline-flex items-center gap-1.5 group">
+                            <i class="fas fa-flask text-xs text-gray-600 group-hover:text-teal-400 transition-colors"></i>
+                            Methodology
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('privacy_policy') }}" class="text-gray-400 hover:text-teal-400 text-sm transition-colors inline-flex items-center gap-1.5 group">
+                            <i class="fas fa-shield-alt text-xs text-gray-600 group-hover:text-teal-400 transition-colors"></i>
+                            Privacy
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('terms_of_use') }}" class="text-gray-400 hover:text-teal-400 text-sm transition-colors inline-flex items-center gap-1.5 group">
+                            <i class="fas fa-file-contract text-xs text-gray-600 group-hover:text-teal-400 transition-colors"></i>
+                            Terms
+                        </a>
+                    </li>
+                    <li>
+                        <a href="mailto:fadiliddrisu24@gmail.com" class="text-gray-400 hover:text-teal-400 text-sm transition-colors inline-flex items-center gap-1.5 group">
+                            <i class="fas fa-envelope text-xs text-gray-600 group-hover:text-teal-400 transition-colors"></i>
+                            Contact
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Newsletter/CTA -->
+            <div class="col-span-2 md:col-span-2">
+                <h4 class="text-white font-semibold text-sm mb-4 tracking-wide">Stay Updated</h4>
+                <p class="text-gray-400 text-xs mb-3 leading-relaxed">
+                    Get notified about new features and job market insights.
+                </p>
+                <form class="flex flex-col gap-2" onsubmit="event.preventDefault(); this.querySelector('button').textContent='✅ Subscribed';">
+                    <input type="email" 
+                           placeholder="your@email.com"
+                           class="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 focus:border-teal-500/50 focus:outline-none focus:ring-1 focus:ring-teal-500/20 transition">
+                    <button type="submit" 
+                            class="w-full bg-teal-500/20 hover:bg-teal-500/30 border border-teal-500/40 text-teal-400 hover:text-teal-300 text-sm font-medium rounded-lg px-3 py-2 transition-all">
+                        Subscribe
+                    </button>
+                </form>
             </div>
         </div>
-    </footer>
 
+        <!-- ===== BOTTOM BAR ===== -->
+        <div class="pt-6 border-t border-[#30363d] flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p class="text-gray-500 text-xs sm:text-sm">
+                © 2026 <span class="text-gray-400 font-medium">TalentForge AI</span> · Built in Ghana 🇬🇭
+            </p>
+            <div class="flex items-center gap-4 text-xs sm:text-sm">
+                <span class="flex items-center gap-1.5 text-gray-500">
+                    <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+                    All systems operational
+                </span>
+                <span class="text-gray-700 hidden sm:inline">·</span>
+                <a href="{{ url_for('privacy_policy') }}" class="text-gray-500 hover:text-teal-400 transition-colors">Privacy</a>
+                <a href="{{ url_for('terms_of_use') }}" class="text-gray-500 hover:text-teal-400 transition-colors">Terms</a>
+            </div>
+        </div>
+    </div>
+</footer>
     <!-- ============================================
          JAVASCRIPT
          ============================================ -->
