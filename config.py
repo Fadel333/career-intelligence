@@ -43,6 +43,9 @@ class Config:
     
     # ========== GEMINI API CONFIGURATION (FREE TIER) ==========
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+
+        # ========== GOOGLE ANALYTICS ==========
+    GA_MEASUREMENT_ID = os.environ.get('GA_MEASUREMENT_ID')
     
     # ========== YOUTUBE API CONFIGURATION ==========
     YOUTUBE_API_KEY = os.environ.get('YOUTUBE_API_KEY')
@@ -69,7 +72,7 @@ class Config:
 
     # ========== EMAIL CONFIGURATION - SENDGRID ==========
     SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
-    SENDGRID_FROM_EMAIL = os.environ.get('SENDGRID_FROM_EMAIL', 'fadtechlabs.com@gmail.com')
+    SENDGRID_FROM_EMAIL = os.environ.get('SENDGRID_FROM_EMAIL', 'faditechnologies@gmail.com')
     SENDGRID_FROM_NAME = os.environ.get('SENDGRID_FROM_NAME', 'TalentForge AI')
     
     # ========== EMAIL CONFIGURATION - SMTP FALLBACK ==========
@@ -108,6 +111,7 @@ class Config:
 print(f"🔍 Database URL: {Config.SQLALCHEMY_DATABASE_URI}")
 print(f"🔍 Supabase URL: {Config.SUPABASE_URL}")
 print(f"🔍 Gemini API Key: {'✅ Set' if Config.GEMINI_API_KEY else '❌ Not Set'} (FREE tier)")
+print(f"🔍 Google Analytics: {'✅ Set' if Config.GA_MEASUREMENT_ID else '❌ Not Set'}")
 print(f"🔍 YouTube Key: {'✅ Set' if Config.YOUTUBE_API_KEY else '❌ Not Set'}")
 print(f"🔍 Coursera: {'✅ Business API' if Config.COURSERA_CLIENT_ID else '⚠️ Using Public API (free)'}")
 print(f"🔍 Udemy: {'✅ Set' if Config.UDEMY_CLIENT_ID else '❌ Not Set'}")

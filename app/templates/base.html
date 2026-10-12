@@ -15,7 +15,7 @@
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/logo.svg') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='images/favicon.ico') }}">
     
-    <!-- ========== MICROSOFT CLARITY ========== -->
+    <!-- ===== MICROSOFT CLARITY ===== -->
     <script type="text/javascript">
         (function(c,l,a,r,i,t,y){
             c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
@@ -24,15 +24,28 @@
         })(window, document, "clarity", "script", "xzoxxcak0g");
     </script>
     
+    <!-- ===== GOOGLE ANALYTICS ===== -->
+    {% if config.GA_MEASUREMENT_ID %}
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ config.GA_MEASUREMENT_ID }}"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', '{{ config.GA_MEASUREMENT_ID }}');
+
+        // Custom event tracker helper
+        function trackEvent(name, params = {}) {
+            if (typeof gtag !== 'undefined') {
+                gtag('event', name, params);
+            }
+        }
+    </script>
+    {% endif %}
+    
     <style>
         * {
             font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
         }
-        
-        /* ============================================
-           OVERLEAF-STYLE DARK UI
-           Clean, minimal, document-focused
-           ============================================ */
         
         /* ===== SIDEBAR ===== */
         .sidebar {
