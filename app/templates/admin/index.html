@@ -1,240 +1,716 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Dashboard{% endblock %}
+{% block title %}Admin Dashboard — TalentForge AI{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 py-8">
+
+<style>
+    /* ===== ADMIN DASHBOARD SPECIFIC STYLES ===== */
+    .admin-hero {
+        background: linear-gradient(135deg, rgba(45, 212, 191, 0.08) 0%, rgba(88, 166, 255, 0.05) 100%);
+        border: 1px solid rgba(45, 212, 191, 0.15);
+        border-radius: 16px;
+        padding: 28px 32px;
+        margin-bottom: 24px;
+        position: relative;
+        overflow: hidden;
+    }
     
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-8">
-        <div>
-            <h1 class="text-3xl font-bold text-white">🛡️ Admin Dashboard</h1>
-            <p class="text-white/60 text-sm">TalentForge AI — Command Center</p>
-        </div>
-        <div class="text-xs text-white/40">
-            {{ now.strftime('%b %d, %Y · %I:%M %p') if now else '' }}
+    .admin-hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(45, 212, 191, 0.1) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    
+    .metric-card {
+        background: linear-gradient(145deg, rgba(22, 27, 34, 0.9) 0%, rgba(13, 17, 23, 0.9) 100%);
+        border: 1px solid rgba(48, 54, 61, 0.8);
+        border-radius: 14px;
+        padding: 20px;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .metric-card::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(45, 212, 191, 0.5), transparent);
+        opacity: 0;
+        transition: opacity 0.25s ease;
+    }
+    
+    .metric-card:hover {
+        border-color: rgba(45, 212, 191, 0.4);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    
+    .metric-card:hover::after {
+        opacity: 1;
+    }
+    
+    .metric-icon-wrap {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        position: relative;
+    }
+    
+    .metric-icon-teal {
+        background: linear-gradient(135deg, rgba(45, 212, 191, 0.15) 0%, rgba(45, 212, 191, 0.05) 100%);
+        color: #2dd4bf;
+        border: 1px solid rgba(45, 212, 191, 0.2);
+    }
+    
+    .metric-icon-blue {
+        background: linear-gradient(135deg, rgba(88, 166, 255, 0.15) 0%, rgba(88, 166, 255, 0.05) 100%);
+        color: #58a6ff;
+        border: 1px solid rgba(88, 166, 255, 0.2);
+    }
+    
+    .metric-icon-purple {
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.15) 0%, rgba(139, 92, 246, 0.05) 100%);
+        color: #a78bfa;
+        border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+    
+    .metric-icon-amber {
+        background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(251, 191, 36, 0.05) 100%);
+        color: #fbbf24;
+        border: 1px solid rgba(251, 191, 36, 0.2);
+    }
+    
+    .metric-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: #f0f6fc;
+        letter-spacing: -0.03em;
+        line-height: 1;
+        margin: 14px 0 6px;
+        font-variant-numeric: tabular-nums;
+    }
+    
+    .metric-label {
+        font-size: 13px;
+        color: #8b949e;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+    }
+    
+    .metric-subtext {
+        font-size: 11px;
+        color: #6e7681;
+        margin-top: 6px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    .stat-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1;
+    }
+    
+    .pill-green {
+        background: rgba(34, 197, 94, 0.15);
+        color: #4ade80;
+        border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+    
+    .pill-blue {
+        background: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+        border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+    
+    .pill-amber {
+        background: rgba(251, 191, 36, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(251, 191, 36, 0.2);
+    }
+    
+    .pill-neutral {
+        background: rgba(139, 148, 158, 0.1);
+        color: #8b949e;
+        border: 1px solid rgba(139, 148, 158, 0.15);
+    }
+    
+    .panel {
+        background: linear-gradient(145deg, rgba(22, 27, 34, 0.95) 0%, rgba(13, 17, 23, 0.95) 100%);
+        border: 1px solid rgba(48, 54, 61, 0.8);
+        border-radius: 14px;
+        overflow: hidden;
+    }
+    
+    .panel-header {
+        padding: 18px 22px;
+        border-bottom: 1px solid rgba(48, 54, 61, 0.6);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: rgba(13, 17, 23, 0.5);
+    }
+    
+    .panel-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #f0f6fc;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .panel-title i {
+        color: #2dd4bf;
+        font-size: 14px;
+    }
+    
+    .panel-body {
+        padding: 22px;
+    }
+    
+    .sector-row {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(48, 54, 61, 0.4);
+    }
+    
+    .sector-row:last-child {
+        border-bottom: none;
+    }
+    
+    .sector-bar {
+        height: 6px;
+        background: rgba(48, 54, 61, 0.5);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+    
+    .sector-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #2dd4bf 0%, #58a6ff 100%);
+        border-radius: 3px;
+        transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+    
+    .data-table thead th {
+        text-align: left;
+        padding: 12px 16px;
+        color: #6e7681;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid rgba(48, 54, 61, 0.6);
+        background: rgba(13, 17, 23, 0.5);
+    }
+    
+    .data-table tbody td {
+        padding: 14px 16px;
+        color: #c9d1d9;
+        border-bottom: 1px solid rgba(48, 54, 61, 0.3);
+        font-size: 13px;
+    }
+    
+    .data-table tbody tr {
+        transition: background 0.15s ease;
+    }
+    
+    .data-table tbody tr:hover {
+        background: rgba(45, 212, 191, 0.04);
+    }
+    
+    .data-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .user-avatar-initial {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 12px;
+        color: white;
+        background: linear-gradient(135deg, #2dd4bf 0%, #58a6ff 100%);
+    }
+    
+    .badge-type {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 10px;
+        border-radius: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+    }
+    
+    .badge-student {
+        background: rgba(45, 212, 191, 0.12);
+        color: #2dd4bf;
+        border: 1px solid rgba(45, 212, 191, 0.2);
+    }
+    
+    .badge-recruiter {
+        background: rgba(88, 166, 255, 0.12);
+        color: #58a6ff;
+        border: 1px solid rgba(88, 166, 255, 0.2);
+    }
+    
+    .badge-admin {
+        background: rgba(139, 92, 246, 0.12);
+        color: #a78bfa;
+        border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+    
+    .badge-default {
+        background: rgba(139, 148, 158, 0.12);
+        color: #8b949e;
+        border: 1px solid rgba(139, 148, 158, 0.2);
+    }
+    
+    .section-title {
+        font-size: 15px;
+        font-weight: 600;
+        color: #f0f6fc;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        letter-spacing: -0.01em;
+    }
+    
+    .section-title i {
+        color: #2dd4bf;
+        font-size: 14px;
+    }
+    
+    .verification-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px;
+        background: rgba(48, 54, 61, 0.15);
+        border: 1px solid rgba(48, 54, 61, 0.4);
+        border-radius: 10px;
+        margin-bottom: 10px;
+        transition: all 0.2s ease;
+    }
+    
+    .verification-row:hover {
+        background: rgba(48, 54, 61, 0.25);
+        border-color: rgba(251, 191, 36, 0.3);
+    }
+    
+    .verification-row:last-child {
+        margin-bottom: 0;
+    }
+    
+    .btn-review {
+        background: linear-gradient(135deg, #2dd4bf 0%, #14b8a6 100%);
+        color: #0d1117;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    
+    .btn-review:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(45, 212, 191, 0.3);
+    }
+</style>
+
+<div class="max-w-7xl mx-auto px-4 py-8">
+
+    <!-- ===== HERO HEADER ===== -->
+    <div class="admin-hero">
+        <div class="flex items-center justify-between flex-wrap gap-4 relative z-10">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="metric-icon-wrap metric-icon-teal">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h1 class="text-2xl font-bold text-white tracking-tight">Admin Dashboard</h1>
+                </div>
+                <p class="text-white/60 text-sm">TalentForge AI — Platform Command Center</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="stat-pill pill-green">
+                    <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+                    Live
+                </div>
+                <div class="text-xs text-white/50">
+                    <i class="far fa-clock mr-1"></i>
+                    {{ now.strftime('%b %d, %Y · %I:%M %p') if now else '' }}
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- ===== NEW: USER & PLATFORM METRICS ===== -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        
+    <!-- ===== PRIMARY METRIC CARDS ===== -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
         <!-- Total Users -->
-        <div class="glass-card p-6">
-            <div class="flex items-center justify-between mb-2">
-                <i class="fas fa-users text-teal-400 text-xl"></i>
-                <span class="text-xs px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">
-                    +{{ users_today }} today
+        <div class="metric-card">
+            <div class="flex items-start justify-between">
+                <div class="metric-icon-wrap metric-icon-teal">
+                    <i class="fas fa-users"></i>
+                </div>
+                {% if users_today > 0 %}
+                <span class="stat-pill pill-green">
+                    <i class="fas fa-arrow-up text-[8px]"></i>
+                    {{ users_today }} today
                 </span>
+                {% endif %}
             </div>
-            <p class="text-3xl font-bold text-white">{{ total_users }}</p>
-            <p class="text-white/60 text-sm">Total Users</p>
-            <p class="text-white/40 text-xs mt-1">
-                {{ total_students }} students · {{ total_recruiter_users }} recruiters
-            </p>
+            <div class="metric-value">{{ total_users }}</div>
+            <div class="metric-label">Total Users</div>
+            <div class="metric-subtext">
+                <i class="fas fa-graduation-cap text-[9px]"></i>
+                {{ total_students }} students
+                <span class="text-white/20">·</span>
+                <i class="fas fa-briefcase text-[9px]"></i>
+                {{ total_recruiter_users }} recruiters
+            </div>
         </div>
 
         <!-- CVs Uploaded -->
-        <div class="glass-card p-6">
-            <div class="flex items-center justify-between mb-2">
-                <i class="fas fa-file-alt text-teal-400 text-xl"></i>
-                <span class="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400">
-                    {{ cv_completion_rate }}%
-                </span>
+        <div class="metric-card">
+            <div class="flex items-start justify-between">
+                <div class="metric-icon-wrap metric-icon-blue">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <span class="stat-pill pill-blue">{{ cv_completion_rate }}%</span>
             </div>
-            <p class="text-3xl font-bold text-white">{{ cvs_uploaded }}</p>
-            <p class="text-white/60 text-sm">CVs Uploaded</p>
-            <p class="text-white/40 text-xs mt-1">
+            <div class="metric-value">{{ cvs_uploaded }}</div>
+            <div class="metric-label">CVs Uploaded</div>
+            <div class="metric-subtext">
+                <i class="fas fa-arrow-trend-up text-[9px] text-green-400"></i>
                 +{{ cvs_this_week }} this week
-            </p>
+            </div>
         </div>
 
         <!-- New This Week -->
-        <div class="glass-card p-6">
-            <div class="flex items-center justify-between mb-2">
-                <i class="fas fa-calendar-week text-teal-400 text-xl"></i>
-                <span class="text-xs px-2 py-0.5 rounded-full bg-white/10 text-white/60">
-                    7 days
-                </span>
+        <div class="metric-card">
+            <div class="flex items-start justify-between">
+                <div class="metric-icon-wrap metric-icon-purple">
+                    <i class="fas fa-calendar-week"></i>
+                </div>
+                <span class="stat-pill pill-neutral">7 days</span>
             </div>
-            <p class="text-3xl font-bold text-white">{{ users_this_week }}</p>
-            <p class="text-white/60 text-sm">New This Week</p>
-            <p class="text-white/40 text-xs mt-1">
-                of {{ total_users }} total
-            </p>
+            <div class="metric-value">{{ users_this_week }}</div>
+            <div class="metric-label">New This Week</div>
+            <div class="metric-subtext">
+                of {{ total_users }} total users
+            </div>
         </div>
 
         <!-- Avg Employability -->
-        <div class="glass-card p-6">
-            <div class="flex items-center justify-between mb-2">
-                <i class="fas fa-chart-line text-teal-400 text-xl"></i>
-                <span class="text-xs px-2 py-0.5 rounded-full bg-yellow-500/20 text-yellow-400">
-                    avg
-                </span>
+        <div class="metric-card">
+            <div class="flex items-start justify-between">
+                <div class="metric-icon-wrap metric-icon-amber">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <span class="stat-pill pill-amber">avg</span>
             </div>
-            <p class="text-3xl font-bold text-white">{{ avg_score }}</p>
-            <p class="text-white/60 text-sm">Avg Employability</p>
-            <p class="text-white/40 text-xs mt-1">
-                out of 100
-            </p>
+            <div class="metric-value">{{ avg_score }}</div>
+            <div class="metric-label">Avg Employability</div>
+            <div class="metric-subtext">
+                out of 100 points
+            </div>
         </div>
 
     </div>
 
-    <!-- ===== NEW: CHART + TOP SECTORS ===== -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        
+    <!-- ===== CHART + TOP SECTORS ===== -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+
         <!-- Signup Chart -->
-        <div class="lg:col-span-2 glass-card p-6">
-            <h2 class="text-lg font-bold text-white mb-4">
-                📈 Signups (Last 30 Days)
-            </h2>
-            <div style="position: relative; height: 240px;">
-                <canvas id="signupChart"></canvas>
+        <div class="lg:col-span-2 panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fas fa-chart-area"></i>
+                    Signups — Last 30 Days
+                </div>
+                <span class="stat-pill pill-teal" style="background: rgba(45, 212, 191, 0.1); color: #2dd4bf;">
+                    {{ chart_data|length }} active days
+                </span>
+            </div>
+            <div class="panel-body">
+                <div style="position: relative; height: 260px;">
+                    <canvas id="signupChart"></canvas>
+                </div>
             </div>
         </div>
 
         <!-- Top Sectors -->
-        <div class="glass-card p-6">
-            <h2 class="text-lg font-bold text-white mb-4">
-                🎯 Top Target Sectors
-            </h2>
-            {% if top_sectors %}
-            <div class="space-y-4">
-                {% for sector, count in top_sectors %}
-                <div>
-                    <div class="flex items-center justify-between mb-1.5">
-                        <span class="text-white/80 text-sm">{{ sector|title }}</span>
-                        <span class="text-white font-semibold text-sm">{{ count }}</span>
-                    </div>
-                    <div class="h-1.5 rounded-full bg-white/10 overflow-hidden">
-                        <div class="h-full bg-teal-400 rounded-full"
-                             style="width: {{ (count / top_sectors[0][1] * 100)|round }}%;"></div>
-                    </div>
+        <div class="panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <i class="fas fa-bullseye"></i>
+                    Top Target Sectors
                 </div>
-                {% endfor %}
             </div>
-            {% else %}
-            <div class="text-center py-8">
-                <i class="fas fa-chart-pie text-3xl text-white/20 mb-2"></i>
-                <p class="text-white/40 text-sm">No sector data yet</p>
+            <div class="panel-body">
+                {% if top_sectors %}
+                <div class="space-y-0">
+                    {% for sector, count in top_sectors %}
+                    <div class="sector-row">
+                        <div class="flex items-center justify-between">
+                            <span class="text-white/80 text-sm font-medium">{{ sector|title }}</span>
+                            <span class="text-white font-bold text-sm">{{ count }}</span>
+                        </div>
+                        <div class="sector-bar">
+                            <div class="sector-bar-fill"
+                                 style="width: {{ (count / top_sectors[0][1] * 100)|round }}%;"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-12">
+                    <i class="fas fa-chart-pie text-4xl text-white/10 mb-3"></i>
+                    <p class="text-white/40 text-sm">No sector data yet</p>
+                    <p class="text-white/25 text-xs mt-1">Data appears as users upload CVs</p>
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
         </div>
 
     </div>
 
-    <!-- ===== NEW: RECENT SIGNUPS ===== -->
-    <div class="glass-card p-6 mb-8">
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-bold text-white">👥 Recent Signups</h2>
-            <span class="text-white/40 text-xs">Latest 10</span>
+    <!-- ===== RECENT SIGNUPS ===== -->
+    <div class="panel mb-6">
+        <div class="panel-header">
+            <div class="panel-title">
+                <i class="fas fa-user-plus"></i>
+                Recent Signups
+            </div>
+            <span class="stat-pill pill-neutral">Latest 10</span>
         </div>
         {% if recent_users %}
         <div class="overflow-x-auto">
-            <table class="w-full text-sm">
+            <table class="data-table">
                 <thead>
-                    <tr class="text-white/40 border-b border-white/10 text-xs uppercase">
-                        <th class="text-left py-3 font-medium">Name</th>
-                        <th class="text-left py-3 font-medium">Email</th>
-                        <th class="text-left py-3 font-medium">Type</th>
-                        <th class="text-left py-3 font-medium">Sector</th>
-                        <th class="text-left py-3 font-medium">Score</th>
-                        <th class="text-left py-3 font-medium">Joined</th>
+                    <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Type</th>
+                        <th>Sector</th>
+                        <th>Score</th>
+                        <th>Joined</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for user in recent_users %}
-                    <tr class="border-b border-white/5 hover:bg-white/5 transition">
-                        <td class="py-3 text-white/80">{{ user.fullname or '—' }}</td>
-                        <td class="py-3 text-white/60 text-xs">{{ user.email }}</td>
-                        <td class="py-3">
-                            <span class="px-2 py-0.5 rounded-full text-xs
-                                {% if user.user_type == 'student' %}bg-teal-500/20 text-teal-400
-                                {% elif user.user_type == 'recruiter' %}bg-blue-500/20 text-blue-400
-                                {% elif user.user_type == 'admin' %}bg-purple-500/20 text-purple-400
-                                {% else %}bg-white/10 text-white/60{% endif %}">
-                                {{ user.user_type|capitalize }}
-                            </span>
+                    <tr>
+                        <td>
+                            <div class="flex items-center gap-3">
+                                <div class="user-avatar-initial">
+                                    {{ user.fullname[0]|upper if user.fullname else '?' }}
+                                </div>
+                                <span class="text-white/90 font-medium">
+                                    {{ user.fullname or 'Unnamed' }}
+                                </span>
+                            </div>
                         </td>
-                        <td class="py-3 text-white/60 text-xs">{{ user.detected_sector|title if user.detected_sector else '—' }}</td>
-                        <td class="py-3 text-white/60 text-xs">{{ user.employability_score or '—' }}</td>
-                        <td class="py-3 text-white/40 text-xs">{{ user.created_at.strftime('%b %d') if user.created_at else '—' }}</td>
+                        <td class="text-white/60 text-xs">{{ user.email }}</td>
+                        <td>
+                            {% if user.user_type == 'student' %}
+                            <span class="badge-type badge-student">
+                                <i class="fas fa-graduation-cap mr-1 text-[9px]"></i> Student
+                            </span>
+                            {% elif user.user_type == 'recruiter' %}
+                            <span class="badge-type badge-recruiter">
+                                <i class="fas fa-briefcase mr-1 text-[9px]"></i> Recruiter
+                            </span>
+                            {% elif user.user_type == 'admin' %}
+                            <span class="badge-type badge-admin">
+                                <i class="fas fa-shield-alt mr-1 text-[9px]"></i> Admin
+                            </span>
+                            {% else %}
+                            <span class="badge-type badge-default">{{ user.user_type|capitalize }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-white/60 text-xs">
+                            {{ user.detected_sector|title if user.detected_sector else '—' }}
+                        </td>
+                        <td>
+                            {% if user.employability_score %}
+                            <span class="text-white font-semibold text-sm">{{ user.employability_score }}</span>
+                            {% else %}
+                            <span class="text-white/30">—</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-white/40 text-xs">
+                            {{ user.created_at.strftime('%b %d, %Y') if user.created_at else '—' }}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
         {% else %}
-        <p class="text-white/40 text-sm text-center py-6">No users yet</p>
+        <div class="text-center py-12">
+            <i class="fas fa-inbox text-4xl text-white/10 mb-3"></i>
+            <p class="text-white/40 text-sm">No users yet</p>
+        </div>
         {% endif %}
     </div>
 
-    <!-- ============================================================ -->
-    <!-- ===== YOUR EXISTING SECTIONS (UNCHANGED) ===== -->
-    <!-- ============================================================ -->
-
-    <h2 class="text-lg font-bold text-white mb-4 mt-8">🏢 Recruiter & Placement Stats</h2>
-
-    <!-- Stats Cards (your existing) -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div class="glass-card p-6">
-            <p class="text-white/60 text-sm">Total Recruiters</p>
-            <p class="text-3xl font-bold text-white">{{ total_recruiters }}</p>
-        </div>
-        <div class="glass-card p-6 border-yellow-400/30">
-            <p class="text-white/60 text-sm">Pending Verifications</p>
-            <p class="text-3xl font-bold text-yellow-400">{{ pending_verifications }}</p>
-            <a href="{{ url_for('admin.verifications') }}" class="text-teal-400 text-sm hover:text-teal-300 transition">
-                Review now →
-            </a>
-        </div>
-        <div class="glass-card p-6">
-            <p class="text-white/60 text-sm">Total Jobs</p>
-            <p class="text-3xl font-bold text-teal-400">{{ total_jobs }}</p>
-        </div>
-        <div class="glass-card p-6">
-            <p class="text-white/60 text-sm">Total Placements</p>
-            <p class="text-3xl font-bold text-green-400">{{ total_placements }}</p>
-        </div>
+    <!-- ===== DIVIDER ===== -->
+    <div class="flex items-center gap-4 my-8">
+        <div class="flex-1 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+        <span class="text-white/40 text-xs font-medium uppercase tracking-wider">Recruitment Operations</span>
+        <div class="flex-1 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
     </div>
 
-    <!-- Pending Verifications (your existing) -->
-    <div class="glass-card p-6">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="text-xl font-bold text-white">⏳ Pending Verifications</h2>
-            <a href="{{ url_for('admin.verifications') }}" class="text-teal-400 hover:text-teal-300 text-sm transition">
-                View All →
+    <!-- ===== RECRUITER & PLACEMENT STATS ===== -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+
+        <div class="metric-card">
+            <div class="flex items-start justify-between">
+                <div class="metric-icon-wrap metric-icon-teal">
+                    <i class="fas fa-building"></i>
+                </div>
+            </div>
+            <div class="metric-value">{{ total_recruiters }}</div>
+            <div class="metric-label">Total Recruiters</div>
+            <div class="metric-subtext">Registered companies</div>
+        </div>
+
+        <div class="metric-card" style="border-color: rgba(251, 191, 36, 0.3);">
+            <div class="flex items-start justify-between">
+                <div class="metric-icon-wrap metric-icon-amber">
+                    <i class="fas fa-clock"></i>
+                </div>
+                {% if pending_verifications > 0 %}
+                <span class="stat-pill pill-amber">Action needed</span>
+                {% endif %}
+            </div>
+            <div class="metric-value" style="color: #fbbf24;">{{ pending_verifications }}</div>
+            <div class="metric-label">Pending Verifications</div>
+            {% if pending_verifications > 0 %}
+            <a href="{{ url_for('admin.verifications') }}"
+               class="metric-subtext text-teal-400 hover:text-teal-300 transition font-medium">
+                Review now <i class="fas fa-arrow-right text-[8px]"></i>
+            </a>
+            {% else %}
+            <div class="metric-subtext">All clear</div>
+            {% endif %}
+        </div>
+
+        <div class="metric-card">
+            <div class="flex items-start justify-between">
+                <div class="metric-icon-wrap metric-icon-blue">
+                    <i class="fas fa-briefcase"></i>
+                </div>
+            </div>
+            <div class="metric-value" style="color: #58a6ff;">{{ total_jobs }}</div>
+            <div class="metric-label">Total Jobs</div>
+            <div class="metric-subtext">Active listings</div>
+        </div>
+
+        <div class="metric-card">
+            <div class="flex items-start justify-between">
+                <div class="metric-icon-wrap metric-icon-teal">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+            <div class="metric-value" style="color: #4ade80;">{{ total_placements }}</div>
+            <div class="metric-label">Total Placements</div>
+            <div class="metric-subtext">Successful hires</div>
+        </div>
+
+    </div>
+
+    <!-- ===== PENDING VERIFICATIONS ===== -->
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <i class="fas fa-hourglass-half"></i>
+                Pending Verifications
+            </div>
+            <a href="{{ url_for('admin.verifications') }}"
+               class="text-teal-400 hover:text-teal-300 text-xs font-medium transition flex items-center gap-1">
+                View All <i class="fas fa-arrow-right text-[9px]"></i>
             </a>
         </div>
-        {% if pending_recruiters %}
-            <div class="space-y-3">
+        <div class="panel-body">
+            {% if pending_recruiters %}
+            <div>
                 {% for recruiter in pending_recruiters %}
-                <div class="flex items-center justify-between p-4 bg-white/5 rounded-xl hover:bg-white/10 transition">
+                <div class="verification-row">
                     <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 rounded-full bg-yellow-500/20 flex items-center justify-center">
-                            <i class="fas fa-clock text-yellow-400"></i>
+                        <div class="metric-icon-wrap metric-icon-amber">
+                            <i class="fas fa-clock"></i>
                         </div>
                         <div>
-                            <p class="text-white font-medium">{{ recruiter.company_name }}</p>
-                            <p class="text-white/60 text-sm">{{ recruiter.industry or 'No industry' }} • {{ recruiter.location or 'No location' }}</p>
-                            <p class="text-white/40 text-xs">Submitted: {{ recruiter.created_at.strftime('%b %d, %Y') }}</p>
+                            <p class="text-white font-semibold text-sm">{{ recruiter.company_name }}</p>
+                            <p class="text-white/50 text-xs mt-0.5">
+                                {{ recruiter.industry or 'No industry' }}
+                                <span class="text-white/20 mx-1">·</span>
+                                {{ recruiter.location or 'No location' }}
+                            </p>
+                            <p class="text-white/30 text-[11px] mt-1">
+                                <i class="far fa-calendar mr-1"></i>
+                                Submitted {{ recruiter.created_at.strftime('%b %d, %Y') }}
+                            </p>
                         </div>
                     </div>
-                    <a href="{{ url_for('admin.verification_detail', recruiter_id=recruiter.id) }}" 
-                       class="btn-primary px-4 py-2 rounded-xl text-white text-sm font-semibold">
-                        Review
+                    <a href="{{ url_for('admin.verification_detail', recruiter_id=recruiter.id) }}"
+                       class="btn-review">
+                        <i class="fas fa-eye"></i> Review
                     </a>
                 </div>
                 {% endfor %}
             </div>
-        {% else %}
-            <div class="text-center py-8">
-                <i class="fas fa-check-circle text-4xl text-green-400 mb-3"></i>
-                <p class="text-white/60">No pending verifications</p>
-                <p class="text-white/40 text-sm">All recruiters are verified</p>
+            {% else %}
+            <div class="text-center py-12">
+                <div class="metric-icon-wrap metric-icon-teal mx-auto mb-4" style="width: 56px; height: 56px; font-size: 24px;">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <p class="text-white/70 font-semibold text-sm mb-1">All caught up</p>
+                <p class="text-white/40 text-xs">No pending verifications — all recruiters are verified</p>
             </div>
-        {% endif %}
+            {% endif %}
+        </div>
     </div>
 
 </div>
@@ -250,9 +726,20 @@
 
         // Handle empty data
         if (chartData.length === 0) {
-            ctx.parentElement.innerHTML = '<p class="text-white/40 text-sm text-center py-20">No signup data yet</p>';
+            ctx.parentElement.innerHTML = `
+                <div class="text-center py-20">
+                    <i class="fas fa-chart-line text-4xl text-white/10 mb-3"></i>
+                    <p class="text-white/40 text-sm">No signup data yet</p>
+                    <p class="text-white/25 text-xs mt-1">Signups will appear here over time</p>
+                </div>
+            `;
             return;
         }
+
+        // Create gradient for the chart fill
+        const gradient = ctx.getContext('2d').createLinearGradient(0, 0, 0, 260);
+        gradient.addColorStop(0, 'rgba(45, 212, 191, 0.25)');
+        gradient.addColorStop(1, 'rgba(45, 212, 191, 0.0)');
 
         new Chart(ctx, {
             type: 'line',
@@ -262,46 +749,75 @@
                     label: 'Signups',
                     data: chartData.map(d => d.count),
                     borderColor: '#2dd4bf',
-                    backgroundColor: 'rgba(45, 212, 191, 0.1)',
-                    borderWidth: 2,
+                    backgroundColor: gradient,
+                    borderWidth: 2.5,
                     fill: true,
-                    tension: 0.35,
-                    pointRadius: 3,
-                    pointBackgroundColor: '#2dd4bf',
-                    pointBorderColor: '#0d1117',
-                    pointBorderWidth: 2,
-                    pointHoverRadius: 5,
+                    tension: 0.4,
+                    pointRadius: 0,
+                    pointHoverRadius: 6,
+                    pointHoverBackgroundColor: '#2dd4bf',
+                    pointHoverBorderColor: '#0d1117',
+                    pointHoverBorderWidth: 3,
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                interaction: {
+                    intersect: false,
+                    mode: 'index',
+                },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
                         backgroundColor: '#161b22',
-                        borderColor: '#30363d',
+                        borderColor: 'rgba(45, 212, 191, 0.3)',
                         borderWidth: 1,
                         titleColor: '#f0f6fc',
+                        titleFont: { size: 12, weight: '600' },
                         bodyColor: '#8b949e',
-                        padding: 10,
-                        cornerRadius: 6,
+                        bodyFont: { size: 12 },
+                        padding: 12,
+                        cornerRadius: 8,
                         displayColors: false,
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y + ' signup' + (context.parsed.y !== 1 ? 's' : '');
+                            }
+                        }
                     }
                 },
                 scales: {
                     x: {
-                        ticks: { color: '#8b949e', font: { size: 10 } },
-                        grid: { color: 'rgba(255,255,255,0.05)' }
+                        ticks: {
+                            color: '#6e7681',
+                            font: { size: 10 },
+                            maxRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: 8,
+                        },
+                        grid: { display: false },
+                        border: { display: false }
                     },
                     y: {
                         beginAtZero: true,
-                        ticks: { color: '#8b949e', font: { size: 10 }, stepSize: 1, precision: 0 },
-                        grid: { color: 'rgba(255,255,255,0.05)' }
+                        ticks: {
+                            color: '#6e7681',
+                            font: { size: 10 },
+                            stepSize: 1,
+                            precision: 0,
+                            padding: 8,
+                        },
+                        grid: {
+                            color: 'rgba(48, 54, 61, 0.3)',
+                            drawBorder: false,
+                        },
+                        border: { display: false }
                     }
                 }
             }
         });
     });
 </script>
+
 {% endblock %}
