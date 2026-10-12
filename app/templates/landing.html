@@ -841,58 +841,99 @@
 </section>
 
 <!-- ============================================
-     VIDEO MODAL SCRIPT
+     VIDEO MODAL SCRIPT — Bulletproof Version
      ============================================ -->
 <script>
-    const videoModal = document.getElementById('videoModal');
-    const modalVideo = document.getElementById('modalVideo');
-
-    function openVideoModal() {
-        // Show modal
-        videoModal.classList.remove('hidden');
-        videoModal.classList.add('flex');
+    (function() {
+        'use strict';
         
-        // Prevent body scroll
-        document.body.style.overflow = 'hidden';
-        
-        // Reset and play video with sound
-        modalVideo.currentTime = 0;
-        modalVideo.muted = false;
-        modalVideo.volume = 1.0;
-        
-        modalVideo.play().catch(err => {
-            console.log('Video play blocked, falling back to muted:', err);
-            modalVideo.muted = true;
-            modalVideo.play();
-        });
-        
-        // Track in Google Analytics
-        if (typeof trackEvent === 'function') {
-            trackEvent('video_modal_opened', {
-                video_name: 'TalentForge Demo'
+        // Wait for DOM to be fully ready
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            const videoModal = document.getElementById('videoModal');
+            const modalVideo = document.getElementById('modalVideo');
+            const videoCard = document.querySelector('#demo [onclick="openVideoModal()"]');
+            
+            console.log('🎬 Video elements found:');
+            console.log('  - Modal:', videoModal);
+            console.log('  - Video:', modalVideo);
+            console.log('  - Card:', videoCard);
+            
+            if (!videoModal || !modalVideo) {
+                console.error('❌ Video modal elements not found!');
+                return;
+            }
+            
+            // ===== OPEN MODAL =====
+            window.openVideoModal = function() {
+                console.log('🎬 Opening video modal...');
+                
+                // Show modal
+                videoModal.classList.remove('hidden');
+                videoModal.classList.add('flex');
+                
+                // Lock body scroll
+                document.body.style.overflow = 'hidden';
+                
+                // Reset video
+                modalVideo.currentTime = 0;
+                modalVideo.muted = false;
+                modalVideo.volume = 1.0;
+                
+                // Play (with fallback to muted if blocked)
+                const playPromise = modalVideo.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise
+                        .then(() => {
+                            console.log('✅ Video playing with sound');
+                        })
+                        .catch(err => {
+                            console.warn('⚠️ Sound autoplay blocked, trying muted:', err);
+                            modalVideo.muted = true;
+                            modalVideo.play()
+                                .then(() => console.log('✅ Video playing muted'))
+                                .catch(e => console.error('❌ Video failed to play:', e));
+                        });
+                }
+                
+                // Track in GA
+                if (typeof trackEvent === 'function') {
+                    trackEvent('video_modal_opened');
+                }
+            };
+            
+            // ===== CLOSE MODAL =====
+            window.closeVideoModal = function() {
+                console.log('🎬 Closing video modal...');
+                
+                modalVideo.pause();
+                modalVideo.currentTime = 0;
+                
+                videoModal.classList.add('hidden');
+                videoModal.classList.remove('flex');
+                
+                document.body.style.overflow = '';
+            };
+            
+            // ===== ATTACH CLICK HANDLER (in case inline onclick fails) =====
+            if (videoCard) {
+                videoCard.addEventListener('click', function(e) {
+                    console.log('🎬 Video card clicked');
+                    window.openVideoModal();
+                });
+            }
+            
+            // ===== ESC KEY TO CLOSE =====
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && !videoModal.classList.contains('hidden')) {
+                    window.closeVideoModal();
+                }
             });
-        }
-    }
-
-    function closeVideoModal() {
-        // Pause and reset video
-        modalVideo.pause();
-        modalVideo.currentTime = 0;
-        
-        // Hide modal
-        videoModal.classList.add('hidden');
-        videoModal.classList.remove('flex');
-        
-        // Restore body scroll
-        document.body.style.overflow = '';
-    }
-
-    // ESC key to close
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && !videoModal.classList.contains('hidden')) {
-            closeVideoModal();
-        }
-    });
+            
+            console.log('✅ Video modal script loaded');
+        });
+    })();
 </script>
 
 {% endblock %}
