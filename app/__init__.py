@@ -771,8 +771,138 @@ def register_routes(app):
     
     @app.route('/guest/upload', methods=['GET', 'POST'])
     def guest_upload():
-        """Guest mode — try before signup"""
+        """Guest mode — try before signup. No account required."""
+        
+        # If user is already logged in, redirect them to real upload
+        if current_user.is_authenticated:
+            flash('You are logged in. Using your account for analysis.', 'info')
+            return redirect(url_for('upload_cv'))
+        
+        if request.method == 'POST':
+            # Check if file was uploaded
+            if 'cv_file' not in request.files:
+                flash('No file selected', 'error')
+                return redirect(url_for('guest_upload'))
+            
+            file = request.files['cv_file']
+            
+            if file.filename == '':
+                flash('No file selected', 'error')
+                return redirect(url_for('guest_upload'))
+            
+            # Validate file
+            is_valid, error_message = is_valid_cv_file(file)
+            if not is_valid:
+                flash(error_message, 'error')
+                return redirect(url_for('guest_upload'))
+            
+            # Save to temp folder with session ID
+            import uuid
+            guest_session_id = str(uuid.uuid4())
+            filename = secure_filename(f"guest_{guest_session_id}_{file.filename}")
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+            
+            try:
+                # Parse the CV (guest mode — no user_id)
+                parsed_data = hybrid_parser.parse_hybrid(filepath, user_id=None)
+                
+                if not parsed_data:
+                    flash('Could not parse your CV. Please make sure it is readable.', 'error')
+                    safe_delete_file(filepath)
+                    return redirect(url_for('guest_upload'))
+                
+                # CV detection check
+                if parsed_data.get('is_cv') is False:
+                    flash(f"❌ Not a valid CV: {parsed_data.get('reason', 'Unknown reason')}", 'error')
+                    safe_delete_file(filepath)
+                    return redirect(url_for('guest_upload'))
+                
+                # Extract skills
+                all_skills = []
+                for category, skills in parsed_data.get('skills', {}).items():
+                    if isinstance(skills, list):
+                        all_skills.extend(skills)
+                    elif isinstance(skills, str):
+                        all_skills.append(skills)
+                
+                # Detect sector + employability
+                detected_sector = SkillAnalyzer.detect_sector(all_skills)
+                parsed_data['detected_sector'] = detected_sector
+                
+                market_demands = SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get(
+                    detected_sector,
+                    SkillAnalyzer.MARKET_DEMANDS_BY_SECTOR.get('technology', {})
+                )
+                
+                employability = SkillAnalyzer.calculate_employability_score(
+                    all_skills,
+                    parsed_data.get('experience_years', 0),
+                    market_demands
+                )
+                parsed_data['employability_score'] = employability['score']
+                
+                # Analyze gaps
+                gaps = SkillAnalyzer.analyze_gaps(all_skills, market_demands)
+                top_gaps = gaps[:3] if gaps else []
+                
+                # Get job match count
+                job_matches = get_real_job_matches(all_skills, limit=50)
+                job_match_count = len(job_matches)
+                
+                # Count total skills
+                total_skills = len(all_skills)
+                
+                # Total gaps for teaser
+                total_gaps = len(gaps)
+                
+                # Store in session (temporary, 1 hour)
+                session['guest_session_id'] = guest_session_id
+                session['guest_filename'] = filename
+                session['guest_parsed_data'] = {
+                    'name': parsed_data.get('name', 'Guest User'),
+                    'total_skills': total_skills,
+                    'detected_sector': detected_sector,
+                    'employability_score': employability['score'],
+                    'employability_level': employability.get('level', 'Beginner'),
+                    'top_gaps': top_gaps,
+                    'total_gaps': total_gaps,
+                    'job_match_count': job_match_count,
+                    'top_skills': all_skills[:10]
+                }
+                session.permanent = False  # Session expires when browser closes
+                session.modified = True
+                
+                # Delete the file after processing (privacy!)
+                safe_delete_file(filepath)
+                session.pop('guest_filename', None)
+                
+                # Track in GA
+                print(f"✅ Guest CV analyzed: score={employability['score']}, skills={total_skills}")
+                
+                return redirect(url_for('guest_results'))
+                
+            except Exception as e:
+                print(f"❌ Guest upload error: {e}")
+                flash(f'Error analyzing CV: {str(e)}', 'error')
+                safe_delete_file(filepath)
+                return redirect(url_for('guest_upload'))
+        
+        # GET — show the form
         return render_template('guest_upload.html')
+    
+    
+    @app.route('/guest/results')
+    def guest_results():
+        """Show guest analysis results (preview)"""
+        
+        guest_data = session.get('guest_parsed_data')
+        
+        if not guest_data:
+            flash('Session expired. Please upload your CV again.', 'warning')
+            return redirect(url_for('guest_upload'))
+        
+        return render_template('guest_results.html', guest=guest_data)
 
     # ========== STUDENT-ONLY ROUTES ==========
     @app.route('/upload-cv', methods=['GET', 'POST'])

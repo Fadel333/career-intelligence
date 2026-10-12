@@ -32,7 +32,6 @@ class HybridParser:
         if self._quick_parser is None:
             print("⏳ Loading quick parser...")
             try:
-                # REMOVED the mode='quick' parameter
                 self._quick_parser = AdvancedCVParser()
                 print("✅ Quick parser loaded")
             except Exception as e:
@@ -45,7 +44,6 @@ class HybridParser:
         if self._deep_parser is None:
             print("⏳ Loading deep parser...")
             try:
-                # REMOVED the mode='deep' parameter
                 self._deep_parser = AdvancedCVParser()
                 print("✅ Deep parser loaded")
             except Exception as e:
@@ -87,28 +85,31 @@ class HybridParser:
             # Default to allowing parsing if detection fails
             return True, 50.0, "Detection failed, allowing parse"
     
-    def parse_hybrid(self, file_path: str, user_id: int) -> Optional[Dict[str, Any]]:
+    def parse_hybrid(self, file_path: str, user_id: Optional[int] = None) -> Optional[Dict[str, Any]]:
         """
-        Hybrid parsing: Detect CV first, then quick parse, deep parse in background
+        Hybrid parsing: Detect CV first, then quick parse, deep parse in background.
         
         Args:
             file_path: Path to the CV file
-            user_id: ID of the user uploading the CV
+            user_id: ID of the user uploading the CV (None for guest mode)
             
         Returns:
             Dictionary with parsed data or None if parsing fails
         """
         
         print(f"🔍 HybridParser.parse_hybrid called for {file_path}")
-        print(f"👤 User ID: {user_id}")
+        print(f"👤 User ID: {user_id if user_id is not None else 'GUEST'}")
         
         # Check if file exists
         if not os.path.exists(file_path):
             print(f"❌ File not found: {file_path}")
             return None
         
+        # Build cache key — supports guest mode
+        user_key = str(user_id) if user_id is not None else "guest"
+        cache_key = f"{user_key}_{os.path.basename(file_path)}"
+        
         # Check cache first
-        cache_key = f"{user_id}_{os.path.basename(file_path)}"
         if cache_key in self.cache:
             cached_data = self.cache[cache_key]
             print(f"📦 Returning cached data for {cache_key}")
@@ -347,7 +348,7 @@ class HybridParser:
             self._add_to_cache(cache_key, quick_results)
             return quick_results
     
-    def _start_deep_parse(self, text: str, quick_results: Dict, cache_key: str, user_id: int):
+    def _start_deep_parse(self, text: str, quick_results: Dict, cache_key: str, user_id: Optional[int] = None):
         """
         Start deep parse in background thread
         
@@ -355,7 +356,7 @@ class HybridParser:
             text: Extracted text from CV
             quick_results: Results from quick parse
             cache_key: Cache key for storing results
-            user_id: ID of the user
+            user_id: ID of the user (None for guest mode)
         """
         
         # Prevent duplicate processing
@@ -460,49 +461,52 @@ class HybridParser:
         self.cache[cache_key] = data
         print(f"💾 Added to cache: {cache_key}")
     
-    def get_parsed_data(self, user_id: int, file_path: str) -> Optional[Dict]:
+    def get_parsed_data(self, user_id: Optional[int], file_path: str) -> Optional[Dict]:
         """
         Get parsed data from cache
         
         Args:
-            user_id: ID of the user
+            user_id: ID of the user (None for guest mode)
             file_path: Path to the file
             
         Returns:
             Cached data or None if not found
         """
-        cache_key = f"{user_id}_{os.path.basename(file_path)}"
+        user_key = str(user_id) if user_id is not None else "guest"
+        cache_key = f"{user_key}_{os.path.basename(file_path)}"
         return self.cache.get(cache_key)
     
-    def is_parsing_complete(self, user_id: int, file_path: str) -> bool:
+    def is_parsing_complete(self, user_id: Optional[int], file_path: str) -> bool:
         """
         Check if deep parsing is complete
         
         Args:
-            user_id: ID of the user
+            user_id: ID of the user (None for guest mode)
             file_path: Path to the file
             
         Returns:
             True if parsing is complete, False otherwise
         """
-        cache_key = f"{user_id}_{os.path.basename(file_path)}"
+        user_key = str(user_id) if user_id is not None else "guest"
+        cache_key = f"{user_key}_{os.path.basename(file_path)}"
         data = self.cache.get(cache_key)
         if data:
             return data.get('status') == 'complete'
         return False
     
-    def get_parse_status(self, user_id: int, file_path: str) -> Dict:
+    def get_parse_status(self, user_id: Optional[int], file_path: str) -> Dict:
         """
         Get detailed parse status including CV detection info
         
         Args:
-            user_id: ID of the user
+            user_id: ID of the user (None for guest mode)
             file_path: Path to the file
             
         Returns:
             Dictionary with status information
         """
-        cache_key = f"{user_id}_{os.path.basename(file_path)}"
+        user_key = str(user_id) if user_id is not None else "guest"
+        cache_key = f"{user_key}_{os.path.basename(file_path)}"
         data = self.cache.get(cache_key)
         
         if data:
