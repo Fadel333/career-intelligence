@@ -48,8 +48,8 @@ class Config:
     APPLICATION_ROOT = '/'
     
     # ========== SUPABASE CONFIGURATION ==========
-    SUPABASE_URL = os.environ.get('NEXT_PUBLIC_SUPABASE_URL')
-    SUPABASE_PUBLISHABLE_KEY = os.environ.get('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY')
+    #SUPABASE_URL = os.environ.get('NEXT_PUBLIC_SUPABASE_URL')
+    #SUPABASE_PUBLISHABLE_KEY = os.environ.get('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY')
     
     # ========== GEMINI API CONFIGURATION ==========
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
