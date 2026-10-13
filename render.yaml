@@ -6,6 +6,6 @@ services:
     plan: free
     envVars:
       - key: DATABASE_URL
-        value: postgresql://postgres.twpqpeeqebsobgaawgug:fadiliddrisu@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?sslmode=require
+        sync: false
       - key: SECRET_KEY
-        value: your-super-secret-key-change-this
+        sync: false
