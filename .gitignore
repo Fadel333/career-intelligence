@@ -20,4 +20,5 @@ static/verification_docs/
 "setup_admin.py" 
 ".env" 
 *.yaml
-config.py
+config.py__pycache__/ 
+*.pyc 
