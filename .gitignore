@@ -1,24 +1,63 @@
-# Environment variables
+# ============================================================
+# Environment variables (keep out of Git)
+# ============================================================
 .env
 .env.local
 .env.production
+.env.*.local
+*.env
 
-# Config with secrets
-config.py
-
-# Uploads
-uploads/
+# ============================================================
+# User uploads — NEVER commit these
+# ============================================================
+static/applications/
+static/verification_docs/
 static/uploads/
 static/profile_pics/
-static/verification_docs/
 
-# Database
-*.db
-*.sqlite"create_admin.py" 
-"reset_admin.py" 
-"check_user.py" 
-"setup_admin.py" 
-".env" 
+# Uploads folder (keep folder structure via .gitkeep)
+uploads/*
+!uploads/applications/.gitkeep
+!uploads/verification_docs/.gitkeep
+
+# ============================================================
+# Local utility scripts (do not track)
+# ============================================================
+create_admin.py
+reset_admin.py
+check_user.py
+setup_admin.py
+
+# ============================================================
+# YAML files (may contain secrets)
+# ============================================================
 *.yaml
-config.py__pycache__/ 
-*.pyc 
+
+# ============================================================
+# Python
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# ============================================================
+# Database files
+# ============================================================
+*.db
+*.sqlite
+*.sqlite3
+
+# ============================================================
+# IDE / OS
+# ============================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

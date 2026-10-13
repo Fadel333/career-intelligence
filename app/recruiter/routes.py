@@ -1,24 +1,24 @@
 # app/recruiter/routes.py
-from flask import render_template, redirect, url_for, flash, request, jsonify, current_app
+from flask import (
+    render_template, redirect, url_for, flash, request, jsonify, 
+    current_app, send_file, abort
+)
 from flask_login import login_required, current_user
 from sqlalchemy import desc, func
 from datetime import datetime, timedelta
 import json
 import os
 from werkzeug.utils import secure_filename
+
 from app.utils.email import send_job_published_email
-# app/recruiter/routes.py
 from app.utils.job_notifier import notify_candidates_about_job
+from app.utils.talent_assistant import TalentAssistant
 
 from . import recruiter_bp
 from .forms import JobForm
 from .services import CandidateMatcher
 
-# ✅ Import TalentAssistant for AI features (Gemini)
-from app.utils.talent_assistant import TalentAssistant
-
-# Fix imports - remove UserRole since it's not in models.py
-from models import db, User, RecruiterProfile, Job, Placement, Candidate, Shortlist,  JobApplication
+from models import db, User, RecruiterProfile, Job, Placement, Candidate, Shortlist, JobApplication
 
 # Import enums - define fallbacks if they don't exist
 try:
@@ -51,7 +51,6 @@ try:
     from app.utils.decorators import recruiter_required, verified_recruiter_required
 except ImportError:
     from functools import wraps
-    from flask import abort
     
     def recruiter_required(f):
         @wraps(f)
@@ -85,7 +84,48 @@ except ImportError:
         return decorated_function
 
 # Configure upload for verification documents
-VERIFICATION_UPLOAD_FOLDER = 'static/verification_docs'
+VERIFICATION_UPLOAD_FOLDER = 'uploads/verification_docs'
+ALLOWED_DOCUMENT_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
+
+
+def allowed_document_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_DOCUMENT_EXTENSIONS
+
+
+# ============================================================
+# PROTECTED VERIFICATION DOC DOWNLOAD
+# ============================================================
+
+@recruiter_bp.route('/download/verification/<int:recruiter_id>/<path:filename>')
+@login_required
+def download_verification(recruiter_id, filename):
+    """Serve a verification doc — only to admins."""
+    if not current_user.is_admin():
+        abort(403)
+    
+    # Extra safety: prevent path traversal
+    if '..' in filename or filename.startswith('/') or '\\' in filename:
+        abort(400)
+    
+    filepath = os.path.join(
+        current_app.config.get('VERIFICATION_UPLOAD_FOLDER', 'uploads/verification_docs'),
+        filename
+    )
+    
+    if not os.path.exists(filepath):
+        abort(404)
+    
+    return send_file(
+        filepath,
+        as_attachment=True,
+        download_name=filename
+    )
+
+# Configure upload for verification documents
+from flask import send_file, abort, current_app
+import os
+
+VERIFICATION_UPLOAD_FOLDER = 'uploads/verification_docs'
 ALLOWED_DOCUMENT_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg'}
 
 def allowed_document_file(filename):
