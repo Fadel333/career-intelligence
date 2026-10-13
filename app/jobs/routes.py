@@ -3,10 +3,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, send_file
 from flask_login import login_required, current_user
 from sqlalchemy import desc, func, or_
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 from werkzeug.utils import secure_filename
-from datetime import datetime, timedelta
 
 from models import db, Job, JobApplication, Candidate, User, JobStatus, RecruiterProfile
 from app.utils.decorators import recruiter_required
@@ -15,10 +14,8 @@ from app.utils.email import send_new_application_email, send_application_status_
 # Create blueprint
 jobs_bp = Blueprint('jobs', __name__, url_prefix='/jobs')
 
-# Configure upload for CVs
-APPLICATION_UPLOAD_FOLDER = 'static/applications'
-
-# ========== CV FILE VALIDATION ==========
+# ========== CONFIGURATION ==========
+APPLICATION_UPLOAD_FOLDER = 'uploads/applications'
 ALLOWED_CV_EXTENSIONS = {'pdf', 'docx'}
 ALLOWED_CV_MIME_TYPES = {
     'application/pdf',
@@ -27,6 +24,8 @@ ALLOWED_CV_MIME_TYPES = {
 }
 MAX_CV_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
+
+# ========== VALIDATION HELPERS ==========
 
 def allowed_cv_file(filename):
     """Check if file has allowed extension"""
@@ -61,64 +60,38 @@ def is_valid_cv_file(file):
     return True, "Valid CV file"
 
 
-# ========== HELPER FUNCTIONS ==========
+# ========== FILE PATH HELPERS ==========
+
 def get_cv_file_path(application):
-    """Get the correct CV file path - returns absolute path"""
+    """Get the correct CV file path — checks uploads/ first, then legacy static/"""
     if not application.cv_filename and not application.cv_filepath:
         return None
-    
-    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     
     if application.cv_filename:
         filename = application.cv_filename
     else:
         filename = os.path.basename(application.cv_filepath)
     
-    print(f"🔍 Looking for CV file: {filename}")
-    print(f"📁 Project root: {project_root}")
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     
+    # Primary location (new), then legacy fallback for old records
     possible_paths = [
+        os.path.join(project_root, 'uploads', 'applications', filename),
+        os.path.abspath(os.path.join(APPLICATION_UPLOAD_FOLDER, filename)),
         os.path.join(project_root, 'static', 'applications', filename),
-        os.path.join(project_root, 'app', 'static', 'applications', filename),
-        os.path.join(project_root, 'uploads', filename),
-        os.path.join(os.getcwd(), 'static', 'applications', filename),
-        os.path.join(project_root, application.cv_filepath) if application.cv_filepath else None,
-        os.path.join('static', 'applications', filename),
     ]
     
-    if '_' in filename:
-        parts = filename.split('_', 2)
-        if len(parts) >= 3:
-            clean_filename = parts[2]
-            possible_paths.extend([
-                os.path.join(project_root, 'static', 'applications', clean_filename),
-                os.path.join(project_root, 'app', 'static', 'applications', clean_filename),
-                os.path.join(project_root, 'uploads', clean_filename),
-                os.path.join('static', 'applications', clean_filename),
-            ])
-    
     for path in possible_paths:
-        if path:
-            abs_path = os.path.abspath(path)
-            print(f"🔍 Checking: {abs_path}")
-            if os.path.exists(abs_path):
-                print(f"✅ Found CV at: {abs_path}")
-                return abs_path
-    
-    static_dir = os.path.join(project_root, 'static', 'applications')
-    if os.path.exists(static_dir):
-        for root, dirs, files in os.walk(static_dir):
-            for file in files:
-                if file == filename or (len(filename.split('_')) >= 3 and file.endswith(filename.split('_')[-1])):
-                    full_path = os.path.join(root, file)
-                    print(f"✅ Found CV in search: {full_path}")
-                    return full_path
+        if path and os.path.exists(path):
+            print(f"✅ CV found: {path}")
+            return path
     
     print(f"❌ CV not found. Tried: {possible_paths}")
     return None
 
 
 # ========== PUBLIC JOB BOARD ==========
+
 @jobs_bp.route('/')
 def job_board():
     """Public job board - list all published jobs"""
@@ -244,9 +217,8 @@ def apply(job_id):
                 flash(error_message, 'error')
                 return redirect(url_for('jobs.apply', job_id=job_id))
             
-            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            upload_folder = os.path.join(project_root, 'static', 'applications')
-            
+            # Save to uploads/applications (outside static/)
+            upload_folder = os.path.abspath(APPLICATION_UPLOAD_FOLDER)
             os.makedirs(upload_folder, exist_ok=True)
             
             timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
@@ -255,7 +227,7 @@ def apply(job_id):
             cv_file.save(filepath)
             
             cv_filename = filename
-            cv_filepath = os.path.join('static', 'applications', filename).replace('\\', '/')
+            cv_filepath = os.path.join(APPLICATION_UPLOAD_FOLDER, filename).replace('\\', '/')
             
             print(f"📄 CV saved to: {filepath}")
         
@@ -275,7 +247,7 @@ def apply(job_id):
         db.session.add(application)
         job.applications_count = (job.applications_count or 0) + 1
         db.session.commit()
-
+        
         send_new_application_email(application, job)
         
         flash('✅ Your application has been submitted successfully!', 'success')
@@ -285,6 +257,7 @@ def apply(job_id):
 
 
 # ========== RECRUITER APPLICATIONS ==========
+
 @jobs_bp.route('/recruiter/applications')
 @login_required
 @recruiter_required
@@ -382,7 +355,7 @@ def application_detail(application_id):
 @login_required
 @recruiter_required
 def download_cv(application_id):
-    """Download candidate's CV"""
+    """Download candidate's CV — only the owning recruiter can access"""
     application = JobApplication.query.get_or_404(application_id)
     
     recruiter = RecruiterProfile.query.filter_by(user_id=current_user.id).first()
@@ -399,23 +372,40 @@ def download_cv(application_id):
     file_path = get_cv_file_path(application)
     
     if not file_path or not os.path.exists(file_path):
-        if application.cv_filepath:
-            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            abs_path = os.path.join(project_root, application.cv_filepath)
-            if os.path.exists(abs_path):
-                file_path = abs_path
-        
-        if not file_path or not os.path.exists(file_path):
-            flash('CV file not found. Please contact support.', 'error')
-            return redirect(url_for('jobs.application_detail', application_id=application.id))
-    
-    if not os.path.exists(file_path):
         flash('CV file not found. Please contact support.', 'error')
         return redirect(url_for('jobs.application_detail', application_id=application.id))
     
     download_name = application.cv_filename or os.path.basename(file_path)
     
     print(f"📄 Sending file: {file_path}")
+    
+    return send_file(
+        file_path,
+        as_attachment=True,
+        download_name=download_name
+    )
+
+
+@jobs_bp.route('/my-applications/<int:application_id>/download-cv')
+@login_required
+def download_my_cv(application_id):
+    """Applicant downloads their own CV"""
+    application = JobApplication.query.filter_by(
+        id=application_id,
+        user_id=current_user.id
+    ).first_or_404()
+    
+    if not application.cv_filename and not application.cv_filepath:
+        flash('No CV uploaded for this application.', 'warning')
+        return redirect(url_for('jobs.my_application_detail', application_id=application.id))
+    
+    file_path = get_cv_file_path(application)
+    
+    if not file_path or not os.path.exists(file_path):
+        flash('CV file not found.', 'error')
+        return redirect(url_for('jobs.my_application_detail', application_id=application.id))
+    
+    download_name = application.cv_filename or os.path.basename(file_path)
     
     return send_file(
         file_path,
@@ -578,11 +568,6 @@ def test_alert_check():
 def test_single_alert(alert_id):
     """
     Test a single job alert - always sends an email via SendGrid.
-
-    If there are matching jobs from the last 7 days, sends the normal
-    job-listing alert email. If there are no matches, sends a lightweight
-    confirmation email so the person still receives something in their
-    inbox proving the notification pipeline works.
     """
     print(f"🔍 TEST ALERT CALLED: alert_id={alert_id}, user={current_user.email}")
     
@@ -590,16 +575,13 @@ def test_single_alert(alert_id):
     from app.utils.job_alert_checker import find_matching_jobs, send_job_alert_notification
     from app.utils.email import send_alert_test_no_matches_email
     
-    # Get the alert
     alert = JobAlert.query.get_or_404(alert_id)
     print(f"📋 Alert found: {alert.keywords}, user_id={alert.user_id}")
     
-    # Check permissions
     if alert.user_id != current_user.id and not current_user.is_admin():
         print(f"❌ Access denied for user {current_user.id} on alert {alert.user_id}")
         return jsonify({'error': 'Access denied'}), 403
     
-    # Find matching jobs from the last 7 days
     print(f"🔍 Finding matching jobs for alert {alert_id}...")
     matching_jobs = find_matching_jobs(alert, datetime.utcnow() - timedelta(days=7))
     print(f"📊 Found {len(matching_jobs)} matching jobs")
@@ -623,12 +605,10 @@ def test_single_alert(alert_id):
                     'error': 'Failed to send email. Check server logs.'
                 }), 500
         else:
-            # No matches — still send a confirmation email so the test proves
-            # the email pipeline actually works, not just the matching logic.
             print(f"📧 No matches — sending confirmation email to {current_user.email}")
             result = send_alert_test_no_matches_email(current_user, alert)
             print(f"📧 Send result: {result}")
-
+            
             if result:
                 return jsonify({
                     'success': True,
@@ -688,10 +668,7 @@ def get_alert_matching_jobs(alert_id):
 @jobs_bp.route('/test-email', methods=['GET'])
 @login_required
 def test_email():
-    """
-    Simple endpoint to test if SendGrid email sending is working.
-    Visit /jobs/test-email to test.
-    """
+    """Simple endpoint to test if SendGrid email sending is working."""
     from app.utils.email import send_email
     
     print(f"📧 Testing email to: {current_user.email}")
@@ -764,15 +741,3 @@ def test_email():
             'success': False,
             'error': str(e)
         }), 500
-
-
-# ========== JOB ALERT TRIGGER ==========
-def create_job():
-    """Helper function for job creation with alert triggers"""
-    # ... save job to database ...
-    
-    # After saving, check for matching alerts
-    if job.status == 'published':
-        from app.utils.job_alert_checker import check_job_alerts
-        import threading
-        threading.Thread(target=check_job_alerts).start()
