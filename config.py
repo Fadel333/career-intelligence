@@ -8,12 +8,15 @@ from pathlib import Path
 env_path = Path(__file__).parent / '.env'
 load_dotenv(dotenv_path=env_path, override=True)
 
+
 class Config:
-    SECRET_KEY = os.environ.get('SECRET_KEY', 'your-secret-key')
-    
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+    if not SECRET_KEY:
+        raise ValueError("SECRET_KEY environment variable is not set.")
+
     # ========== DATABASE CONFIGURATION ==========
     DATABASE_URL = os.environ.get('DATABASE_URL')
-    
+
     if DATABASE_URL:
         if DATABASE_URL.startswith('postgres+psycopg2://'):
             DATABASE_URL = DATABASE_URL.replace('postgres+psycopg2://', 'postgresql://', 1)
@@ -26,46 +29,48 @@ class Config:
                 DATABASE_URL = DATABASE_URL + '?sslmode=require'
         SQLALCHEMY_DATABASE_URI = DATABASE_URL
     else:
-        SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:fadiliddrisu@db.twpqpeeqebsobgaawgug.supabase.co:5432/postgres?sslmode=require'
-    
+        raise ValueError(
+            "DATABASE_URL environment variable is not set. "
+            "Please add it to your .env file or deployment environment."
+        )
+
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    
+
     # ========== BASE URL & SERVER NAME ==========
     BASE_URL = os.environ.get('BASE_URL', 'http://localhost:5000')
-    # Extract SERVER_NAME from BASE_URL for url_for()
     SERVER_NAME = BASE_URL.replace('https://', '').replace('http://', '').split('/')[0]
     PREFERRED_URL_SCHEME = 'https' if 'https://' in BASE_URL else 'http'
     APPLICATION_ROOT = '/'
-    
+
     # ========== SUPABASE CONFIGURATION ==========
-    SUPABASE_URL = os.environ.get('NEXT_PUBLIC_SUPABASE_URL', 'https://twpqpeeqebsobgaawgug.supabase.co')
-    SUPABASE_PUBLISHABLE_KEY = os.environ.get('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY', 'sb_publishable_3FZF-s7rliIgVCGXV_yq0Q_ZnS43BYp')
-    
+    SUPABASE_URL = os.environ.get('NEXT_PUBLIC_SUPABASE_URL')
+    SUPABASE_PUBLISHABLE_KEY = os.environ.get('NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY')
+
     # ========== GEMINI API CONFIGURATION (FREE TIER) ==========
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 
-        # ========== GOOGLE ANALYTICS ==========
+    # ========== GOOGLE ANALYTICS ==========
     GA_MEASUREMENT_ID = os.environ.get('GA_MEASUREMENT_ID')
-    
+
     # ========== YOUTUBE API CONFIGURATION ==========
     YOUTUBE_API_KEY = os.environ.get('YOUTUBE_API_KEY')
-    
+
     # ========== COURSERA API CONFIGURATION ==========
     COURSERA_CLIENT_ID = os.environ.get('COURSERA_CLIENT_ID')
     COURSERA_CLIENT_SECRET = os.environ.get('COURSERA_CLIENT_SECRET')
     COURSERA_ORGANIZATION_ID = os.environ.get('COURSERA_ORGANIZATION_ID')
-    
+
     # ========== UDEMY API CONFIGURATION ==========
     UDEMY_CLIENT_ID = os.environ.get('UDEMY_CLIENT_ID')
     UDEMY_CLIENT_SECRET = os.environ.get('UDEMY_CLIENT_SECRET')
     UDEMY_ORG_ID = os.environ.get('UDEMY_ORG_ID')
     UDEMY_SUBDOMAIN = os.environ.get('UDEMY_SUBDOMAIN')
-    
+
     # ========== UPLOAD CONFIGURATION ==========
     UPLOAD_FOLDER = 'uploads'
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024
     ALLOWED_EXTENSIONS = {'pdf', 'docx'}
-    
+
     # ========== SESSION CONFIGURATION ==========
     SESSION_COOKIE_SAMESITE = 'Lax'
     PERMANENT_SESSION_LIFETIME = 3600
@@ -74,7 +79,7 @@ class Config:
     SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
     SENDGRID_FROM_EMAIL = os.environ.get('SENDGRID_FROM_EMAIL', 'faditechnologies@gmail.com')
     SENDGRID_FROM_NAME = os.environ.get('SENDGRID_FROM_NAME', 'TalentForge AI')
-    
+
     # ========== EMAIL CONFIGURATION - SMTP FALLBACK ==========
     MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
     MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
@@ -83,17 +88,17 @@ class Config:
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'fadtechlabs.com@gmail.com')
     MAIL_DEBUG = os.environ.get('MAIL_DEBUG', 'False') == 'True'
-    
+
     # ========== OAUTH CONFIGURATION ==========
     GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID')
     GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
-    
+
     LINKEDIN_CLIENT_ID = os.environ.get('LINKEDIN_CLIENT_ID')
     LINKEDIN_CLIENT_SECRET = os.environ.get('LINKEDIN_CLIENT_SECRET')
-    
+
     GITHUB_CLIENT_ID = os.environ.get('GITHUB_CLIENT_ID')
     GITHUB_CLIENT_SECRET = os.environ.get('GITHUB_CLIENT_SECRET')
-    
+
     # ========== ENGINE OPTIONS ==========
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_pre_ping': True,
@@ -107,9 +112,11 @@ class Config:
         return bool(os.environ.get('SENDGRID_API_KEY'))
 
 
-# Print configuration status
-print(f"🔍 Database URL: {Config.SQLALCHEMY_DATABASE_URI}")
-print(f"🔍 Supabase URL: {Config.SUPABASE_URL}")
+# ============================================================
+# Configuration status print (SAFE — no secrets shown)
+# ============================================================
+print(f"🔍 Database URL: {'✅ Set' if Config.DATABASE_URL else '❌ Not Set'}")
+print(f"🔍 Supabase URL: {Config.SUPABASE_URL or '❌ Not Set'}")
 print(f"🔍 Gemini API Key: {'✅ Set' if Config.GEMINI_API_KEY else '❌ Not Set'} (FREE tier)")
 print(f"🔍 Google Analytics: {'✅ Set' if Config.GA_MEASUREMENT_ID else '❌ Not Set'}")
 print(f"🔍 YouTube Key: {'✅ Set' if Config.YOUTUBE_API_KEY else '❌ Not Set'}")
