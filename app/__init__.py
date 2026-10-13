@@ -1028,6 +1028,236 @@ def register_routes(app):
         
         return jsonify({'success': True, 'message': 'Roadmap unshared'})
 
+        # ============================================
+    # PROGRESS TRACKING ROUTES
+    # ============================================
+    
+    @app.route('/api/progress/toggle', methods=['POST'])
+    @login_required
+    def toggle_progress():
+        """Toggle a course's completion status"""
+        from models import UserProgress, UserStreak, Milestone
+        
+        data = request.get_json()
+        skill = data.get('skill')
+        course_title = data.get('course_title')
+        course_url = data.get('course_url', '')
+        
+        if not skill or not course_title:
+            return jsonify({'success': False, 'error': 'Missing skill or course_title'}), 400
+        
+        # Get or create progress entry
+        progress = UserProgress.query.filter_by(
+            user_id=current_user.id,
+            skill=skill,
+            course_title=course_title
+        ).first()
+        
+        if not progress:
+            progress = UserProgress(
+                user_id=current_user.id,
+                skill=skill,
+                course_title=course_title,
+                course_url=course_url,
+                status='not_started'
+            )
+            db.session.add(progress)
+        
+        # Cycle status: not_started → in_progress → completed → not_started
+        if progress.status == 'not_started':
+            progress.status = 'in_progress'
+            progress.started_at = datetime.utcnow()
+        elif progress.status == 'in_progress':
+            progress.status = 'completed'
+            progress.completed_at = datetime.utcnow()
+        else:
+            progress.status = 'not_started'
+            progress.started_at = None
+            progress.completed_at = None
+        
+        # Update streak
+        _update_streak(current_user.id)
+        
+        # Check for new milestones
+        _check_milestones(current_user.id)
+        
+        db.session.commit()
+        
+        # Track in GA
+        if progress.status == 'completed':
+            print(f"🎓 Course completed: {skill} - {course_title}")
+        
+        return jsonify({
+            'success': True,
+            'status': progress.status,
+            'message': f'Course marked as {progress.status}'
+        })
+    
+    
+    @app.route('/api/progress/summary')
+    @login_required
+    def progress_summary():
+        """Get user's progress summary"""
+        from models import UserProgress, UserStreak, Milestone
+        
+        all_progress = UserProgress.query.filter_by(user_id=current_user.id).all()
+        
+        completed = len([p for p in all_progress if p.status == 'completed'])
+        in_progress = len([p for p in all_progress if p.status == 'in_progress'])
+        total = len(all_progress)
+        
+        progress_pct = round((completed / total * 100) if total > 0 else 0)
+        
+        streak = UserStreak.query.filter_by(user_id=current_user.id).first()
+        milestones = Milestone.query.filter_by(user_id=current_user.id).order_by(Milestone.achieved_at.desc()).limit(5).all()
+        
+        return jsonify({
+            'success': True,
+            'completed': completed,
+            'in_progress': in_progress,
+            'total': total,
+            'progress_pct': progress_pct,
+            'streak': {
+                'current': streak.current_streak if streak else 0,
+                'longest': streak.longest_streak if streak else 0,
+                'total_days': streak.total_active_days if streak else 0,
+            },
+            'recent_milestones': [
+                {
+                    'title': m.milestone_title,
+                    'description': m.milestone_description,
+                    'achieved_at': m.achieved_at.isoformat()
+                }
+                for m in milestones
+            ]
+        })
+    
+    
+    @app.route('/progress')
+    @login_required
+    def progress_dashboard():
+        """User's progress dashboard page"""
+        from models import UserProgress, UserStreak, Milestone
+        
+        all_progress = UserProgress.query.filter_by(user_id=current_user.id).all()
+        
+        # Group by skill
+        by_skill = {}
+        for p in all_progress:
+            if p.skill not in by_skill:
+                by_skill[p.skill] = {'completed': 0, 'in_progress': 0, 'total': 0, 'courses': []}
+            by_skill[p.skill]['total'] += 1
+            if p.status == 'completed':
+                by_skill[p.skill]['completed'] += 1
+            elif p.status == 'in_progress':
+                by_skill[p.skill]['in_progress'] += 1
+            by_skill[p.skill]['courses'].append(p)
+        
+        streak = UserStreak.query.filter_by(user_id=current_user.id).first()
+        milestones = Milestone.query.filter_by(user_id=current_user.id).order_by(Milestone.achieved_at.desc()).all()
+        
+        return render_template('progress_dashboard.html',
+            by_skill=by_skill,
+            streak=streak,
+            milestones=milestones,
+            total_completed=sum(s['completed'] for s in by_skill.values()),
+            total_courses=len(all_progress),
+            now=datetime.utcnow()
+        )
+    
+    
+    def _update_streak(user_id):
+        """Update user's daily streak"""
+        from models import UserStreak
+        
+        today = datetime.utcnow().date()
+        streak = UserStreak.query.filter_by(user_id=user_id).first()
+        
+        if not streak:
+            streak = UserStreak(
+                user_id=user_id,
+                current_streak=1,
+                longest_streak=1,
+                last_activity_date=today,
+                total_active_days=1
+            )
+            db.session.add(streak)
+            return
+        
+        last_date = streak.last_activity_date
+        if last_date == today:
+            # Already counted today
+            return
+        elif last_date and (today - last_date).days == 1:
+            # Consecutive day
+            streak.current_streak += 1
+            streak.total_active_days += 1
+        elif last_date and (today - last_date).days > 1:
+            # Broke streak
+            streak.current_streak = 1
+            streak.total_active_days += 1
+        else:
+            # First activity
+            streak.current_streak = 1
+            streak.total_active_days = 1
+        
+        if streak.current_streak > streak.longest_streak:
+            streak.longest_streak = streak.current_streak
+        
+        streak.last_activity_date = today
+    
+    
+    def _check_milestones(user_id):
+        """Check if user achieved new milestones"""
+        from models import UserProgress, Milestone, User
+        
+        user = User.query.get(user_id)
+        if not user:
+            return
+        
+        # Helper to add milestone if not exists
+        def add_milestone_if_new(mtype, title, desc):
+            existing = Milestone.query.filter_by(user_id=user_id, milestone_type=mtype).first()
+            if not existing:
+                milestone = Milestone(
+                    user_id=user_id,
+                    milestone_type=mtype,
+                    milestone_title=title,
+                    milestone_description=desc
+                )
+                db.session.add(milestone)
+        
+        # Milestone: Uploaded first CV
+        if user.cv_filename:
+            add_milestone_if_new('first_cv', '🎉 First CV Uploaded!', 'You uploaded your first CV and got an AI analysis.')
+        
+        # Milestone: First course completed
+        completed_count = UserProgress.query.filter_by(user_id=user_id, status='completed').count()
+        if completed_count >= 1:
+            add_milestone_if_new('first_course', '🎓 First Course Completed!', 'You completed your first course. Great start!')
+        
+        # Milestone: 5 courses completed
+        if completed_count >= 5:
+            add_milestone_if_new('five_courses', '🔥 5 Courses Completed!', 'You completed 5 courses. Momentum is building!')
+        
+        # Milestone: Score 50
+        if user.employability_score and user.employability_score >= 50:
+            add_milestone_if_new('score_50', '📈 Score 50+!', f'Your employability score reached {user.employability_score}.')
+        
+        # Milestone: Score 75
+        if user.employability_score and user.employability_score >= 75:
+            add_milestone_if_new('score_75', '⭐ Score 75+!', f'Your employability score reached {user.employability_score}. You\'re in the top tier!')
+        
+        # Milestone: 7-day streak
+        from models import UserStreak
+        streak = UserStreak.query.filter_by(user_id=user_id).first()
+        if streak and streak.current_streak >= 7:
+            add_milestone_if_new('streak_7', '🔥 7-Day Streak!', 'You\'ve been active 7 days in a row.')
+        
+        # Milestone: 30-day streak
+        if streak and streak.current_streak >= 30:
+            add_milestone_if_new('streak_30', '💎 30-Day Streak!', 'You\'ve been active 30 days in a row. Incredible dedication!')
+
     # ========== STUDENT-ONLY ROUTES ==========
     @app.route('/upload-cv', methods=['GET', 'POST'])
     @login_required

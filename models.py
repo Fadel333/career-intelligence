@@ -932,3 +932,95 @@ class SharedRoadmap(db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
+# ============================================
+# PROGRESS TRACKING
+# ============================================
+
+class UserProgress(db.Model):
+    """Tracks which courses a user has completed"""
+    __tablename__ = 'user_progress'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    
+    # Which course
+    skill = db.Column(db.String(200), nullable=False)
+    course_title = db.Column(db.String(500), nullable=False)
+    course_url = db.Column(db.String(1000))
+    
+    # Status
+    status = db.Column(db.String(50), default='not_started')  # not_started, in_progress, completed
+    
+    # Timeline
+    started_at = db.Column(db.DateTime)
+    completed_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Engagement
+    time_spent_minutes = db.Column(db.Integer, default=0)
+    
+    # Relationship
+    user = db.relationship('User', backref=db.backref('progress', cascade='all, delete-orphan'))
+    
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'skill', 'course_title', name='_user_course_uc'),
+    )
+    
+    def __repr__(self):
+        return f'<UserProgress {self.user_id} - {self.skill} - {self.status}>'
+
+
+class UserStreak(db.Model):
+    """Tracks daily streaks"""
+    __tablename__ = 'user_streaks'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), unique=True, nullable=False)
+    
+    current_streak = db.Column(db.Integer, default=0)
+    longest_streak = db.Column(db.Integer, default=0)
+    last_activity_date = db.Column(db.Date)
+    total_active_days = db.Column(db.Integer, default=0)
+    
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    user = db.relationship('User', backref=db.backref('streak', uselist=False, cascade='all, delete-orphan'))
+
+
+class Milestone(db.Model):
+    """Milestones users have achieved"""
+    __tablename__ = 'milestones'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    
+    milestone_type = db.Column(db.String(100), nullable=False)  # first_cv, first_course, score_50, etc.
+    milestone_title = db.Column(db.String(300), nullable=False)
+    milestone_description = db.Column(db.Text)
+    achieved_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    user = db.relationship('User', backref=db.backref('milestones', cascade='all, delete-orphan'))
+
+
+# ============================================
+# WEEKLY DIGEST
+# ============================================
+
+class WeeklyDigest(db.Model):
+    """Weekly digest emails sent to users"""
+    __tablename__ = 'weekly_digests'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    
+    sent_at = db.Column(db.DateTime, default=datetime.utcnow)
+    week_of = db.Column(db.Date)
+    
+    # Snapshot of what was sent
+    content = db.Column(db.JSON)  # {new_jobs, score_change, top_skill, ...}
+    
+    opened_at = db.Column(db.DateTime)
+    clicked_at = db.Column(db.DateTime)
+    
+    user = db.relationship('User', backref='weekly_digests')

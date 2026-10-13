@@ -1,0 +1,204 @@
+{% extends "base.html" %}
+
+{% block title %}My Progress | TalentForge AI{% endblock %}
+
+{% block breadcrumb %}
+<span class="current">My Progress</span>
+{% endblock %}
+
+{% block content %}
+
+<section class="max-w-6xl mx-auto py-8">
+    
+    <!-- Hero Card -->
+    <div class="card p-6 sm:p-8 mb-6 border-teal-500/30 relative overflow-hidden"
+         style="background: linear-gradient(145deg, rgba(45, 212, 191, 0.08) 0%, rgba(22, 27, 34, 0.95) 100%);">
+        
+        <div class="absolute top-0 right-0 w-64 h-64 rounded-full bg-teal-500/10 blur-3xl pointer-events-none"></div>
+        
+        <div class="relative z-10">
+            <h1 class="text-2xl sm:text-3xl font-bold text-white mb-2">Your Learning Journey</h1>
+            <p class="text-gray-400 text-sm mb-6">Track your progress, celebrate milestones, and stay motivated.</p>
+            
+            <!-- Quick Stats Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="p-4 bg-white/5 rounded-xl border border-white/10">
+                    <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Completed</p>
+                    <p class="text-3xl font-bold text-teal-400">{{ total_completed }}</p>
+                    <p class="text-gray-500 text-xs mt-1">of {{ total_courses }} courses</p>
+                </div>
+                
+                <div class="p-4 bg-white/5 rounded-xl border border-white/10">
+                    <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Progress</p>
+                    <p class="text-3xl font-bold text-white">
+                        {{ ((total_completed / total_courses * 100) | round) if total_courses > 0 else 0 }}%
+                    </p>
+                    <div class="mt-2 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full"
+                             style="width: {{ ((total_completed / total_courses * 100) | round) if total_courses > 0 else 0 }}%;"></div>
+                    </div>
+                </div>
+                
+                <div class="p-4 bg-white/5 rounded-xl border border-white/10">
+                    <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Current Streak</p>
+                    <p class="text-3xl font-bold text-orange-400">
+                        {{ streak.current_streak if streak else 0 }}🔥
+                    </p>
+                    <p class="text-gray-500 text-xs mt-1">days in a row</p>
+                </div>
+                
+                <div class="p-4 bg-white/5 rounded-xl border border-white/10">
+                    <p class="text-gray-500 text-xs uppercase tracking-wider mb-1">Longest Streak</p>
+                    <p class="text-3xl font-bold text-purple-400">
+                        {{ streak.longest_streak if streak else 0 }}
+                    </p>
+                    <p class="text-gray-500 text-xs mt-1">personal best</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="grid lg:grid-cols-3 gap-6">
+        
+        <!-- Left: Progress by Skill -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="card p-6">
+                <h2 class="text-lg font-bold text-white mb-4">
+                    <i class="fas fa-chart-line text-teal-400 mr-2"></i>
+                    Progress by Skill
+                </h2>
+                
+                {% if by_skill %}
+                    <div class="space-y-4">
+                        {% for skill, data in by_skill.items() %}
+                        <div class="p-4 bg-white/5 rounded-xl border border-white/10">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="text-white font-semibold">{{ skill }}</h3>
+                                <span class="text-xs text-gray-500">
+                                    {{ data.completed }}/{{ data.total }} completed
+                                </span>
+                            </div>
+                            <div class="h-2 bg-white/10 rounded-full overflow-hidden mb-3">
+                                <div class="h-full bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full"
+                                     style="width: {{ ((data.completed / data.total * 100) | round) if data.total > 0 else 0 }}%;"></div>
+                            </div>
+                            
+                            {% if data.courses %}
+                                <div class="space-y-2 mt-3">
+                                    {% for course in data.courses %}
+                                    <div class="flex items-center gap-2 text-xs">
+                                        {% if course.status == 'completed' %}
+                                        <i class="fas fa-check-circle text-teal-400"></i>
+                                        {% elif course.status == 'in_progress' %}
+                                        <i class="fas fa-spinner text-amber-400"></i>
+                                        {% else %}
+                                        <i class="far fa-circle text-gray-500"></i>
+                                        {% endif %}
+                                        <span class="{% if course.status == 'completed' %}text-gray-500 line-through{% else %}text-gray-300{% endif %} flex-1 truncate">
+                                            {{ course.course_title }}
+                                        </span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-8">
+                        <i class="fas fa-book-open text-4xl text-white/10 mb-3"></i>
+                        <p class="text-gray-400 text-sm">No courses in your roadmap yet.</p>
+                        <a href="{{ url_for('learning_roadmap') }}" class="text-teal-400 hover:text-teal-300 text-sm font-medium mt-2 inline-flex items-center gap-1">
+                            View your roadmap <i class="fas fa-arrow-right text-xs"></i>
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Milestones -->
+            <div class="card p-6">
+                <h2 class="text-lg font-bold text-white mb-4">
+                    <i class="fas fa-trophy text-yellow-400 mr-2"></i>
+                    Milestones
+                </h2>
+                
+                {% if milestones %}
+                    <div class="space-y-3">
+                        {% for m in milestones %}
+                        <div class="flex items-start gap-3 p-3 bg-white/5 rounded-xl border border-white/10">
+                            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-500/20 to-orange-500/10 border border-yellow-500/30 flex items-center justify-center flex-shrink-0">
+                                <i class="fas fa-trophy text-yellow-400 text-xs"></i>
+                            </div>
+                            <div class="flex-1">
+                                <p class="text-white text-sm font-semibold">{{ m.milestone_title }}</p>
+                                <p class="text-gray-400 text-xs mt-0.5">{{ m.milestone_description }}</p>
+                                <p class="text-gray-500 text-[10px] mt-1">
+                                    {{ m.achieved_at.strftime('%b %d, %Y') }}
+                                </p>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-8">
+                        <i class="fas fa-trophy text-4xl text-white/10 mb-3"></i>
+                        <p class="text-gray-400 text-sm">No milestones yet.</p>
+                        <p class="text-gray-500 text-xs mt-1">Keep learning to unlock them!</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Right: Motivation -->
+        <div class="space-y-6">
+            <div class="card p-6 text-center border-teal-500/30"
+                 style="background: linear-gradient(145deg, rgba(45, 212, 191, 0.08) 0%, rgba(22, 27, 34, 0.95) 100%);">
+                <i class="fas fa-fire text-4xl text-orange-400 mb-3"></i>
+                <h3 class="text-lg font-bold text-white mb-2">Keep Going!</h3>
+                <p class="text-gray-400 text-sm mb-4">
+                    {% if total_completed > 0 %}
+                        You've completed {{ total_completed }} courses. You're making real progress.
+                    {% else %}
+                        Every journey starts with one course. Begin today.
+                    {% endif %}
+                </p>
+                <a href="{{ url_for('learning_roadmap') }}" 
+                   class="btn-primary w-full py-2.5 rounded-lg text-sm font-semibold inline-flex items-center justify-center gap-2">
+                    <i class="fas fa-road"></i>
+                    Continue Learning
+                </a>
+            </div>
+            
+            <div class="card p-6">
+                <h3 class="text-sm font-semibold text-white mb-3">
+                    <i class="fas fa-lightbulb text-teal-400 mr-2"></i>
+                    Tip of the Day
+                </h3>
+                <p class="text-gray-400 text-sm leading-relaxed">
+                    Consistency beats intensity. Even 15 minutes a day adds up — you're building a streak.
+                </p>
+            </div>
+        </div>
+        
+    </div>
+</section>
+
+<script>
+// Fetch and update progress summary
+async function loadProgressSummary() {
+    try {
+        const res = await fetch('/api/progress/summary');
+        const data = await res.json();
+        if (data.success) {
+            // Could update live stats here
+            console.log('Progress summary:', data);
+        }
+    } catch (err) {
+        console.error('Failed to load progress:', err);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', loadProgressSummary);
+</script>
+
+{% endblock %}

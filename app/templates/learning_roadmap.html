@@ -2,193 +2,138 @@
 
 {% block title %}Your Learning Roadmap - TalentForge AI{% endblock %}
 
+{% block breadcrumb %}
+<span class="current">Learning Roadmap</span>
+{% endblock %}
+
 {% block content %}
 <section class="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
 
     <!-- ===== HEADER ===== -->
-<div class="mb-8" data-aos="fade-up">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-            <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">Your Personalized Learning Roadmap</h1>
-            <p class="text-white/60">AI-powered course recommendations to close your skill gaps</p>
+    <div class="mb-6" data-aos="fade-up">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-bold text-white mb-2">Your Personalized Learning Roadmap</h1>
+                <p class="text-white/60">AI-powered course recommendations to close your skill gaps</p>
+            </div>
+            
+            <div class="flex items-center gap-2 self-start sm:self-auto">
+                <a href="{{ url_for('progress_dashboard') }}"
+                   class="btn-secondary inline-flex items-center gap-2 px-4 py-2.5 rounded-lg">
+                    <i class="fas fa-chart-simple"></i>
+                    My Progress
+                </a>
+                <button id="shareRoadmapBtn"
+                        onclick="shareRoadmap()"
+                        class="btn-primary inline-flex items-center gap-2 px-4 py-2.5 rounded-lg shadow-lg shadow-teal-500/20">
+                    <i class="fas fa-share-alt"></i>
+                    Share
+                </button>
+            </div>
         </div>
-        
-        <!-- Share Button -->
-        <button id="shareRoadmapBtn"
-                onclick="shareRoadmap()"
-                class="btn-primary inline-flex items-center gap-2 px-5 py-2.5 rounded-lg shadow-lg shadow-teal-500/20 self-start sm:self-auto">
-            <i class="fas fa-share-alt"></i>
-            Share My Roadmap
-        </button>
     </div>
-</div>
 
-<!-- Share Modal -->
-<div id="shareModal" class="hidden fixed inset-0 z-[9999] items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-    <div class="card max-w-md w-full p-6 border-teal-500/30"
-         style="background: linear-gradient(145deg, rgba(22, 27, 34, 0.98) 0%, rgba(13, 17, 23, 0.98) 100%);">
-        
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-white font-bold text-lg">
-                <i class="fas fa-share-alt text-teal-400 mr-2"></i>
-                Share Your Roadmap
-            </h3>
-            <button onclick="closeShareModal()" class="text-gray-400 hover:text-white transition">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        
-        <p class="text-gray-400 text-sm mb-4">
-            Get a public link to share on LinkedIn, WhatsApp, or Twitter.
-        </p>
-        
-        <!-- Loading state -->
-        <div id="shareLoading" class="text-center py-6">
-            <i class="fas fa-spinner fa-spin text-teal-400 text-2xl"></i>
-            <p class="text-gray-400 text-sm mt-2">Generating your share link...</p>
-        </div>
-        
-        <!-- Error state -->
-        <div id="shareError" class="hidden text-center py-6">
-            <i class="fas fa-exclamation-circle text-red-400 text-2xl"></i>
-            <p id="shareErrorMsg" class="text-red-400 text-sm mt-2">Something went wrong</p>
-            <button onclick="shareRoadmap()" 
-                    class="mt-3 text-teal-400 hover:text-teal-300 text-sm underline">
-                Try again
-            </button>
-        </div>
-        
-        <!-- Result state -->
-        <div id="shareResult" class="hidden">
-            <div class="mb-4">
-                <label class="text-gray-400 text-xs uppercase block mb-2">Your public link</label>
-                <div class="flex gap-2">
-                    <input type="text" 
-                           id="shareUrl" 
-                           readonly
-                           class="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-xs font-mono">
-                    <button onclick="copyShareUrl()" 
-                            class="bg-teal-500 hover:bg-teal-400 text-white px-4 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1 whitespace-nowrap">
-                        <i class="fas fa-copy"></i>
-                        <span id="copyBtnText">Copy</span>
-                    </button>
+    <!-- ===== PROGRESS SUMMARY BAR ===== -->
+    <div class="glass-card p-4 sm:p-5 mb-6 border-teal-500/20" data-aos="fade-up"
+         style="background: linear-gradient(145deg, rgba(45, 212, 191, 0.05) 0%, rgba(22, 27, 34, 0.95) 100%);">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-teal-500/20 border border-teal-500/30 flex items-center justify-center">
+                    <i class="fas fa-fire text-teal-400"></i>
+                </div>
+                <div>
+                    <p class="text-white font-semibold text-sm" id="progressText">
+                        Loading your progress...
+                    </p>
+                    <p class="text-gray-500 text-xs" id="streakText">
+                        Keep going — you've got this!
+                    </p>
                 </div>
             </div>
-            
-            <div class="grid grid-cols-3 gap-2 mt-4">
-                <a id="shareLinkedIn" href="#" target="_blank" 
-                   class="flex flex-col items-center gap-1 p-3 bg-white/5 hover:bg-blue-500/20 border border-white/10 hover:border-blue-500/40 rounded-lg transition">
-                    <i class="fab fa-linkedin text-blue-400 text-lg"></i>
-                    <span class="text-white text-xs">LinkedIn</span>
-                </a>
-                <a id="shareTwitter" href="#" target="_blank" 
-                   class="flex flex-col items-center gap-1 p-3 bg-white/5 hover:bg-gray-500/20 border border-white/10 hover:border-gray-500/40 rounded-lg transition">
-                    <i class="fab fa-x-twitter text-gray-400 text-lg"></i>
-                    <span class="text-white text-xs">Twitter</span>
-                </a>
-                <a id="shareWhatsApp" href="#" target="_blank" 
-                   class="flex flex-col items-center gap-1 p-3 bg-white/5 hover:bg-green-500/20 border border-white/10 hover:border-green-500/40 rounded-lg transition">
-                    <i class="fab fa-whatsapp text-green-400 text-lg"></i>
-                    <span class="text-white text-xs">WhatsApp</span>
-                </a>
+            <div class="flex-1 sm:max-w-xs">
+                <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+                    <div id="progressBar" 
+                         class="h-full bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full transition-all duration-500"
+                         style="width: 0%;"></div>
+                </div>
+                <p class="text-right text-xs text-gray-500 mt-1" id="progressPct">0%</p>
             </div>
-            
-            <p class="text-gray-500 text-xs text-center mt-4">
-                Anyone can view this link. You can unshare anytime.
-            </p>
         </div>
     </div>
-</div>
 
-<script>
-async function shareRoadmap() {
-    const modal = document.getElementById('shareModal');
-    const loading = document.getElementById('shareLoading');
-    const result = document.getElementById('shareResult');
-    const error = document.getElementById('shareError');
-    
-    // Show modal with loading state
-    modal.classList.remove('hidden');
-    modal.classList.add('flex');
-    loading.classList.remove('hidden');
-    result.classList.add('hidden');
-    error.classList.add('hidden');
-    
-    try {
-        const res = await fetch('/roadmap/share', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            credentials: 'same-origin'
-        });
-        
-        const data = await res.json();
-        
-        if (!data.success) {
-            throw new Error(data.error || 'Failed to create share link');
-        }
-        
-        // Show success
-        loading.classList.add('hidden');
-        result.classList.remove('hidden');
-        
-        // Set URL
-        document.getElementById('shareUrl').value = data.url;
-        
-        // Set social links
-        const shareText = encodeURIComponent(`Check out my career roadmap on TalentForge AI 🚀`);
-        const shareUrlEncoded = encodeURIComponent(data.url);
-        
-        document.getElementById('shareLinkedIn').href = 
-            `https://www.linkedin.com/sharing/share-offsite/?url=${shareUrlEncoded}`;
-        document.getElementById('shareTwitter').href = 
-            `https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrlEncoded}`;
-        document.getElementById('shareWhatsApp').href = 
-            `https://wa.me/?text=${shareText}%20${shareUrlEncoded}`;
-        
-        // Track
-        if (typeof trackEvent === 'function') {
-            trackEvent('roadmap_shared', {
-                is_new: !data.already_shared
-            });
-        }
-        
-    } catch (err) {
-        loading.classList.add('hidden');
-        error.classList.remove('hidden');
-        document.getElementById('shareErrorMsg').textContent = err.message;
-        console.error('Share error:', err);
-    }
-}
-
-function closeShareModal() {
-    const modal = document.getElementById('shareModal');
-    modal.classList.add('hidden');
-    modal.classList.remove('flex');
-}
-
-async function copyShareUrl() {
-    const input = document.getElementById('shareUrl');
-    const text = document.getElementById('copyBtnText');
-    
-    try {
-        await navigator.clipboard.writeText(input.value);
-        text.textContent = 'Copied!';
-        setTimeout(() => text.textContent = 'Copy', 2000);
-    } catch (err) {
-        input.select();
-        document.execCommand('copy');
-        text.textContent = 'Copied!';
-        setTimeout(() => text.textContent = 'Copy', 2000);
-    }
-}
-
-// Close modal on Escape
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeShareModal();
-    }
-});
-</script>
+    <!-- ===== SHARE MODAL ===== -->
+    <div id="shareModal" class="hidden fixed inset-0 z-[9999] items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div class="card max-w-md w-full p-6 border-teal-500/30"
+             style="background: linear-gradient(145deg, rgba(22, 27, 34, 0.98) 0%, rgba(13, 17, 23, 0.98) 100%);">
+            
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-white font-bold text-lg">
+                    <i class="fas fa-share-alt text-teal-400 mr-2"></i>
+                    Share Your Roadmap
+                </h3>
+                <button onclick="closeShareModal()" class="text-gray-400 hover:text-white transition">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <p class="text-gray-400 text-sm mb-4">
+                Get a public link to share on LinkedIn, WhatsApp, or Twitter.
+            </p>
+            
+            <div id="shareLoading" class="text-center py-6">
+                <i class="fas fa-spinner fa-spin text-teal-400 text-2xl"></i>
+                <p class="text-gray-400 text-sm mt-2">Generating your share link...</p>
+            </div>
+            
+            <div id="shareError" class="hidden text-center py-6">
+                <i class="fas fa-exclamation-circle text-red-400 text-2xl"></i>
+                <p id="shareErrorMsg" class="text-red-400 text-sm mt-2">Something went wrong</p>
+                <button onclick="shareRoadmap()" 
+                        class="mt-3 text-teal-400 hover:text-teal-300 text-sm underline">
+                    Try again
+                </button>
+            </div>
+            
+            <div id="shareResult" class="hidden">
+                <div class="mb-4">
+                    <label class="text-gray-400 text-xs uppercase block mb-2">Your public link</label>
+                    <div class="flex gap-2">
+                        <input type="text" 
+                               id="shareUrl" 
+                               readonly
+                               class="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-xs font-mono">
+                        <button onclick="copyShareUrl()" 
+                                class="bg-teal-500 hover:bg-teal-400 text-white px-4 py-2 rounded-lg text-xs font-medium transition flex items-center gap-1 whitespace-nowrap">
+                            <i class="fas fa-copy"></i>
+                            <span id="copyBtnText">Copy</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-3 gap-2 mt-4">
+                    <a id="shareLinkedIn" href="#" target="_blank" 
+                       class="flex flex-col items-center gap-1 p-3 bg-white/5 hover:bg-blue-500/20 border border-white/10 hover:border-blue-500/40 rounded-lg transition">
+                        <i class="fab fa-linkedin text-blue-400 text-lg"></i>
+                        <span class="text-white text-xs">LinkedIn</span>
+                    </a>
+                    <a id="shareTwitter" href="#" target="_blank" 
+                       class="flex flex-col items-center gap-1 p-3 bg-white/5 hover:bg-gray-500/20 border border-white/10 hover:border-gray-500/40 rounded-lg transition">
+                        <i class="fab fa-x-twitter text-gray-400 text-lg"></i>
+                        <span class="text-white text-xs">Twitter</span>
+                    </a>
+                    <a id="shareWhatsApp" href="#" target="_blank" 
+                       class="flex flex-col items-center gap-1 p-3 bg-white/5 hover:bg-green-500/20 border border-white/10 hover:border-green-500/40 rounded-lg transition">
+                        <i class="fab fa-whatsapp text-green-400 text-lg"></i>
+                        <span class="text-white text-xs">WhatsApp</span>
+                    </a>
+                </div>
+                
+                <p class="text-gray-500 text-xs text-center mt-4">
+                    Anyone can view this link. You can unshare anytime.
+                </p>
+            </div>
+        </div>
+    </div>
 
     {% if not parsed_data or not parsed_data.get('skills') %}
     <!-- ===== NO CV UPLOADED ===== -->
@@ -216,9 +161,9 @@ document.addEventListener('keydown', function(e) {
     {% set gaps = skill_analyzer.analyze_gaps(all_skills) %}
     {% set roadmap = skill_analyzer.generate_learning_roadmap(gaps) %}
 
-    <!-- ===== OVERALL PROGRESS ===== -->
+    <!-- ===== OVERALL PROGRESS STATS ===== -->
     <div class="glass-card p-4 sm:p-6 mb-6 sm:mb-8" data-aos="fade-up">
-        <h2 class="text-lg sm:text-xl font-bold text-white mb-4">Your Learning Progress</h2>
+        <h2 class="text-lg sm:text-xl font-bold text-white mb-4">Your Learning Snapshot</h2>
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
             <div class="text-center p-2">
                 <div class="text-xl sm:text-2xl font-bold text-teal-400">
@@ -232,10 +177,7 @@ document.addEventListener('keydown', function(e) {
             </div>
             <div class="text-center p-2">
                 <div class="text-xl sm:text-2xl font-bold text-purple-400">
-                    {% set total_weeks = 0 %}
-                    {% for gap in gaps[:5] %}
-                        {% set _ = total_weeks + 4 %}
-                    {% endfor %}
+                    {% set total_weeks = gaps|length * 4 %}
                     {{ total_weeks }}
                 </div>
                 <div class="text-white/60 text-xs sm:text-sm mt-1">Estimated Weeks</div>
@@ -277,14 +219,12 @@ document.addEventListener('keydown', function(e) {
                 <div class="space-y-3 sm:space-y-4">
                     {% for item in roadmap.immediate %}
                     <div class="bg-white/5 rounded-xl p-3 sm:p-4 hover:bg-white/10 transition">
-                        <!-- Skill Header -->
                         <div class="flex flex-wrap items-center gap-2 mb-3">
                             <span class="w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">{{ item.id }}</span>
                             <h3 class="text-base sm:text-lg font-bold text-white break-words">{{ item.skill }}</h3>
                             <span class="bg-red-500/20 text-red-400 text-[10px] sm:text-xs px-2 py-0.5 sm:py-1 rounded-full">Critical</span>
                         </div>
 
-                        <!-- Courses -->
                         {% if item.courses %}
                         <div class="space-y-2">
                             <p class="text-white/60 text-[11px] sm:text-xs font-semibold">📚 Recommended Courses:</p>
@@ -307,10 +247,22 @@ document.addEventListener('keydown', function(e) {
                                             <span class="text-yellow-400">💰 {{ course.price }}</span>
                                             {% endif %}
                                         </div>
-                                        <a href="{{ course.url or '#' }}" target="_blank" 
-                                           class="btn-primary inline-flex items-center gap-1 px-3 py-1 rounded-full text-white text-[11px] sm:text-xs font-semibold mt-2">
-                                            Enroll <i class="fas fa-arrow-right"></i>
-                                        </a>
+                                        <div class="flex flex-wrap items-center gap-2 mt-2">
+                                            <a href="{{ course.url or '#' }}" target="_blank" 
+                                               class="btn-primary inline-flex items-center gap-1 px-3 py-1 rounded-full text-white text-[11px] sm:text-xs font-semibold">
+                                                Enroll <i class="fas fa-arrow-right"></i>
+                                            </a>
+                                            <!-- ✅ PROGRESS CHECKBOX -->
+                                            <label class="inline-flex items-center gap-1.5 cursor-pointer px-2 py-1 rounded-lg hover:bg-white/10 transition">
+                                                <input type="checkbox" 
+                                                       class="progress-checkbox w-4 h-4 accent-teal-500 cursor-pointer"
+                                                       data-skill="{{ item.skill|e }}"
+                                                       data-course="{{ course.title|e }}"
+                                                       data-url="{{ course.url|e }}"
+                                                       onchange="toggleProgress(this)">
+                                                <span class="text-[11px] sm:text-xs text-gray-400">Mark complete</span>
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -327,7 +279,6 @@ document.addEventListener('keydown', function(e) {
                         </div>
                         {% endif %}
 
-                        <!-- Certifications -->
                         {% if item.certifications %}
                         <div class="mt-3">
                             <p class="text-white/60 text-[11px] sm:text-xs font-semibold">🏆 Recommended Certifications:</p>
@@ -389,10 +340,22 @@ document.addEventListener('keydown', function(e) {
                                             <span class="text-teal-400">✓ Certificate</span>
                                             {% endif %}
                                         </div>
-                                        <a href="{{ course.url or '#' }}" target="_blank" 
-                                           class="btn-outline inline-flex items-center gap-1 px-3 py-1 rounded-full text-white text-[11px] sm:text-xs font-semibold mt-2">
-                                            View <i class="fas fa-external-link-alt"></i>
-                                        </a>
+                                        <div class="flex flex-wrap items-center gap-2 mt-2">
+                                            <a href="{{ course.url or '#' }}" target="_blank" 
+                                               class="btn-outline inline-flex items-center gap-1 px-3 py-1 rounded-full text-white text-[11px] sm:text-xs font-semibold">
+                                                View <i class="fas fa-external-link-alt"></i>
+                                            </a>
+                                            <!-- ✅ PROGRESS CHECKBOX -->
+                                            <label class="inline-flex items-center gap-1.5 cursor-pointer px-2 py-1 rounded-lg hover:bg-white/10 transition">
+                                                <input type="checkbox" 
+                                                       class="progress-checkbox w-4 h-4 accent-teal-500 cursor-pointer"
+                                                       data-skill="{{ item.skill|e }}"
+                                                       data-course="{{ course.title|e }}"
+                                                       data-url="{{ course.url|e }}"
+                                                       onchange="toggleProgress(this)">
+                                                <span class="text-[11px] sm:text-xs text-gray-400">Mark complete</span>
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -444,10 +407,17 @@ document.addEventListener('keydown', function(e) {
                                     <span><i class="fas fa-clock mr-1"></i> {{ item.duration or '6 weeks' }}</span>
                                     <span><i class="fas fa-hourglass-half mr-1"></i> {{ item.effort or '4 hrs/week' }}</span>
                                 </div>
+                                <!-- ✅ PROGRESS CHECKBOX -->
+                                <label class="inline-flex items-center gap-1.5 cursor-pointer mt-2 px-2 py-1 rounded-lg hover:bg-white/10 transition">
+                                    <input type="checkbox" 
+                                           class="progress-checkbox w-4 h-4 accent-teal-500 cursor-pointer"
+                                           data-skill="{{ item.skill|e }}"
+                                           data-course="{{ item.course_name|default(item.skill)|e }}"
+                                           data-url=""
+                                           onchange="toggleProgress(this)">
+                                    <span class="text-[11px] sm:text-xs text-gray-400">Mark complete</span>
+                                </label>
                             </div>
-                            <button class="btn-outline px-4 py-2 rounded-full text-white text-xs sm:text-sm font-semibold whitespace-nowrap self-start sm:self-auto">
-                                <i class="fas fa-bookmark mr-1"></i> Save
-                            </button>
                         </div>
                     </div>
                     {% endfor %}
@@ -458,6 +428,16 @@ document.addEventListener('keydown', function(e) {
 
         <!-- ===== SIDEBAR ===== -->
         <div class="space-y-6 sm:space-y-8 order-1 lg:order-2">
+
+            <!-- Streak Card -->
+            <div class="glass-card p-4 sm:p-6 text-center border-orange-500/20"
+                 style="background: linear-gradient(145deg, rgba(251, 146, 60, 0.05) 0%, rgba(22, 27, 34, 0.95) 100%);">
+                <i class="fas fa-fire text-3xl sm:text-4xl text-orange-400 mb-3"></i>
+                <h3 class="text-base sm:text-lg font-bold text-white mb-2">Daily Streak</h3>
+                <div class="text-4xl sm:text-5xl font-bold text-orange-400 mb-2" id="streakCount">0</div>
+                <p class="text-white/60 text-xs sm:text-sm">days in a row</p>
+                <p class="text-white/40 text-xs mt-2">Come back tomorrow to keep it going!</p>
+            </div>
 
             <!-- Learning Platforms -->
             <div class="glass-card p-4 sm:p-6" data-aos="fade-left">
@@ -533,7 +513,7 @@ document.addEventListener('keydown', function(e) {
                     Complete your roadmap to increase employability by up to 40%
                 </p>
                 <div class="mt-4 h-2 bg-white/10 rounded-full overflow-hidden">
-                    <div class="h-full bg-gradient-to-r from-teal-400 to-purple-600 rounded-full" style="width: 0%"></div>
+                    <div id="motivationBar" class="h-full bg-gradient-to-r from-teal-400 to-purple-600 rounded-full transition-all duration-500" style="width: 0%"></div>
                 </div>
                 <p class="text-white/40 text-xs mt-2">Track your progress as you complete courses</p>
             </div>
@@ -552,4 +532,241 @@ document.addEventListener('keydown', function(e) {
     </div>
     {% endif %}
 </section>
+
+<script>
+// ============================================================
+// PROGRESS TRACKING
+// ============================================================
+
+async function toggleProgress(checkbox) {
+    const skill = checkbox.dataset.skill;
+    const courseTitle = checkbox.dataset.course;
+    const courseUrl = checkbox.dataset.url || '';
+    
+    try {
+        const res = await fetch('/api/progress/toggle', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                skill: skill,
+                course_title: courseTitle,
+                course_url: courseUrl
+            })
+        });
+        
+        const data = await res.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to save progress');
+        }
+        
+        // Update UI feedback
+        if (data.status === 'completed') {
+            checkbox.checked = true;
+            checkbox.parentElement.querySelector('span').textContent = '✓ Completed';
+            checkbox.parentElement.querySelector('span').className = 'text-[11px] sm:text-xs text-teal-400 font-semibold';
+        } else if (data.status === 'in_progress') {
+            checkbox.checked = true;
+            checkbox.parentElement.querySelector('span').textContent = '⏳ In progress';
+            checkbox.parentElement.querySelector('span').className = 'text-[11px] sm:text-xs text-amber-400 font-semibold';
+        } else {
+            checkbox.checked = false;
+            checkbox.parentElement.querySelector('span').textContent = 'Mark complete';
+            checkbox.parentElement.querySelector('span').className = 'text-[11px] sm:text-xs text-gray-400';
+        }
+        
+        // Refresh summary
+        loadProgressSummary();
+        
+        // Track
+        if (typeof trackEvent === 'function') {
+            trackEvent('course_' + data.status, { skill: skill });
+        }
+        
+    } catch (err) {
+        console.error('Progress toggle error:', err);
+        alert('Could not save progress. Please try again.');
+        checkbox.checked = !checkbox.checked; // revert
+    }
+}
+
+async function loadProgressSummary() {
+    try {
+        const res = await fetch('/api/progress/summary', {
+            credentials: 'same-origin'
+        });
+        const data = await res.json();
+        
+        if (!data.success) return;
+        
+        // Update progress text
+        const pct = data.progress_pct || 0;
+        
+        document.getElementById('progressPct').textContent = pct + '%';
+        document.getElementById('progressBar').style.width = pct + '%';
+        document.getElementById('motivationBar').style.width = pct + '%';
+        
+        document.getElementById('progressText').textContent = 
+            `${data.completed} of ${data.total} courses completed`;
+        
+        document.getElementById('streakCount').textContent = 
+            data.streak.current_streak || 0;
+        
+        if (data.streak.current_streak > 0) {
+            document.getElementById('streakText').textContent = 
+                `🔥 ${data.streak.current_streak} day streak — keep it up!`;
+        } else {
+            document.getElementById('streakText').textContent = 
+                'Start learning to build a streak!';
+        }
+        
+        // Update checkboxes based on saved progress
+        document.querySelectorAll('.progress-checkbox').forEach(cb => {
+            // Note: checkboxes reflect DB state when page loads
+            // We could populate them here if we fetch all progress
+        });
+        
+    } catch (err) {
+        console.error('Progress summary error:', err);
+    }
+}
+
+// Load progress on page load
+document.addEventListener('DOMContentLoaded', loadProgressSummary);
+
+
+// ============================================================
+// SHARE ROADMAP
+// ============================================================
+
+async function shareRoadmap() {
+    const modal = document.getElementById('shareModal');
+    const loading = document.getElementById('shareLoading');
+    const result = document.getElementById('shareResult');
+    const error = document.getElementById('shareError');
+    
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    loading.classList.remove('hidden');
+    result.classList.add('hidden');
+    error.classList.add('hidden');
+    
+    try {
+        const res = await fetch('/roadmap/share', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            credentials: 'same-origin'
+        });
+        
+        const data = await res.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to create share link');
+        }
+        
+        loading.classList.add('hidden');
+        result.classList.remove('hidden');
+        
+        document.getElementById('shareUrl').value = data.url;
+        
+        const shareText = encodeURIComponent(`Check out my career roadmap on TalentForge AI 🚀`);
+        const shareUrlEncoded = encodeURIComponent(data.url);
+        
+        document.getElementById('shareLinkedIn').href = 
+            `https://www.linkedin.com/sharing/share-offsite/?url=${shareUrlEncoded}`;
+        document.getElementById('shareTwitter').href = 
+            `https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrlEncoded}`;
+        document.getElementById('shareWhatsApp').href = 
+            `https://wa.me/?text=${shareText}%20${shareUrlEncoded}`;
+        
+        if (typeof trackEvent === 'function') {
+            trackEvent('roadmap_shared', { is_new: !data.already_shared });
+        }
+        
+    } catch (err) {
+        loading.classList.add('hidden');
+        error.classList.remove('hidden');
+        document.getElementById('shareErrorMsg').textContent = err.message;
+        console.error('Share error:', err);
+    }
+}
+
+function closeShareModal() {
+    const modal = document.getElementById('shareModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+async function copyShareUrl() {
+    const input = document.getElementById('shareUrl');
+    const text = document.getElementById('copyBtnText');
+    
+    try {
+        await navigator.clipboard.writeText(input.value);
+        text.textContent = 'Copied!';
+        setTimeout(() => text.textContent = 'Copy', 2000);
+    } catch (err) {
+        input.select();
+        document.execCommand('copy');
+        text.textContent = 'Copied!';
+        setTimeout(() => text.textContent = 'Copy', 2000);
+    }
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeShareModal();
+    }
+});
+
+
+// ============================================================
+// AUTO-LOAD CHECKBOX STATE FROM SERVER
+// ============================================================
+
+// Fetch saved progress and check the boxes
+async function syncCheckboxes() {
+    try {
+        // Fetch all progress entries for this user
+        const res = await fetch('/api/progress/all', {
+            credentials: 'same-origin'
+        });
+        
+        if (!res.ok) return;
+        
+        const data = await res.json();
+        if (!data.success) return;
+        
+        // Build map of skill+course → status
+        const progressMap = {};
+        data.progress.forEach(p => {
+            progressMap[p.skill + '::' + p.course_title] = p.status;
+        });
+        
+        // Apply to checkboxes
+        document.querySelectorAll('.progress-checkbox').forEach(cb => {
+            const key = cb.dataset.skill + '::' + cb.dataset.course;
+            const status = progressMap[key];
+            const label = cb.parentElement.querySelector('span');
+            
+            if (status === 'completed') {
+                cb.checked = true;
+                label.textContent = '✓ Completed';
+                label.className = 'text-[11px] sm:text-xs text-teal-400 font-semibold';
+            } else if (status === 'in_progress') {
+                cb.checked = true;
+                label.textContent = '⏳ In progress';
+                label.className = 'text-[11px] sm:text-xs text-amber-400 font-semibold';
+            }
+        });
+        
+    } catch (err) {
+        console.error('Checkbox sync error:', err);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', syncCheckboxes);
+</script>
+
 {% endblock %}

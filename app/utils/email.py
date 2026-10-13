@@ -1101,3 +1101,98 @@ def send_newsletter_broadcast(subscriber_email, subject, html_content):
     """
     
     return send_email(subject, subscriber_email, wrapped_html)
+
+def send_weekly_digest(user, digest_data):
+    """Send weekly progress digest email"""
+    base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
+    
+    subject = f"📊 Your TalentForge Weekly — {digest_data.get('week_of', '')}"
+    
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body {{ font-family: 'Inter', Arial, sans-serif; background: #f8f6f0; color: #2c3e50; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background: white; border-radius: 16px; }}
+            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #6366f1; }}
+            .logo {{ font-size: 28px; font-weight: 800; color: #2c3e50; }}
+            .logo span {{ color: #6366f1; }}
+            .tagline {{ color: #10b981; font-size: 14px; font-weight: 500; }}
+            .content {{ padding: 30px 0; }}
+            .stat-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }}
+            .stat {{ background: #f8f6f0; border-radius: 12px; padding: 16px; }}
+            .stat-label {{ color: #718096; font-size: 12px; text-transform: uppercase; }}
+            .stat-value {{ color: #2c3e50; font-size: 24px; font-weight: 700; margin-top: 4px; }}
+            .section-title {{ color: #2c3e50; font-size: 16px; font-weight: 600; margin-top: 24px; }}
+            .job-item {{ padding: 12px; background: #f8f6f0; border-radius: 8px; margin-bottom: 8px; }}
+            .footer {{ text-align: center; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }}
+        </style>
+    </head>
+    <body>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f8f6f0">
+            <tr>
+                <td align="center" style="padding: 20px 0;">
+                    <table class="container" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="max-width: 600px; width: 100%;">
+                        <tr>
+                            <td style="padding: 40px 30px;">
+                                <div class="header">
+                                    <div class="logo">TalentForge <span>AI</span></div>
+                                    <p class="tagline">Africa's Talent Intelligence Platform</p>
+                                </div>
+                                <div class="content">
+                                    <h2 style="color: #2c3e50;">Hi {user.fullname.split()[0]}! 👋</h2>
+                                    <p style="color: #555; line-height: 1.6;">Here's what happened this week:</p>
+                                    
+                                    <div class="stat-grid">
+                                        <div class="stat">
+                                            <div class="stat-label">Courses Completed</div>
+                                            <div class="stat-value">{digest_data.get('courses_completed', 0)}</div>
+                                        </div>
+                                        <div class="stat">
+                                            <div class="stat-label">Current Streak</div>
+                                            <div class="stat-value">{digest_data.get('current_streak', 0)}🔥</div>
+                                        </div>
+                                        <div class="stat">
+                                            <div class="stat-label">Employability</div>
+                                            <div class="stat-value">{digest_data.get('employability_score', 0)}</div>
+                                        </div>
+                                        <div class="stat">
+                                            <div class="stat-label">Job Matches</div>
+                                            <div class="stat-value">{digest_data.get('new_jobs_count', 0)}</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <h3 class="section-title">🔥 This week's top skill: {digest_data.get('top_skill', 'Python')}</h3>
+                                    <p style="color: #555; font-size: 14px;">
+                                        {digest_data.get('top_skill_demand', 60)}% of new jobs mention it.
+                                    </p>
+                                    
+                                    <h3 class="section-title">💼 New jobs matching your skills</h3>
+                                    {digest_data.get('new_jobs_html', '<p style="color: #999; font-size: 14px;">No new matches this week — keep building your skills!</p>')}
+                                    
+                                    <div style="text-align: center; margin: 32px 0;">
+                                        <a href="{base_url}/progress" 
+                                           style="display: inline-block; padding: 14px 32px; background: #6366f1; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600;">
+                                            View My Progress
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="footer">
+                                    <p>© 2026 TalentForge AI. All rights reserved.</p>
+                                    <p style="margin-top: 8px;">
+                                        <a href="{base_url}/progress" style="color: #999;">Manage preferences</a>
+                                    </p>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+    """
+    
+    return send_email(subject, user.email, html)

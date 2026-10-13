@@ -569,6 +569,9 @@
             <a href="{{ url_for('upload_cv') }}" class="{% if request.endpoint == 'upload_cv' %}active{% endif %}">
                 <i class="fas fa-upload"></i> Upload CV
             </a>
+            <a href="{{ url_for('progress_dashboard') }}" class="{% if request.endpoint == 'progress_dashboard' %}active{% endif %}">
+    <i class="fas fa-chart-simple"></i> My Progress
+</a>
             <a href="{{ url_for('skill_analysis') }}" class="{% if request.endpoint == 'skill_analysis' %}active{% endif %}">
                 <i class="fas fa-chart-line"></i> Skill Analysis
             </a>
