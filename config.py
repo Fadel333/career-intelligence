@@ -82,10 +82,15 @@ class Config:
     SESSION_COOKIE_SECURE = os.environ.get('BASE_URL', '').startswith('https://')
     PERMANENT_SESSION_LIFETIME = 3600
     
-    # ========== EMAIL CONFIGURATION - SENDGRID ==========
-    SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')
-    SENDGRID_FROM_EMAIL = os.environ.get('SENDGRID_FROM_EMAIL', 'faditechnologies@gmail.com')
-    SENDGRID_FROM_NAME = os.environ.get('SENDGRID_FROM_NAME', 'TalentForge AI')
+        # ========== EMAIL CONFIGURATION - BREVO ==========
+    BREVO_API_KEY = os.environ.get('BREVO_API_KEY')
+    BREVO_FROM_EMAIL = os.environ.get('BREVO_FROM_EMAIL', 'fadtechlabs.com@gmail.com')
+    BREVO_FROM_NAME = os.environ.get('BREVO_FROM_NAME', 'TalentForge AI')
+    
+    # Legacy aliases (some code may still reference SendGrid)
+    SENDGRID_API_KEY = os.environ.get('SENDGRID_API_KEY')  # Deprecated
+    SENDGRID_FROM_EMAIL = BREVO_FROM_EMAIL  # Alias to Brevo
+    SENDGRID_FROM_NAME = BREVO_FROM_NAME  # Alias to Brevo
     
     # ========== EMAIL CONFIGURATION - SMTP FALLBACK ==========
     MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
@@ -132,7 +137,7 @@ print(f"🔍 Google Analytics:  {'✅ Set' if Config.GA_MEASUREMENT_ID else '❌
 print(f"🔍 YouTube Key:       {'✅ Set' if Config.YOUTUBE_API_KEY else '❌ Not Set'}")
 print(f"🔍 Coursera:          {'✅ Business API' if Config.COURSERA_CLIENT_ID else '⚠️  Using Public API (free)'}")
 print(f"🔍 Udemy:             {'✅ Set' if Config.UDEMY_CLIENT_ID else '❌ Not Set'}")
-print(f"🔍 SendGrid:          {'✅ Set' if Config.SENDGRID_API_KEY else '❌ Not Set'}")
+print(f"🔍 Brevo:             {'✅ Set' if Config.BREVO_API_KEY else '❌ Not Set'}")
 print(f"🔍 Google OAuth:      {'✅ Set' if Config.GOOGLE_CLIENT_ID else '❌ Not Set'}")
 print(f"🔍 LinkedIn OAuth:    {'✅ Set' if Config.LINKEDIN_CLIENT_ID else '❌ Not Set'}")
 print(f"🔍 GitHub OAuth:      {'✅ Set' if Config.GITHUB_CLIENT_ID else '❌ Not Set'}")
