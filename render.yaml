@@ -9,3 +9,23 @@ services:
         sync: false
       - key: SECRET_KEY
         sync: false
+
+  - type: cron
+    name: weekly-digest-cron
+    runtime: docker
+    repo: https://github.com/Fadel333/career-intelligence
+    schedule: "0 9 * * 1"  # Every Monday at 9:00 AM UTC [citation:1][citation:8]
+    dockerCommand: python -c "from app.utils.weekly_digest import generate_and_send_digests; generate_and_send_digests()"
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_FROM_EMAIL
+        sync: false
+      - key: BREVO_FROM_NAME
+        sync: false
+      - key: BASE_URL
+        value: https://career-intelligence-3.onrender.com
