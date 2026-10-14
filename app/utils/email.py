@@ -26,7 +26,6 @@ def _send_async_brevo(app, subject, recipients, html_body, sender_email, sender_
                 logger.error("BREVO_API_KEY not configured")
                 return
 
-            # Brevo expects a list of recipient objects
             to_list = [{"email": r} for r in recipients]
 
             payload = {
@@ -67,10 +66,9 @@ def send_email(subject, recipients, html_body, text_body=None, sender=None):
         app = current_app._get_current_object()
         recipients_list = recipients if isinstance(recipients, list) else [recipients]
 
-        # Sender config
         sender_email = sender or app.config.get(
             'BREVO_FROM_EMAIL',
-            app.config.get('SENDGRID_FROM_EMAIL', 'fadtechlabs.com@gmail.com')
+            'fadtechlabs.com@gmail.com'
         )
         sender_name = app.config.get('BREVO_FROM_NAME', 'TalentForge AI')
 
@@ -695,6 +693,118 @@ def send_application_status_update_email(application):
 
 
 # ============================================================
+# JOB PUBLISHED EMAIL
+# ============================================================
+
+def send_job_published_email(job):
+    """Send job published confirmation to recruiter"""
+    from models import RecruiterProfile, User
+    base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
+    recruiter = RecruiterProfile.query.get(job.recruiter_id)
+    user = User.query.get(recruiter.user_id)
+
+    subject = f"✅ Job Published: {job.title}"
+
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body {{ font-family: 'Inter', Arial, sans-serif; background: #f8f6f0; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background: white; border-radius: 16px; }}
+            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #4CAF50; }}
+            .logo {{ font-size: 28px; font-weight: 800; color: #2c3e50; }}
+            .logo span {{ color: #6366f1; }}
+            .footer {{ text-align: center; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <div class="logo">TalentForge <span>AI</span></div>
+            </div>
+            <h2>✅ Job Published Successfully!</h2>
+            <p>Dear {recruiter.company_name},</p>
+            <p>Your job posting is now live on the TalentForge AI job board!</p>
+            <div style="background: #f8f6f0; padding: 20px; border-radius: 12px; margin: 20px 0;">
+                <p style="margin: 0; font-weight: 600;">📌 Job Details:</p>
+                <p style="margin: 4px 0; color: #555;">Title: {job.title}</p>
+                <p style="margin: 4px 0; color: #555;">Location: {job.location or 'Remote'}</p>
+                <p style="margin: 4px 0; color: #555;">Posted: {job.posted_at.strftime('%B %d, %Y at %I:%M %p') if job.posted_at else 'Today'}</p>
+            </div>
+            {create_clickable_button('🔍 View Your Job', f'{base_url}/jobs/{job.id}')}
+            <br><br>
+            <p style="text-align: center;">
+                {create_clickable_text_link('✏️ Edit Job Posting', f'{base_url}/recruiter/jobs/{job.id}/edit')}
+            </p>
+            <div class="footer">
+                <p>© 2026 TalentForge AI. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    send_email(subject, user.email, html)
+
+
+# ============================================================
+# CANDIDATE MATCH EMAIL
+# ============================================================
+
+def send_candidate_match_email(recruiter, candidate, job=None):
+    """Send candidate match alert to recruiter"""
+    from models import User
+    base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
+    user = User.query.get(recruiter.user_id)
+
+    subject = "🎯 New Candidate Match Found!"
+
+    job_text = f" for {job.title}" if job else ""
+
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body {{ font-family: 'Inter', Arial, sans-serif; background: #f8f6f0; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background: white; border-radius: 16px; }}
+            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #6366f1; }}
+            .logo {{ font-size: 28px; font-weight: 800; color: #2c3e50; }}
+            .logo span {{ color: #6366f1; }}
+            .footer {{ text-align: center; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <div class="logo">TalentForge <span>AI</span></div>
+            </div>
+            <h2>🎯 New Candidate Match Found!</h2>
+            <p>Dear {recruiter.company_name},</p>
+            <p>Our AI has found a promising candidate that matches your requirements{job_text}!</p>
+            <div style="background: #f8f6f0; padding: 20px; border-radius: 12px; margin: 20px 0;">
+                <p style="margin: 0; font-weight: 600;">👤 Candidate Profile:</p>
+                <p style="margin: 4px 0; color: #555;">Name: {candidate.name}</p>
+                <p style="margin: 4px 0; color: #555;">Email: {candidate.email}</p>
+                <p style="margin: 4px 0; color: #555;">Skills: {', '.join(candidate.skills[:5]) if candidate.skills else 'N/A'}</p>
+                <p style="margin: 4px 0; color: #555;">Experience: {candidate.experience_years or 0} years</p>
+            </div>
+            {create_clickable_button('👤 View Candidate Profile', f'{base_url}/recruiter/candidates/{candidate.id}')}
+            <div class="footer">
+                <p>© 2026 TalentForge AI. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    send_email(subject, user.email, html)
+
+
+# ============================================================
 # ALERT TEST — no matches
 # ============================================================
 
@@ -745,3 +855,113 @@ def send_alert_test_no_matches_email(user, alert):
     """
 
     return send_email(subject, user.email, html)
+
+
+# ============================================================
+# NEWSLETTER EMAILS
+# ============================================================
+
+def send_welcome_newsletter_email(email, name=None):
+    """Send welcome email to new newsletter subscriber."""
+    base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
+    display_name = name or "there"
+
+    subject = "Welcome to TalentForge AI Newsletter 🎉"
+
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body {{ font-family: 'Inter', Arial, sans-serif; background: #f8f6f0; color: #2c3e50; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background: white; border-radius: 16px; }}
+            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #6366f1; }}
+            .logo {{ font-size: 28px; font-weight: 800; color: #2c3e50; }}
+            .logo span {{ color: #6366f1; }}
+            .tagline {{ color: #10b981; font-size: 14px; font-weight: 500; }}
+            .footer {{ text-align: center; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <div class="logo">TalentForge <span>AI</span></div>
+                <p class="tagline">Africa's Talent Intelligence Platform</p>
+            </div>
+            <h2>Welcome, {display_name}! 🎉</h2>
+            <p style="color: #555; line-height: 1.6;">
+                Thanks for subscribing to the TalentForge AI newsletter! You'll be the first to hear about:
+            </p>
+            <div style="background: #f8f6f0; padding: 20px; border-radius: 12px; margin: 20px 0;">
+                <ul style="color: #555; padding-left: 20px; margin: 0;">
+                    <li style="margin-bottom: 8px;">📊 New job market insights for Africa</li>
+                    <li style="margin-bottom: 8px;">🚀 Feature updates and improvements</li>
+                    <li style="margin-bottom: 8px;">💡 Career tips and learning resources</li>
+                    <li>🎯 Job opportunities matching your skills</li>
+                </ul>
+            </div>
+            <p style="color: #555; line-height: 1.6;">
+                We typically send one update per week — no spam, ever.
+            </p>
+            {create_clickable_button('🚀 Visit TalentForge', base_url)}
+            <div class="footer">
+                <p>© 2026 TalentForge AI. All rights reserved.</p>
+                <p>Ghana · West Africa</p>
+                <p style="margin-top: 8px;">
+                    <a href="{base_url}/newsletter/unsubscribe?email={email}"
+                       style="color: #999; text-decoration: underline;">Unsubscribe</a>
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    return send_email(subject, email, html)
+
+
+def send_newsletter_broadcast(subscriber_email, subject, html_content):
+    """Send a newsletter to one subscriber.
+    Called in a loop by the admin broadcast route.
+    """
+    base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
+
+    wrapped_html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <style>
+            body {{ font-family: 'Inter', Arial, sans-serif; background: #f8f6f0; color: #2c3e50; }}
+            .container {{ max-width: 600px; margin: 0 auto; padding: 40px 20px; background: white; border-radius: 16px; }}
+            .header {{ text-align: center; padding-bottom: 20px; border-bottom: 2px solid #6366f1; }}
+            .logo {{ font-size: 28px; font-weight: 800; color: #2c3e50; }}
+            .logo span {{ color: #6366f1; }}
+            .tagline {{ color: #10b981; font-size: 14px; font-weight: 500; }}
+            .footer {{ text-align: center; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #999; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <div class="logo">TalentForge <span>AI</span></div>
+                <p class="tagline">Africa's Talent Intelligence Platform</p>
+            </div>
+            <div class="content">
+                {html_content}
+            </div>
+            <div class="footer">
+                <p>© 2026 TalentForge AI. All rights reserved.</p>
+                <p>Ghana · West Africa</p>
+                <p style="margin-top: 8px;">
+                    <a href="{base_url}/newsletter/unsubscribe?email={subscriber_email}"
+                       style="color: #999; text-decoration: underline;">Unsubscribe</a>
+                </p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+    return send_email(subject, subscriber_email, wrapped_html)
