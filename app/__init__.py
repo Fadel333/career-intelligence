@@ -919,7 +919,7 @@ def register_routes(app):
             # Return existing share URL
             return jsonify({
                 'success': True,
-                'url': f"{current_app.config['BASE_URL']}/r/{existing.public_slug}",
+                'url': f"{current_app.config['BASE_URL']}/r/{public_slug}",
                 'slug': existing.public_slug,
                 'already_shared': True
             })
@@ -950,7 +950,7 @@ def register_routes(app):
         
         return jsonify({
             'success': True,
-            'url': url_for('view_shared_roadmap', slug=public_slug, _external=True),
+            'url': f"{current_app.config['BASE_URL']}/r/{public_slug}",
             'slug': public_slug,
             'already_shared': False
         })
