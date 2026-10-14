@@ -3,6 +3,7 @@ from flask import (
     render_template, redirect, url_for, flash, request, jsonify, 
     current_app, send_file, abort
 )
+from extensions import limiter
 from flask_login import login_required, current_user
 from sqlalchemy import desc, func
 from datetime import datetime, timedelta
@@ -137,7 +138,7 @@ def allowed_document_file(filename):
 @recruiter_bp.route('/')
 @login_required
 @recruiter_required
-def hub():
+def hub(): 
     """Recruiter Hub landing page"""
     recruiter = RecruiterProfile.query.filter_by(user_id=current_user.id).first()
     
@@ -1175,6 +1176,7 @@ def analytics():
 @recruiter_bp.route('/api/generate-description', methods=['POST'])
 @login_required
 @recruiter_required
+@limiter.limit("20 per hour")
 def api_generate_description():
     """AI-powered job description generation using Gemini"""
     try:

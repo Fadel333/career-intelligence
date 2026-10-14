@@ -688,6 +688,7 @@ def register_routes(app):
     
     # ========== PUBLIC ROUTES ==========
     @app.route('/')
+    @limiter.exempt
     def index():
         """Landing page with real stats"""
         # Real metrics

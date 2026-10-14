@@ -1,11 +1,12 @@
 # app/cron/routes.py
 import os
 from flask import request, jsonify
-from extensions import csrf
+from extensions import csrf, limiter
 from . import cron_bp
 
 
 @cron_bp.route('/weekly-digest')
+@limiter.limit("5 per minute")
 def weekly_digest():
     """Protected endpoint triggered by external cron services."""
     secret = request.args.get('secret') or request.headers.get('X-Cron-Secret')

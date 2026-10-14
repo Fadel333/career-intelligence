@@ -4,12 +4,14 @@ from flask_login import login_required, current_user
 from datetime import datetime
 
 from models import db, NewsletterSubscriber
+from extensions import limiter
 from app.utils.email import send_welcome_newsletter_email
 
 newsletter_bp = Blueprint('newsletter', __name__, url_prefix='/newsletter')
 
 
 @newsletter_bp.route('/subscribe', methods=['POST'])
+@limiter.limit("5 per hour", methods=["POST"])
 def subscribe():
     """Handle newsletter subscription from footer form"""
     data = request.get_json() or request.form

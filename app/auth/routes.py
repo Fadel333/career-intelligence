@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import User, Profile, RecruiterProfile
-from extensions import db, csrf
+from extensions import db, csrf, limiter
 from urllib.parse import urlparse
 from app.utils.oauth import oauth
 from app.utils.email import send_welcome_email, send_verification_email
@@ -39,6 +39,7 @@ def verify_token(token):
 # ========== REGISTRATION ==========
 
 @auth_bp.route("/register", methods=["GET", "POST"])
+@limiter.limit("10 per hour", methods=["POST"])
 def register():
     if request.method == "POST":
         name = request.form.get("name")
@@ -133,6 +134,7 @@ def register():
 # ========== EMAIL VERIFICATION ==========
 
 @auth_bp.route('/verify/<token>')
+@limiter.limit("3 per hour")
 @csrf.exempt
 def verify_email(token):
     """Verify user's email address"""
@@ -162,6 +164,7 @@ def verify_email(token):
 
 
 @auth_bp.route('/resend-verification', methods=['GET', 'POST'])
+@limiter.limit("3 per hour", methods=["POST"])
 
 def resend_verification():
     """Resend verification email"""
@@ -198,6 +201,7 @@ def resend_verification():
 # ========== LOGIN ==========
 
 @auth_bp.route("/login", methods=["GET", "POST"])
+@limiter.limit("20 per hour", methods=["POST"])
 
 def login():
     if request.method == "POST":
@@ -446,6 +450,7 @@ def handle_oauth_callback(provider, profile):
 # ========== PASSWORD RESET ==========
 
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])
+@limiter.limit("5 per hour", methods=["POST"])
 def forgot_password():
     """Request password reset"""
     if request.method == 'POST':

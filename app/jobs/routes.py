@@ -8,6 +8,7 @@ import os
 from werkzeug.utils import secure_filename
 
 from models import db, Job, JobApplication, Candidate, User, JobStatus, RecruiterProfile
+from extensions import limiter
 from app.utils.decorators import recruiter_required
 from app.utils.email import send_new_application_email, send_application_status_update_email
 
@@ -175,6 +176,7 @@ def job_detail(job_id):
 
 
 @jobs_bp.route('/<int:job_id>/apply', methods=['GET', 'POST'])
+@limiter.limit("20 per hour", methods=["POST"])
 def apply(job_id):
     """Apply to a job - redirects if job is closed or filled"""
     job = Job.query.filter_by(id=job_id).first_or_404()
