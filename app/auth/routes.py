@@ -4,6 +4,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import User, Profile, RecruiterProfile
 from extensions import db, csrf
+from urllib.parse import urlparse
 from app.utils.oauth import oauth
 from app.utils.email import send_welcome_email, send_verification_email
 import secrets
@@ -229,7 +230,10 @@ def login():
         
         next_page = request.args.get('next')
         if next_page:
-            return redirect(next_page)
+            parsed = urlparse(next_page)
+            # Only allow relative paths — no scheme, no host
+            if not parsed.scheme and not parsed.netloc and next_page.startswith('/'):
+                return redirect(next_page)
         
         # Redirect based on user type
         if user.user_type == 'admin':

@@ -8,10 +8,7 @@ from flask_mail import Mail
 from werkzeug.utils import secure_filename
 import os
 import sys
-import pickle
-import base64
 import json
-import ast 
 from datetime import datetime, timedelta
 from collections import Counter
 from sqlalchemy import func
@@ -85,20 +82,18 @@ hybrid_parser = HybridParser()
 
 
 def compress_parsed_data(data):
-    """Compress large data to fit in session cookie"""
+    """Serialize large data to fit in session cookie (JSON only — no pickle)"""
     if not data:
         return None
     try:
-        pickled = pickle.dumps(data)
-        compressed = base64.b64encode(pickled).decode('utf-8')
-        return compressed
-    except Exception as e:
-        print(f"Compression error: {e}")
+        return json.dumps(data)
+    except (TypeError, ValueError) as e:
+        print(f"Serialization error: {e}")
         return None
 
 
 def decompress_parsed_data(compressed):
-    """Decompress data from session"""
+    """Deserialize data from session (JSON only — no pickle)"""
     if not compressed:
         return None
     
@@ -110,23 +105,7 @@ def decompress_parsed_data(compressed):
             data = json.loads(compressed)
             if isinstance(data, dict):
                 return data
-        except:
-            pass
-        
-        try:
-            decoded = base64.b64decode(compressed.encode('utf-8'))
-            data = pickle.loads(decoded)
-            if isinstance(data, dict):
-                return data
-        except:
-            pass
-        
-        try:
-            if compressed.startswith('{') and compressed.endswith('}'):
-                data = ast.literal_eval(compressed)
-                if isinstance(data, dict):
-                    return data
-        except:
+        except (json.JSONDecodeError, TypeError):
             pass
         
         return None
@@ -165,7 +144,7 @@ def register_blueprints(app):
 
 
 def get_parsed_data_from_session():
-    """Helper to get parsed data from session with decompression"""
+    """Helper to get parsed data from session (JSON only — no pickle)"""
     data = session.get('parsed_cv', None)
     if not data:
         return None
@@ -178,23 +157,7 @@ def get_parsed_data_from_session():
             result = json.loads(data)
             if isinstance(result, dict):
                 return result
-        except:
-            pass
-        
-        try:
-            decoded = base64.b64decode(data.encode('utf-8'))
-            result = pickle.loads(decoded)
-            if isinstance(result, dict):
-                return result
-        except:
-            pass
-        
-        try:
-            if data.startswith('{') and data.endswith('}'):
-                result = ast.literal_eval(data)
-                if isinstance(result, dict):
-                    return result
-        except:
+        except (json.JSONDecodeError, TypeError):
             pass
         
         return None

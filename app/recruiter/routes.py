@@ -903,8 +903,21 @@ def setup_profile():
         recruiter.company_website = request.form.get('company_website')
         recruiter.industry = request.form.get('industry')
         recruiter.location = request.form.get('location')
-        recruiter.min_match_percentage = float(request.form.get('min_match', 70.0))
-        recruiter.auto_approve_candidates = bool(request.form.get('auto_approve'))
+                # Safely parse min_match — reject NaN/Infinity/out-of-range
+        raw_min_match = request.form.get('min_match', '70.0')
+        try:
+            min_match = float(raw_min_match)
+            if not (0 <= min_match <= 100):
+                raise ValueError("out of range")
+            if min_match != min_match:  # NaN check
+                raise ValueError("NaN")
+        except (TypeError, ValueError):
+            min_match = 70.0
+        recruiter.min_match_percentage = min_match
+
+        # Fix bool() on string — "false"/"0"/"" should all be False
+        auto_approve_value = request.form.get('auto_approve', '')
+        recruiter.auto_approve_candidates = auto_approve_value.lower() in ('true', '1', 'on', 'yes')
         
         current_user.company_name = recruiter.company_name
         
