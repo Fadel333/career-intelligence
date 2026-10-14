@@ -36,6 +36,7 @@ from app.admin.routes import admin_bp
 from app.jobs.routes import jobs_bp 
 from app.newsletter.routes import newsletter_bp
 from app.cli import register_commands
+from app.cron import cron_bp
 
 # Initialize Flask-Mail ONCE
 mail = Mail()
@@ -158,6 +159,8 @@ def register_blueprints(app):
     # ✅ Register chat blueprint
     from app.chat.routes import chat_bp
     app.register_blueprint(chat_bp, url_prefix='/chat')
+    # ✅ Register cron blueprint
+    app.register_blueprint(cron_bp)
 
 
 def get_parsed_data_from_session():
