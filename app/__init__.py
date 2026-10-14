@@ -1,6 +1,6 @@
 # app/__init__.py
 
-from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify, make_response
+from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify, make_response, current_app
 from flask_login import login_required, current_user
 from extensions import db, login_manager, csrf
 from flask_migrate import Migrate
@@ -919,7 +919,7 @@ def register_routes(app):
             # Return existing share URL
             return jsonify({
                 'success': True,
-                'url': url_for('view_shared_roadmap', slug=existing.public_slug, _external=True),
+                'url': f"{current_app.config['BASE_URL']}/r/{existing.public_slug}",
                 'slug': existing.public_slug,
                 'already_shared': True
             })
@@ -2735,5 +2735,15 @@ def create_app():
     app.register_blueprint(recruiter_bp)
     app.register_blueprint(admin_bp) 
     app.register_blueprint(jobs_bp) 
+    
+    # ✅ Security headers on every response
+    @app.after_request
+    def add_security_headers(response):
+        response.headers['X-Frame-Options'] = app.config.get('X_FRAME_OPTIONS', 'SAMEORIGIN')
+        response.headers['X-Content-Type-Options'] = app.config.get('X_CONTENT_TYPE_OPTIONS', 'nosniff')
+        response.headers['Referrer-Policy'] = app.config.get('REFERRER_POLICY', 'strict-origin-when-cross-origin')
+        if not app.debug:
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        return response
     
     return app
