@@ -46,6 +46,26 @@
                     }
                 });
             }
+
+                    // Patch XMLHttpRequest to auto-add CSRF header for state-changing methods
+        const originalXhrOpen = XMLHttpRequest.prototype.open;
+        const originalXhrSend = XMLHttpRequest.prototype.send;
+
+        XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+            this._method = (method || 'GET').toUpperCase();
+            return originalXhrOpen.call(this, method, url, ...rest);
+        };
+
+        XMLHttpRequest.prototype.send = function(body) {
+            if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(this._method)) {
+                try {
+                    this.setRequestHeader('X-CSRFToken', getCsrfToken());
+                } catch (e) {
+                    // setRequestHeader can fail if called before open() — ignore
+                }
+            }
+            return originalXhrSend.call(this, body);
+        };
         })();
     </script>
     <title>{% block title %}TalentForge AI | Africa's Talent Intelligence Platform{% endblock %}</title>

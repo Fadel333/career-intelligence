@@ -290,7 +290,8 @@
 
         // Create FormData
         const formData = new FormData();
-        formData.append('cv_file', file);
+formData.append('cv_file', file);
+formData.append('csrf_token', document.querySelector('meta[name="csrf-token"]').content);
 
         // Create XMLHttpRequest for progress tracking
         const xhr = new XMLHttpRequest();
