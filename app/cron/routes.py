@@ -1,6 +1,7 @@
 # app/cron/routes.py
 import os
 from flask import request, jsonify
+from extensions import csrf
 from . import cron_bp
 
 

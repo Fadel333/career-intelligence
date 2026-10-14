@@ -96,6 +96,7 @@
                         
                         <!-- Status Update Form with Notes -->
                         <form method="POST" action="{{ url_for('recruiter.update_placement', placement_id=placement.id) }}" class="flex flex-wrap items-center gap-2">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <select name="status" 
                                     class="bg-white/10 border border-white/10 rounded-xl px-3 py-1.5 text-white text-sm focus:border-teal-400 focus:outline-none transition">
                                 <option value="pending" {% if placement.status.value == 'pending' %}selected{% endif %}>Pending</option>

@@ -2,7 +2,7 @@
 
 from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify, make_response
 from flask_login import login_required, current_user
-from extensions import db, login_manager
+from extensions import db, login_manager, csrf
 from flask_migrate import Migrate
 from flask_mail import Mail
 from werkzeug.utils import secure_filename
@@ -143,6 +143,7 @@ def initialize_extensions(app):
     """Initialize Flask extensions with app"""
     db.init_app(app)
     login_manager.init_app(app)
+    csrf.init_app(app)
 
 
 def configure_login_manager():

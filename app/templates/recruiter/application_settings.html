@@ -18,6 +18,7 @@
     <!-- Main Card -->
     <div class="glass-card p-8">
         <form method="POST" class="space-y-6">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <!-- Retention Period -->
             <div>
                 <label class="block text-white/80 text-sm font-semibold mb-2">
@@ -58,6 +59,7 @@
                     <i class="fas fa-arrow-left mr-2"></i> Back to Applications
                 </a>
                 <form action="{{ url_for('recruiter.cleanup_expired_applications') }}" method="POST" class="inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" 
                             class="btn-danger px-8 py-3 rounded-xl text-white font-semibold"
                             onclick="return confirm('⚠️ Delete all expired applications? This action cannot be undone.')">

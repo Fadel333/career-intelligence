@@ -143,6 +143,7 @@
         </a>
         {% if answered_count == questions|length and questions|length > 0 %}
             <form method="POST" action="{{ url_for('interview_practice_complete', practice_id=practice.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn-primary px-6 py-3 rounded-full text-white font-semibold">
                     <i class="fas fa-check mr-2"></i> Complete Interview
                 </button>

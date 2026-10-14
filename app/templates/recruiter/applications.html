@@ -16,6 +16,7 @@
         <div class="flex gap-2">
             {% if expired_count is defined and expired_count > 0 %}
                 <form action="{{ url_for('recruiter.cleanup_expired_applications') }}" method="POST" class="d-inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 px-4 py-2 rounded-xl text-sm font-semibold transition border border-yellow-500/20" 
                             onclick="return confirm('Delete all expired applications?')">
                         <i class="fas fa-trash mr-2"></i> Cleanup ({{ expired_count }})
@@ -102,6 +103,7 @@
     <!-- Bulk Actions -->
     {% if applications and applications|length > 0 %}
         <form id="bulkForm" method="POST" action="{{ url_for('recruiter.bulk_delete_applications') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="flex justify-between items-center mb-4">
                 <div class="flex items-center gap-3">
                     <input type="checkbox" id="selectAll" onchange="toggleAll(this)" class="w-4 h-4 accent-indigo-500">
@@ -175,6 +177,7 @@
                             <form method="POST" action="{{ url_for('recruiter.delete_application', app_id=application.id) }}" 
                                   class="d-inline" 
                                   onsubmit="return confirm('Delete this application? It can be restored within 30 days.')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                 <button type="submit" class="bg-red-500/10 hover:bg-red-500/20 px-3 py-2 rounded-xl text-red-400 text-sm font-semibold transition border border-red-500/20">
                                     <i class="fas fa-trash"></i>
                                 </button>
@@ -185,6 +188,7 @@
                 
                 <div class="flex flex-wrap items-center gap-3 mt-3 pt-3 border-t border-[#2d2d3f]">
                     <form method="POST" action="{{ url_for('jobs.update_application_status', application_id=application.id) }}" class="flex gap-2">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <select name="status" 
                                 class="bg-[#1a1a2e] border border-[#2d2d3f] rounded-xl px-2 py-1.5 text-gray-200 text-sm focus:border-indigo-500 focus:outline-none transition">
                             <option value="pending" {% if application.status == 'pending' %}selected{% endif %}>Pending</option>

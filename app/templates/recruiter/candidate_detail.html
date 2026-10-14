@@ -160,6 +160,7 @@
 
             <!-- Add this button in the actions section -->
 <form method="POST" action="{{ url_for('recruiter.add_to_shortlist', candidate_id=candidate.id) }}" class="inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="job_id" value="{{ job.id if job else '' }}">
     <button type="submit" class="w-full bg-yellow-500/20 hover:bg-yellow-500/30 rounded-xl px-4 py-2.5 text-yellow-400 transition text-sm">
         <i class="fas fa-star mr-2"></i> Add to Shortlist
@@ -200,6 +201,7 @@
             </button>
         </div>
         <form action="{{ url_for('recruiter.flag_candidate', candidate_id=candidate.id) }}" method="POST">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <div class="mb-4">
                 <label class="text-white/60 text-sm block mb-1">Select Job</label>
                 <select name="job_id" required 

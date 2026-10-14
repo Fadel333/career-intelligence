@@ -165,6 +165,7 @@
                 <form method="POST" action="{{ url_for('jobs.withdraw_application', application_id=application.id) }}" 
                       class="d-inline" 
                       onsubmit="return confirm('Are you sure you want to withdraw this application?')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <button type="submit" class="bg-red-500/10 hover:bg-red-500/20 text-red-400 px-4 py-2 rounded-xl text-sm font-semibold transition border border-red-500/20">
                         <i class="fas fa-times mr-2"></i> Withdraw Application
                     </button>

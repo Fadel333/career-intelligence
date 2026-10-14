@@ -16,6 +16,7 @@
 
     <div class="glass-card p-6 md:p-8" data-aos="fade-up">
         <form method="POST" action="{{ url_for('recruiter.create_job') }}" class="space-y-6" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             {{ form.hidden_tag() }}
 
             <!-- Display Flash Messages -->

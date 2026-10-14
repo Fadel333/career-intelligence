@@ -3,6 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+        <!-- 🔐 CSRF token for AJAX requests -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <!-- 🔐 Auto-inject CSRF token into all fetch() POST/PUT/DELETE calls -->
+    <script>
+        (function() {
+            'use strict';
+            
+            function getCsrfToken() {
+                const meta = document.querySelector('meta[name="csrf-token"]');
+                return meta ? meta.getAttribute('content') : '';
+            }
+            
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options = {}) {
+                const method = (options.method || 'GET').toUpperCase();
+                if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+                    options.headers = options.headers || {};
+                    
+                    if (options.headers instanceof Headers) {
+                        if (!options.headers.has('X-CSRFToken')) {
+                            options.headers.set('X-CSRFToken', getCsrfToken());
+                        }
+                    } else if (Array.isArray(options.headers)) {
+                        options.headers.push(['X-CSRFToken', getCsrfToken()]);
+                    } else {
+                        if (!options.headers['X-CSRFToken']) {
+                            options.headers['X-CSRFToken'] = getCsrfToken();
+                        }
+                    }
+                }
+                return originalFetch.call(this, url, options);
+            };
+            
+            if (window.jQuery) {
+                window.jQuery.ajaxSetup({
+                    beforeSend: function(xhr, settings) {
+                        if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                            xhr.setRequestHeader('X-CSRFToken', getCsrfToken());
+                        }
+                    }
+                });
+            }
+        })();
+    </script>
+    <title>{% block title %}TalentForge AI | Africa's Talent Intelligence Platform{% endblock %}</title>
     <title>{% block title %}TalentForge AI | Africa's Talent Intelligence Platform{% endblock %}</title>
 
     {% block meta %}

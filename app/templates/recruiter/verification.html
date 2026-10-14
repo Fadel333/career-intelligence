@@ -87,6 +87,7 @@
             </div>
         {% else %}
             <form method="POST" action="{{ url_for('recruiter.upload_verification_document') }}" enctype="multipart/form-data" class="space-y-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div>
                     <label class="text-white/60 text-sm block mb-2">Select Document</label>
                     <div class="border-2 border-dashed border-white/20 rounded-xl p-6 text-center hover:border-teal-400/50 transition">
@@ -152,6 +153,7 @@
                 Our team will verify your information within 1-2 business days.
             </p>
             <form method="POST" action="{{ url_for('recruiter.submit_verification') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button type="submit" class="btn-primary px-8 py-3 rounded-xl text-white font-bold">
                     <i class="fas fa-paper-plane mr-2"></i> Submit for Verification
                 </button>

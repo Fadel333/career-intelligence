@@ -73,6 +73,7 @@
                     {% endif %}
                     <form method="POST" action="{{ url_for('interview_practice_delete', practice_id=session.id) }}" 
                           onsubmit="return confirm('Delete this session?')">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="bg-red-500/20 hover:bg-red-500/30 px-3 py-2 rounded-full text-red-400 text-sm">
                             <i class="fas fa-trash"></i>
                         </button>

@@ -17,6 +17,7 @@
 
     <div class="glass-card p-8" data-aos="fade-up">
         <form method="POST" action="{{ url_for('jobs.apply', job_id=job.id) }}" enctype="multipart/form-data" class="space-y-6">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <!-- Name -->
             <div>
                 <label class="text-white font-medium block mb-1">Full Name *</label>

@@ -38,6 +38,7 @@
 
     <!-- Composer Form -->
     <form method="POST" action="{{ url_for('admin.newsletter_send') }}" class="glass-card p-6">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
         <!-- Subject -->
         <div class="mb-4">

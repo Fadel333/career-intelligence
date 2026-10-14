@@ -3,7 +3,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import User, Profile, RecruiterProfile
-from extensions import db
+from extensions import db, csrf
 from app.utils.oauth import oauth
 from app.utils.email import send_welcome_email, send_verification_email
 import secrets
@@ -132,6 +132,7 @@ def register():
 # ========== EMAIL VERIFICATION ==========
 
 @auth_bp.route('/verify/<token>')
+@csrf.exempt
 def verify_email(token):
     """Verify user's email address"""
     user_id = verify_token(token)
@@ -160,6 +161,7 @@ def verify_email(token):
 
 
 @auth_bp.route('/resend-verification', methods=['GET', 'POST'])
+
 def resend_verification():
     """Resend verification email"""
     if request.method == 'POST':
@@ -195,6 +197,7 @@ def resend_verification():
 # ========== LOGIN ==========
 
 @auth_bp.route("/login", methods=["GET", "POST"])
+
 def login():
     if request.method == "POST":
         email = request.form.get("email")
@@ -244,6 +247,7 @@ def login():
 # ========== LOGOUT ==========
 
 @auth_bp.route("/logout")
+@csrf.exempt
 @login_required
 def logout():
     logout_user()
@@ -259,6 +263,7 @@ def is_oauth_configured(provider):
 
 
 @auth_bp.route('/login/google')
+@csrf.exempt
 def google_login():
     """Google OAuth login"""
     if not is_oauth_configured('google'):
@@ -273,6 +278,7 @@ def google_login():
 
 
 @auth_bp.route('/authorize/google')
+@csrf.exempt
 def google_authorize():
     """Google OAuth callback"""
     if not is_oauth_configured('google'):
@@ -307,6 +313,7 @@ def google_authorize():
 # ========== LINKEDIN OAUTH ==========
 
 @auth_bp.route('/login/linkedin')
+@csrf.exempt
 def linkedin_login():
     """LinkedIn OAuth login"""
     if not is_oauth_configured('linkedin'):
@@ -318,6 +325,7 @@ def linkedin_login():
 
 
 @auth_bp.route('/authorize/linkedin')
+@csrf.exempt
 def linkedin_authorize():
     """LinkedIn OAuth callback"""
     if not is_oauth_configured('linkedin'):
@@ -368,6 +376,7 @@ def linkedin_authorize():
 # ========== GITHUB OAUTH ==========
 
 @auth_bp.route('/login/github')
+@csrf.exempt
 def github_login():
     """GitHub OAuth login"""
     if not is_oauth_configured('github'):
@@ -379,6 +388,7 @@ def github_login():
 
 
 @auth_bp.route('/authorize/github')
+@csrf.exempt
 def github_authorize():
     """GitHub OAuth callback"""
     if not is_oauth_configured('github'):
