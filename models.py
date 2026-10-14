@@ -83,15 +83,15 @@ class User(UserMixin, db.Model):
     total_placements = db.Column(db.Integer, default=0)
     
     # Application retention settings
-    retention_days = db.Column(db.Integer, default=30)  # Days to keep applications
+    retention_days = db.Column(db.Integer, default=30)
     
     # ========== NOTIFICATION PREFERENCES ==========
     receive_notifications = db.Column(db.Boolean, default=True)
     email_notifications = db.Column(db.Boolean, default=True)
     sms_notifications = db.Column(db.Boolean, default=False)
-    notification_frequency = db.Column(db.String(20), default='daily')  # 'realtime', 'daily', 'weekly'
+    notification_frequency = db.Column(db.String(20), default='daily')
     
-    # Relationships - ALL BACKREF NAMES ARE UNIQUE
+    # Relationships
     profile = db.relationship('Profile', backref='user_profile', uselist=False, cascade='all, delete-orphan')
     
     recruiter_profile = db.relationship(
@@ -106,11 +106,17 @@ class User(UserMixin, db.Model):
         'Job', 
         backref='job_poster', 
         lazy=True, 
-        foreign_keys='Job.poster_id'
+        foreign_keys='Job.poster_id',
+        overlaps="recruiter_jobs"
     )
     
     candidates = db.relationship('Candidate', backref='user_candidate', lazy=True)
-    applications = db.relationship('JobApplication', backref='user_applicant', lazy=True)
+    applications = db.relationship(
+        'JobApplication',
+        backref='user_applicant',
+        lazy=True,
+        overlaps="user_applications,applicant"
+    )
     
     def __repr__(self):
         return f'<User {self.email}>'
@@ -190,7 +196,6 @@ class User(UserMixin, db.Model):
             'total_earnings': self.total_earnings,
             'total_placements': self.total_placements,
             'retention_days': self.retention_days,
-            # Notification preferences
             'receive_notifications': self.receive_notifications,
             'email_notifications': self.email_notifications,
             'sms_notifications': self.sms_notifications,
@@ -255,7 +260,7 @@ class RecruiterProfile(db.Model):
     # Settings
     auto_approve_candidates = db.Column(db.Boolean, default=False)
     min_match_percentage = db.Column(db.Float, default=70.0)
-    retention_days = db.Column(db.Integer, default=30)  # Application retention period
+    retention_days = db.Column(db.Integer, default=30)
     
     # Stats (cached)
     total_candidates_reviewed = db.Column(db.Integer, default=0)
@@ -281,11 +286,29 @@ class RecruiterProfile(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
-    jobs = db.relationship('Job', backref='recruiter_jobs', lazy=True, foreign_keys='Job.recruiter_id')
-    placements = db.relationship('Placement', backref='recruiter_placements', lazy=True, foreign_keys='Placement.recruiter_id')
+    # Relationships — overlaps= silences duplicate-FK warnings from backrefs
+    jobs = db.relationship(
+        'Job',
+        backref='recruiter_jobs',
+        lazy=True,
+        foreign_keys='Job.recruiter_id',
+        overlaps="job_poster"
+    )
+    placements = db.relationship(
+        'Placement',
+        backref='recruiter_placements',
+        lazy=True,
+        foreign_keys='Placement.recruiter_id',
+        overlaps="recruiter"
+    )
     verified_by_user = db.relationship('User', foreign_keys=[verified_by])
-    shortlists = db.relationship('Shortlist', backref='recruiter_shortlists', lazy=True, foreign_keys='Shortlist.recruiter_id')
+    shortlists = db.relationship(
+        'Shortlist',
+        backref='recruiter_shortlists',
+        lazy=True,
+        foreign_keys='Shortlist.recruiter_id',
+        overlaps="shortlist_recruiter,recruiter"
+    )
     
     def __repr__(self):
         return f'<RecruiterProfile {self.company_name or self.user_id}>'
@@ -356,8 +379,20 @@ class Candidate(db.Model):
     is_processed = db.Column(db.Boolean, default=False)
     
     # Relationships
-    placements = db.relationship('Placement', backref='candidate_placements', lazy=True, foreign_keys='Placement.candidate_id')
-    shortlists = db.relationship('Shortlist', backref='candidate_shortlists', lazy=True, foreign_keys='Shortlist.candidate_id')
+    placements = db.relationship(
+        'Placement',
+        backref='candidate_placements',
+        lazy=True,
+        foreign_keys='Placement.candidate_id',
+        overlaps="candidate"
+    )
+    shortlists = db.relationship(
+        'Shortlist',
+        backref='candidate_shortlists',
+        lazy=True,
+        foreign_keys='Shortlist.candidate_id',
+        overlaps="shortlist_candidate,candidate"
+    )
     
     def __repr__(self):
         return f'<Candidate {self.name}>'
@@ -423,9 +458,26 @@ class Job(db.Model):
     preferred_skills = db.Column(db.JSON, default=list)
     
     # Relationships
-    placements = db.relationship('Placement', backref='job_placements', lazy=True, foreign_keys='Placement.job_id')
-    shortlists = db.relationship('Shortlist', backref='job_shortlists', lazy=True, foreign_keys='Shortlist.job_id')
-    applications = db.relationship('JobApplication', backref='job_applications', lazy=True)
+    placements = db.relationship(
+        'Placement',
+        backref='job_placements',
+        lazy=True,
+        foreign_keys='Placement.job_id',
+        overlaps="job"
+    )
+    shortlists = db.relationship(
+        'Shortlist',
+        backref='job_shortlists',
+        lazy=True,
+        foreign_keys='Shortlist.job_id',
+        overlaps="shortlist_job,job"
+    )
+    applications = db.relationship(
+        'JobApplication',
+        backref='job_applications',
+        lazy=True,
+        overlaps="job"
+    )
     
     def __repr__(self):
         return f'<Job {self.title}>'
@@ -523,10 +575,25 @@ class Shortlist(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
-    recruiter = db.relationship('RecruiterProfile', backref='shortlist_recruiter', lazy=True)
-    candidate = db.relationship('Candidate', backref='shortlist_candidate', lazy=True)
-    job = db.relationship('Job', backref='shortlist_job', lazy=True)
+    # Relationships — keep backrefs so all attribute names still work
+    recruiter = db.relationship(
+        'RecruiterProfile',
+        backref='shortlist_recruiter',
+        lazy=True,
+        overlaps="shortlists,recruiter_shortlists"
+    )
+    candidate = db.relationship(
+        'Candidate',
+        backref='shortlist_candidate',
+        lazy=True,
+        overlaps="shortlists,candidate_shortlists"
+    )
+    job = db.relationship(
+        'Job',
+        backref='shortlist_job',
+        lazy=True,
+        overlaps="shortlists,job_shortlists"
+    )
     
     def __repr__(self):
         return f'<Shortlist {self.recruiter.company_name if self.recruiter else "Unknown"} - {self.candidate.name if self.candidate else "Unknown"}>'
@@ -545,7 +612,7 @@ class Shortlist(db.Model):
 
 
 # ============================================
-# JOB APPLICATION MODEL - UPDATED
+# JOB APPLICATION MODEL
 # ============================================
 
 class JobApplication(db.Model):
@@ -575,13 +642,23 @@ class JobApplication(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     reviewed_at = db.Column(db.DateTime, nullable=True)
     
-    # NEW: Auto-delete expiry and soft delete
-    expires_at = db.Column(db.DateTime, nullable=True)  # When this application should be auto-deleted
-    is_deleted = db.Column(db.Boolean, default=False)   # Soft delete flag
+    # Auto-delete expiry and soft delete
+    expires_at = db.Column(db.DateTime, nullable=True)
+    is_deleted = db.Column(db.Boolean, default=False)
     
-    # Relationships
-    job = db.relationship('Job', backref='job_applications', lazy=True)
-    applicant = db.relationship('User', backref='user_applications', lazy=True)
+    # Relationships — keep backrefs so all attribute names still work
+    job = db.relationship(
+        'Job',
+        backref='job_applications',
+        lazy=True,
+        overlaps="applications,user_applications"
+    )
+    applicant = db.relationship(
+        'User',
+        backref='user_applications',
+        lazy=True,
+        overlaps="applications,user_applicant"
+    )
     
     def __repr__(self):
         return f'<JobApplication {self.applicant_name} -> {self.job.title if self.job else "Unknown"}>'
@@ -655,16 +732,16 @@ class JobAlert(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     
     # Alert criteria
-    keywords = db.Column(db.String(500), nullable=True)  # Comma-separated
-    job_type = db.Column(db.String(50), nullable=True)  # full_time, part_time, etc.
+    keywords = db.Column(db.String(500), nullable=True)
+    job_type = db.Column(db.String(50), nullable=True)
     location = db.Column(db.String(200), nullable=True)
     salary_min = db.Column(db.Float, nullable=True)
     salary_max = db.Column(db.Float, nullable=True)
     category = db.Column(db.String(100), nullable=True)
-    experience_level = db.Column(db.String(50), nullable=True)  # entry, mid, senior
+    experience_level = db.Column(db.String(50), nullable=True)
     
     # Notification settings
-    frequency = db.Column(db.String(20), default='daily')  # daily, weekly, instant
+    frequency = db.Column(db.String(20), default='daily')
     is_active = db.Column(db.Boolean, default=True)
     
     # Tracking
@@ -699,7 +776,6 @@ class JobAlert(db.Model):
         matches = 0
         total = 0
         
-        # Keyword matching
         if self.keywords:
             total += 1
             keywords = [k.strip().lower() for k in self.keywords.split(',')]
@@ -707,29 +783,21 @@ class JobAlert(db.Model):
             if any(k in job_text for k in keywords):
                 matches += 1
         
-        # Job type
         if self.job_type:
             total += 1
             if job.employment_type and self.job_type == job.employment_type.value:
                 matches += 1
         
-        # Location
         if self.location:
             total += 1
             if job.location and self.location.lower() in job.location.lower():
                 matches += 1
         
-        # Category
-        # Note: You might need to add a 'category' field to Job model
-        # For now, we'll skip if not available
-        
-        # Experience level
         if self.experience_level:
             total += 1
             if job.experience_level and self.experience_level.lower() in job.experience_level.lower():
                 matches += 1
         
-        # Salary
         if self.salary_min or self.salary_max:
             total += 1
             if job.salary_min or job.salary_max:
@@ -741,7 +809,6 @@ class JobAlert(db.Model):
                 if salary_ok:
                     matches += 1
         
-        # Return True if at least 50% of criteria match
         if total == 0:
             return True
         return (matches / total) >= 0.5
@@ -758,10 +825,16 @@ class JobAlertLog(db.Model):
     
     # Relationships
     alert = db.relationship('JobAlert', backref='logs')
-    job = db.relationship('Job', backref='alert_logs')
+    job = db.relationship(
+        'Job',
+        backref='alert_logs',
+        overlaps="applications,shortlists,placements,job_applications,job_shortlists,job_placements"
+    )
     
     def __repr__(self):
         return f'<JobAlertLog Alert {self.alert_id} -> Job {self.job_id}>'
+
+
 # ============================================
 # INTERVIEW PRACTICE MODELS
 # ============================================
@@ -773,25 +846,34 @@ class InterviewPractice(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     
-    # Session details
     job_title = db.Column(db.String(255), nullable=False)
     industry = db.Column(db.String(100), nullable=True)
     experience_level = db.Column(db.String(50), default='mid')
     question_type = db.Column(db.String(50), default='technical')
     
-    # Status
     status = db.Column(db.String(50), default='in_progress')
     score = db.Column(db.Float, default=0.0)
     completed_at = db.Column(db.DateTime, nullable=True)
     
-    # Metadata
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships - Clean approach with unique backrefs
+    # Relationships — overlaps= silences warnings, backrefs preserved
     user = db.relationship('User', backref='interview_practices')
-    questions = db.relationship('InterviewQuestion', backref='interview_practice', lazy=True, cascade='all, delete-orphan')
-    responses = db.relationship('InterviewResponse', backref='interview_practice_responses', lazy=True, cascade='all, delete-orphan')
+    questions = db.relationship(
+        'InterviewQuestion',
+        backref='interview_practice',
+        lazy=True,
+        cascade='all, delete-orphan',
+        overlaps="practice"
+    )
+    responses = db.relationship(
+        'InterviewResponse',
+        backref='interview_practice_responses',
+        lazy=True,
+        cascade='all, delete-orphan',
+        overlaps="practice"
+    )
     
     def __repr__(self):
         return f'<InterviewPractice {self.job_title} - User {self.user_id}>'
@@ -819,20 +901,28 @@ class InterviewQuestion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     practice_id = db.Column(db.Integer, db.ForeignKey('interview_practices.id'), nullable=False)
     
-    # Question details
     question_text = db.Column(db.Text, nullable=False)
     question_type = db.Column(db.String(50), default='technical')
     category = db.Column(db.String(100), nullable=True)
     difficulty = db.Column(db.String(20), default='medium')
     order = db.Column(db.Integer, default=0)
     
-    # Expected answer (for reference)
     expected_answer = db.Column(db.Text, nullable=True)
     tips = db.Column(db.Text, nullable=True)
     
-    # Relationships - Use back_populates for clean bidirectional relationships
-    practice = db.relationship('InterviewPractice', back_populates='questions')
-    response = db.relationship('InterviewResponse', back_populates='question', uselist=False, cascade='all, delete-orphan')
+    # Relationships
+    practice = db.relationship(
+        'InterviewPractice',
+        back_populates='questions',
+        overlaps="interview_practice"
+    )
+    response = db.relationship(
+        'InterviewResponse',
+        back_populates='question',
+        uselist=False,
+        cascade='all, delete-orphan',
+        overlaps="interview_practice_responses"
+    )
     
     def __repr__(self):
         return f'<InterviewQuestion {self.id} - {self.question_text[:50]}...>'
@@ -846,25 +936,30 @@ class InterviewResponse(db.Model):
     practice_id = db.Column(db.Integer, db.ForeignKey('interview_practices.id'), nullable=False)
     question_id = db.Column(db.Integer, db.ForeignKey('interview_questions.id'), nullable=False)
     
-    # Response details
     answer = db.Column(db.Text, nullable=True)
     audio_url = db.Column(db.String(500), nullable=True)
     time_taken = db.Column(db.Integer, default=0)
     
-    # AI Feedback
     feedback = db.Column(db.Text, nullable=True)
     score = db.Column(db.Float, default=0.0)
     strengths = db.Column(db.JSON, default=list)
     improvements = db.Column(db.JSON, default=list)
     key_points = db.Column(db.JSON, default=list)
     
-    # Metadata
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships - Clean bidirectional relationships
-    practice = db.relationship('InterviewPractice', back_populates='responses')
-    question = db.relationship('InterviewQuestion', back_populates='response')
+    # Relationships
+    practice = db.relationship(
+        'InterviewPractice',
+        back_populates='responses',
+        overlaps="interview_practice_responses"
+    )
+    question = db.relationship(
+        'InterviewQuestion',
+        back_populates='response',
+        overlaps="interview_practice"
+    )
     
     def __repr__(self):
         return f'<InterviewResponse {self.id} - Score: {self.score}>'
@@ -884,6 +979,7 @@ class InterviewResponse(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
+
 class NewsletterSubscriber(db.Model):
     __tablename__ = 'newsletter_subscribers'
     
@@ -893,7 +989,11 @@ class NewsletterSubscriber(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     subscribed_at = db.Column(db.DateTime, default=datetime.utcnow)
     unsubscribed_at = db.Column(db.DateTime)
-    source = db.Column(db.String(50), default='footer')  # where they signed up
+    source = db.Column(db.String(50), default='footer')
+    
+    def __repr__(self):
+        return f'<Subscriber {self.email}>'
+
 
 class SharedRoadmap(db.Model):
     """Public shareable roadmap"""
@@ -903,28 +1003,24 @@ class SharedRoadmap(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     public_slug = db.Column(db.String(20), unique=True, nullable=False, index=True)
     
-    # Snapshot of the roadmap at share time
     target_role = db.Column(db.String(200))
     detected_sector = db.Column(db.String(100))
     employability_score = db.Column(db.Integer)
-    top_skills = db.Column(db.JSON)  # ["Python", "SQL", ...]
-    top_gaps = db.Column(db.JSON)  # [{skill, priority, demand, ...}]
-    roadmap_summary = db.Column(db.JSON)  # {immediate: [...], short_term: [...]}
+    top_skills = db.Column(db.JSON)
+    top_gaps = db.Column(db.JSON)
+    roadmap_summary = db.Column(db.JSON)
     
-    # Stats
     views = db.Column(db.Integer, default=0)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relationships
     user = db.relationship('User', backref='shared_roadmaps')
     
     def __repr__(self):
         return f'<SharedRoadmap {self.public_slug}>'
-    
-    def __repr__(self):
-        return f'<Subscriber {self.email}>'
+
+
 # ============================================
 # USER LOADER
 # ============================================
@@ -932,6 +1028,7 @@ class SharedRoadmap(db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
+
 
 # ============================================
 # PROGRESS TRACKING
@@ -944,23 +1041,18 @@ class UserProgress(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     
-    # Which course
     skill = db.Column(db.String(200), nullable=False)
     course_title = db.Column(db.String(500), nullable=False)
     course_url = db.Column(db.String(1000))
     
-    # Status
-    status = db.Column(db.String(50), default='not_started')  # not_started, in_progress, completed
+    status = db.Column(db.String(50), default='not_started')
     
-    # Timeline
     started_at = db.Column(db.DateTime)
     completed_at = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Engagement
     time_spent_minutes = db.Column(db.Integer, default=0)
     
-    # Relationship
     user = db.relationship('User', backref=db.backref('progress', cascade='all, delete-orphan'))
     
     __table_args__ = (
@@ -995,7 +1087,7 @@ class Milestone(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     
-    milestone_type = db.Column(db.String(100), nullable=False)  # first_cv, first_course, score_50, etc.
+    milestone_type = db.Column(db.String(100), nullable=False)
     milestone_title = db.Column(db.String(300), nullable=False)
     milestone_description = db.Column(db.Text)
     achieved_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -1017,8 +1109,7 @@ class WeeklyDigest(db.Model):
     sent_at = db.Column(db.DateTime, default=datetime.utcnow)
     week_of = db.Column(db.Date)
     
-    # Snapshot of what was sent
-    content = db.Column(db.JSON)  # {new_jobs, score_change, top_skill, ...}
+    content = db.Column(db.JSON)
     
     opened_at = db.Column(db.DateTime)
     clicked_at = db.Column(db.DateTime)
