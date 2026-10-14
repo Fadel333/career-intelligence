@@ -2,7 +2,7 @@
 
 from flask import Flask, render_template, redirect, url_for, request, flash, session, jsonify, make_response, current_app
 from flask_login import login_required, current_user
-from extensions import db, login_manager, csrf
+from extensions import db, login_manager, csrf, limiter
 from flask_migrate import Migrate
 from flask_mail import Mail
 from werkzeug.utils import secure_filename
@@ -123,7 +123,7 @@ def initialize_extensions(app):
     db.init_app(app)
     login_manager.init_app(app)
     csrf.init_app(app)
-
+    limiter.init_app(app)
 
 def configure_login_manager():
     """Configure Flask-Login settings"""
@@ -737,6 +737,7 @@ def register_routes(app):
         return render_template('changelog.html')
     
     @app.route('/guest/upload', methods=['GET', 'POST'])
+    @limiter.limit("5 per hour", methods=["POST"])
     def guest_upload():
         """Guest mode — try before signup. No account required."""
         
@@ -1228,6 +1229,7 @@ def register_routes(app):
     # ========== STUDENT-ONLY ROUTES ==========
     @app.route('/upload-cv', methods=['GET', 'POST'])
     @login_required
+    @limiter.limit("10 per hour", methods=["POST"])
     def upload_cv():
         if current_user.is_recruiter():
             flash('Recruiters cannot upload CVs. This feature is for job seekers.', 'warning')
@@ -1671,6 +1673,7 @@ def register_routes(app):
     # Keeping this for backward compatibility
     @app.route('/api/ask', methods=['POST'])
     @login_required
+    @limiter.limit("20 per hour")
     def api_ask():
         """Legacy endpoint - redirects to new chat API"""
         if current_user.is_recruiter() or current_user.is_admin():
@@ -1928,6 +1931,7 @@ def register_routes(app):
     
     @app.route('/upload-profile-pic', methods=['POST'])
     @login_required
+    @limiter.limit("20 per hour")
     def upload_profile_pic():
         if 'profile_pic' not in request.files:
             return jsonify({'success': False, 'message': 'No file uploaded'})
@@ -2259,6 +2263,7 @@ def register_routes(app):
 
     @app.route('/interview-practice/setup', methods=['GET', 'POST'])
     @login_required
+    @limiter.limit("10 per hour", methods=["POST"])
     def interview_practice_setup():
         if current_user.is_recruiter() or current_user.is_admin():
             flash('This feature is for job seekers only.', 'warning')
@@ -2402,6 +2407,7 @@ def register_routes(app):
 
     @app.route('/interview-practice/<int:practice_id>/feedback', methods=['POST'])
     @login_required
+    @limiter.limit("30 per hour")
     def interview_practice_feedback(practice_id):
         practice = InterviewPractice.query.filter_by(
             id=practice_id,
@@ -2745,5 +2751,18 @@ def create_app():
         if not app.debug:
             response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
         return response
+
+
+    @app.errorhandler(429)
+    def ratelimit_handler(e):
+        if request.path.startswith('/api/') or request.is_json:
+            return jsonify({
+                'error': 'Too many requests. Please try again later.',
+                'retry_after': str(e.description)
+            }), 429
+        flash('Too many requests. Please wait a moment and try again.', 'warning')
+        return redirect(request.referrer or url_for('index'))
+
+    
     
     return app
