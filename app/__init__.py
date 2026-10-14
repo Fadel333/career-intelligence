@@ -86,7 +86,7 @@ def compress_parsed_data(data):
     if not data:
         return None
     try:
-        return json.dumps(data)
+       return json.dumps(data, default=str)
     except (TypeError, ValueError) as e:
         print(f"Serialization error: {e}")
         return None
@@ -1273,26 +1273,26 @@ def register_routes(app):
                 
                 print(f"📊 CV Detection Report:")
                 print(f"   - Is CV: {is_cv}")
-                print(f"   - Confidence: {confidence*100:.1f}%")
+                print(f"   - Confidence: {confidence:.1f}%")
                 print(f"   - Reason: {reason}")
                 
                 if not is_cv:
-                    flash(f"❌ CV detection failed: {reason} (Confidence: {confidence*100:.1f}%)", 'error')
+                    flash(f"❌ CV detection failed: {reason} (Confidence: {confidence:.1f}%)", 'error')
                     safe_delete_file(filepath)
                     clear_parsed_data_from_session()
                     clear_user_cv_data(current_user.id)
                     return redirect(url_for('upload_cv'))
                 
-                # Reject if confidence is too low
-                if confidence < 0.3:
-                    print(f"⚠️ LOW CONFIDENCE: {confidence*100:.1f}% - rejecting file")
-                    flash(f"⚠️ File doesn't appear to be a valid CV (Confidence: {confidence*100:.1f}%). Please upload a proper CV/resume.", 'error')
+                # Reject if confidence is below 30%
+                if confidence < 30:
+                    print(f"⚠️ LOW CONFIDENCE: {confidence:.1f}% - rejecting file")
+                    flash(f"⚠️ File doesn't appear to be a valid CV (Confidence: {confidence:.1f}%). Please upload a proper CV/resume.", 'error')
                     safe_delete_file(filepath)
                     clear_parsed_data_from_session()
                     clear_user_cv_data(current_user.id)
                     return redirect(url_for('upload_cv'))
                 
-                print(f"✅ CV Detection: {reason} (Confidence: {confidence*100:.1f}%)")
+                print(f"✅ CV Detection: {reason} (Confidence: {confidence:.1f}%)")
                 
             except Exception as e:
                 print(f"CV detection error: {e}")
@@ -1383,7 +1383,7 @@ def register_routes(app):
                         print(f"✅ CV data saved to database for user {user.email}")
                     
                     try:
-                        json_data = json.dumps(parsed_data)
+                        json_data = json.dumps(parsed_data, default=str)
                         if len(json_data) > 4000:
                             session['parsed_cv'] = compress_parsed_data(parsed_data)
                         else:
@@ -1438,7 +1438,7 @@ def register_routes(app):
             
             if parsed_data and isinstance(parsed_data, dict):
                 try:
-                    session['parsed_cv'] = json.dumps(parsed_data)
+                    session['parsed_cv'] = json.dumps(parsed_data, default=str)
                     session['cv_filename'] = user.cv_filename
                     session['parsing_status'] = 'complete'
                 except Exception as e:
@@ -1546,7 +1546,7 @@ def register_routes(app):
                 parsed_data = user.get_cv_analysis()
                 if parsed_data and isinstance(parsed_data, dict):
                     try:
-                        session['parsed_cv'] = json.dumps(parsed_data)
+                        session['parsed_cv'] = json.dumps(parsed_data, default=str)
                     except:
                         pass
                 else:
@@ -1593,7 +1593,7 @@ def register_routes(app):
                 if db_data and isinstance(db_data, dict):
                     parsed_data = db_data
                     try:
-                        session['parsed_cv'] = json.dumps(parsed_data)
+                        session['parsed_cv'] = json.dumps(parsed_data, default=str)
                     except Exception as e:
                         print(f"Error storing session data: {e}")
         
@@ -1644,7 +1644,7 @@ def register_routes(app):
                 parsed_data = user.get_cv_analysis()
                 if parsed_data and isinstance(parsed_data, dict):
                     try:
-                        session['parsed_cv'] = json.dumps(parsed_data)
+                        session['parsed_cv'] = json.dumps(parsed_data, default=str)
                     except:
                         pass
                 else:
@@ -1723,7 +1723,7 @@ def register_routes(app):
             
             if parsed_data and isinstance(parsed_data, dict):
                 try:
-                    session['parsed_cv'] = json.dumps(parsed_data)
+                    session['parsed_cv'] = json.dumps(parsed_data, default=str)
                     session['cv_filename'] = user.cv_filename
                 except Exception as e:
                     print(f"Error updating session: {e}")
