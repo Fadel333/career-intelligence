@@ -3,6 +3,7 @@ from flask import current_app, render_template, url_for
 from threading import Thread
 import os
 import logging
+from extensions import db
 import requests
 from datetime import datetime
 
@@ -496,7 +497,7 @@ def send_verification_approved_email(recruiter):
     """Send verification approved email to recruiter"""
     from models import User
     base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
-    user = User.query.get(recruiter.user_id)
+    user = db.session.get(User, recruiter.user_id)
 
     subject = "✅ Your Recruiter Account Has Been Verified!"
 
@@ -541,7 +542,7 @@ def send_verification_rejected_email(recruiter):
     """Send verification rejected email to recruiter"""
     from models import User
     base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
-    user = User.query.get(recruiter.user_id)
+    user = db.session.get(User, recruiter.user_id)
 
     subject = "❌ Recruiter Verification Update"
 
@@ -594,8 +595,8 @@ def send_new_application_email(application, job):
     """Send new application notification to recruiter"""
     from models import RecruiterProfile, User
     base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
-    recruiter = RecruiterProfile.query.get(job.recruiter_id)
-    user = User.query.get(recruiter.user_id)
+    recruiter = db.session.get(RecruiterProfile, job.recruiter_id)
+    user = db.session.get(User, recruiter.user_id)
 
     subject = f"📝 New Application for {job.title}"
 
@@ -700,8 +701,8 @@ def send_job_published_email(job):
     """Send job published confirmation to recruiter"""
     from models import RecruiterProfile, User
     base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
-    recruiter = RecruiterProfile.query.get(job.recruiter_id)
-    user = User.query.get(recruiter.user_id)
+    recruiter = db.session.get(RecruiterProfile, job.recruiter_id)
+    user = db.session.get(User, recruiter.user_id)
 
     subject = f"✅ Job Published: {job.title}"
 
@@ -757,7 +758,7 @@ def send_candidate_match_email(recruiter, candidate, job=None):
     """Send candidate match alert to recruiter"""
     from models import User
     base_url = current_app.config.get('BASE_URL', 'http://localhost:5000')
-    user = User.query.get(recruiter.user_id)
+    user = db.session.get(User, recruiter.user_id)
 
     subject = "🎯 New Candidate Match Found!"
 

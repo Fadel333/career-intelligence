@@ -747,7 +747,7 @@ def bulk_delete_applications():
     
     deleted_count = 0
     for app_id in app_ids:
-        application = JobApplication.query.get(int(app_id))
+        application = db.session.get(JobApplication, int(app_id))
         if application:
             # Verify ownership
             job = Job.query.filter_by(id=application.job_id, recruiter_id=recruiter.id).first()

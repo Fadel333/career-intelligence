@@ -335,7 +335,7 @@ def application_detail(application_id):
     application = JobApplication.query.get_or_404(application_id)
     
     recruiter = RecruiterProfile.query.filter_by(user_id=current_user.id).first()
-    job = Job.query.get(application.job_id)
+    job = db.session.get(Job, application.job_id)
     
     if not recruiter or job.recruiter_id != recruiter.id:
         flash('You do not have permission to view this application.', 'error')
@@ -361,7 +361,7 @@ def download_cv(application_id):
     application = JobApplication.query.get_or_404(application_id)
     
     recruiter = RecruiterProfile.query.filter_by(user_id=current_user.id).first()
-    job = Job.query.get(application.job_id)
+    job = db.session.get(Job, application.job_id)
     
     if not recruiter or job.recruiter_id != recruiter.id:
         flash('You do not have permission to download this CV.', 'error')
@@ -424,7 +424,7 @@ def update_application_status(application_id):
     application = JobApplication.query.get_or_404(application_id)
     
     recruiter = RecruiterProfile.query.filter_by(user_id=current_user.id).first()
-    job = Job.query.get(application.job_id)
+    job = db.session.get(Job, application.job_id)
     
     if not recruiter or job.recruiter_id != recruiter.id:
         flash('You do not have permission to update this application.', 'error')

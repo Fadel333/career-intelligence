@@ -181,7 +181,7 @@ def clear_parsed_data_from_session():
 def clear_user_cv_data(user_id):
     """Clear all CV data for a user from the database"""
     try:
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if user:
             user.cv_analysis = None
             user.detected_sector = None
@@ -294,7 +294,7 @@ def get_department_performance():
     
     dept_stats = {}
     for candidate in candidates:
-        user = User.query.get(candidate.user_id)
+        user = db.session.get(User, candidate.user_id)
         if user and user.university_department:
             dept = user.university_department
             if dept not in dept_stats:
@@ -879,7 +879,7 @@ def register_routes(app):
         """Create or toggle a public shareable roadmap"""
         import secrets
         
-        user = User.query.get(current_user.id)
+        user = db.session.get(User, current_user.id)
         if not user or not user.cv_analysis:
             return jsonify({'success': False, 'error': 'No CV data'}), 400
         
@@ -979,7 +979,7 @@ def register_routes(app):
             print(f"⚠️ View count error: {e}")
         
         # Get owner for name
-        owner = User.query.get(shared.user_id)
+        owner = db.session.get(User, shared.user_id)
         
         return render_template('shared_roadmap.html', 
                              shared=shared, 
@@ -1180,7 +1180,7 @@ def register_routes(app):
         """Check if user achieved new milestones"""
         from models import UserProgress, Milestone, User
         
-        user = User.query.get(user_id)
+        user = db.session.get(User, user_id)
         if not user:
             return
         
@@ -1321,7 +1321,7 @@ def register_routes(app):
                         clear_user_cv_data(current_user.id)
                         return redirect(url_for('upload_cv'))
                     
-                    user = User.query.get(current_user.id)
+                    user = db.session.get(User, current_user.id)
                     if user:
                         all_skills = []
                         for category, skills in parsed_data.get('skills', {}).items():
@@ -1430,7 +1430,7 @@ def register_routes(app):
             return redirect(url_for('admin.index'))
         
         # FIRST: Try to get data from database (most reliable)
-        user = User.query.get(current_user.id)
+        user = db.session.get(User, current_user.id)
         parsed_data = None
         showing_previous_cv = False
         
@@ -1544,7 +1544,7 @@ def register_routes(app):
         parsed_data = get_parsed_data_from_session()
         
         if not parsed_data or not isinstance(parsed_data, dict):
-            user = User.query.get(current_user.id)
+            user = db.session.get(User, current_user.id)
             if user and user.cv_analysis:
                 parsed_data = user.get_cv_analysis()
                 if parsed_data and isinstance(parsed_data, dict):
@@ -1590,7 +1590,7 @@ def register_routes(app):
         if session_data and isinstance(session_data, dict):
             parsed_data = session_data
         else:
-            user = User.query.get(current_user.id)
+            user = db.session.get(User, current_user.id)
             if user and user.cv_analysis:
                 db_data = user.get_cv_analysis()
                 if db_data and isinstance(db_data, dict):
@@ -1642,7 +1642,7 @@ def register_routes(app):
         parsed_data = get_parsed_data_from_session()
         
         if not parsed_data or not isinstance(parsed_data, dict):
-            user = User.query.get(current_user.id)
+            user = db.session.get(User, current_user.id)
             if user and user.cv_analysis:
                 parsed_data = user.get_cv_analysis()
                 if parsed_data and isinstance(parsed_data, dict):
@@ -1686,7 +1686,7 @@ def register_routes(app):
         parsed_data = get_parsed_data_from_session()
         
         if not parsed_data or not isinstance(parsed_data, dict):
-            user = User.query.get(current_user.id)
+            user = db.session.get(User, current_user.id)
             if user and user.cv_analysis:
                 parsed_data = user.get_cv_analysis()
                 if not isinstance(parsed_data, dict):
@@ -1717,7 +1717,7 @@ def register_routes(app):
     @login_required
     def dashboard():
         # FIRST: Check if current user has data in database
-        user = User.query.get(current_user.id)
+        user = db.session.get(User, current_user.id)
         parsed_data = None
         
         # Try to get data from database first
@@ -1901,7 +1901,7 @@ def register_routes(app):
             skills = request.form.get('skills')
             university_department = request.form.get('university_department')
             
-            user = User.query.get(current_user.id)
+            user = db.session.get(User, current_user.id)
             if user:
                 user.fullname = fullname or user.fullname
                 user.email = email or user.email
@@ -1966,7 +1966,7 @@ def register_routes(app):
     @app.route('/update-notification-settings', methods=['POST'])
     @login_required
     def update_notification_settings():
-        user = User.query.get(current_user.id)
+        user = db.session.get(User, current_user.id)
         if not user:
             flash('User not found.', 'error')
             return redirect(url_for('profile'))

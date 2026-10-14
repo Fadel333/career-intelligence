@@ -36,7 +36,7 @@ def notify_candidates_about_job(job):
             
             # Only notify if match is above threshold (e.g., 50%)
             if match_score >= 50:
-                user = User.query.get(candidate.user_id)
+                user = db.session.get(User, candidate.user_id)
                 if user and user.receive_notifications:
                     send_job_notification(user, job, candidate, match_score)
                     notifications_sent += 1
@@ -90,7 +90,7 @@ def check_job_alerts_for_job(job):
     
     for alert in alerts:
         if alert.matches_job(job):
-            user = User.query.get(alert.user_id)
+            user = db.session.get(User, alert.user_id)
             if user and user.receive_notifications:
                 send_alert_notification(user, alert, job)
                 notifications_sent += 1

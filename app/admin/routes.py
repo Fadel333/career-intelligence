@@ -147,7 +147,7 @@ def verifications():
 def verification_detail(recruiter_id):
     """View a specific verification request"""
     recruiter = RecruiterProfile.query.get_or_404(recruiter_id)
-    user = User.query.get(recruiter.user_id)
+    user = db.session.get(User, recruiter.user_id)
 
     return render_template('admin/verification_detail.html',
         recruiter=recruiter,

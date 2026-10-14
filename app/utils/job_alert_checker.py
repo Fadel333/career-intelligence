@@ -20,7 +20,7 @@ def check_job_alerts():
     
     for alert in alerts:
         try:
-            user = User.query.get(alert.user_id)
+            user = db.session.get(User, alert.user_id)
             if not user:
                 print(f"⚠️ User {alert.user_id} not found for alert {alert.id}")
                 continue
@@ -162,7 +162,7 @@ def send_job_alert_notification(alert, jobs):
         print("❌ No jobs to send")
         return False
     
-    user = User.query.get(alert.user_id)
+    user = db.session.get(User, alert.user_id)
     if not user:
         print(f"❌ User {alert.user_id} not found")
         return False

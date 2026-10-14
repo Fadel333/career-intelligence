@@ -144,7 +144,7 @@ def verify_email(token):
         flash('❌ Invalid or expired verification link.', 'error')
         return redirect(url_for('auth.login'))
     
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     
     if not user:
         flash('❌ User not found.', 'error')
